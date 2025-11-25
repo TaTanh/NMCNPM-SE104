@@ -208,7 +208,6 @@ body {
 }
 
 /* Sidebar trái */
-/* Sidebar trái */
 .sidebar {
     width: 240px;
     color: #ffffff;
@@ -221,6 +220,10 @@ body {
     background: transparent;
     position: relative;
     overflow: hidden;
+
+    /* FIX: luôn cao = chiều cao màn hình để background không zoom khác giữa các trang */
+    height: 100vh;
+    flex-shrink: 0;
 }
 
 /* Nền ảnh tĩnh cho sidebar */

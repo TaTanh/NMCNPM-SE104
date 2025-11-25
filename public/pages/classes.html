@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý lớp học</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/layout/styles.css">
+</head>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="/assets/uit_logo.png" alt="UIT Logo">
+            <span>QL Học Sinh</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/pages/dashboard.html">Dashboard</a>
+            <a href="/pages/students.html">Quản lý học sinh</a>
+            <a href="/pages/classes.html" class="active">Quản lý lớp</a>
+            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/grade_select.html">Nhập điểm</a>
+            <a href="/pages/teaching_assignment.html">Phân công</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- HEADER -->
+        <header class="topbar">
+            <div class="page-title">Danh sách lớp</div>
+            <div class="user-info">
+                <span>Xin chào, Admin</span>
+                <img src="/assets/user.png" class="avatar" alt="user">
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <!-- TOOLBAR -->
+            <div class="toolbar">
+                <div class="search-box">
+                    <input type="text" placeholder="Tìm theo tên hoặc mã lớp...">
+                </div>
+
+                <div class="toolbar-actions">
+                    <button class="btn btn-outline" id="btnExportClass">Xuất Excel</button>
+
+                    <div class="toolbar-actions-main">
+                        <button class="btn btn-primary" id="btnAddClass">Thêm</button>
+                        <button class="btn btn-edit" id="btnToggleEditClass">Sửa đổi</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- THANH SỬA / XÓA – hiện khi bấm Sửa đổi -->
+            <div class="edit-actions" id="classEditActions">
+                <button class="btn btn-secondary" id="btnEditClass">Sửa</button>
+                <button class="btn btn-danger" id="btnDeleteClass">Xóa</button>
+            </div>
+
+            <!-- BẢNG DANH SÁCH LỚP -->
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="select-col"></th>
+                            <th>Mã lớp</th>
+                            <th>Tên lớp</th>
+                            <th>Khối</th>
+                            <th>Sĩ số</th>
+                            <th>GVCN</th>
+                            <th>Năm học</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classTableBody">
+                        <!-- Dữ liệu mẫu -->
+                        <tr>
+                            <td class="select-cell">
+                                <input type="checkbox" class="row-select-checkbox">
+                            </td>
+                            <td>10A1</td>
+                            <td>Lớp 10A1</td>
+                            <td>10</td>
+                            <td>45</td>
+                            <td>Nguyễn Văn A</td>
+                            <td>2024–2025</td>
+                        </tr>
+                        <tr>
+                            <td class="select-cell">
+                                <input type="checkbox" class="row-select-checkbox">
+                            </td>
+                            <td>10A2</td>
+                            <td>Lớp 10A2</td>
+                            <td>10</td>
+                            <td>43</td>
+                            <td>Trần Thị B</td>
+                            <td>2024–2025</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- PHÂN TRANG -->
+            <div class="pagination">
+                <a href="#" class="page-link disabled">&laquo;</a>
+                <a href="#" class="page-link active">1</a>
+                <a href="#" class="page-link">2</a>
+                <a href="#" class="page-link">&raquo;</a>
+            </div>
+
+        </div><!-- /content -->
+
+    </div><!-- /main -->
+
+    <!-- ========== POPUP SỬA LỚP ========== -->
+    <div class="modal-overlay" id="editClassModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Sửa lớp</h2>
+                <button class="modal-close" id="closeEditClassModalBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="editClassForm">
+                    <div class="modal-grid">
+                        <div class="form-group">
+                            <label>Mã lớp</label>
+                            <input type="text" id="classCodeEdit" readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tên lớp</label>
+                            <input type="text" id="classNameEdit">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Khối</label>
+                            <input type="number" id="gradeLevelEdit" min="1" max="12">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Giáo viên chủ nhiệm</label>
+                            <input type="text" id="homeroomTeacherEdit">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Năm học</label>
+                            <input type="text" id="schoolYearEdit" placeholder="2024–2025">
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancelEditClassBtn">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== POPUP XÓA LỚP ========== -->
+    <div class="modal-overlay" id="deleteClassModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Xóa lớp</h2>
+                <button class="modal-close" id="closeDeleteClassModalBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <p id="deleteClassMessage">
+                    Bạn có chắc chắn muốn xóa lớp này không?
+                </p>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" id="cancelDeleteClassBtn">Hủy</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmDeleteClass">Xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        // ====== Lấy các phần tử cần dùng ======
+        const classTableBody   = document.getElementById('classTableBody');
+        const classRows        = classTableBody.querySelectorAll('tr');
+        const classCheckboxes  = classTableBody.querySelectorAll('.row-select-checkbox');
+
+        const btnToggleClass   = document.getElementById('btnToggleEditClass');
+        const btnEditClass     = document.getElementById('btnEditClass');
+        const btnDeleteClass   = document.getElementById('btnDeleteClass');
+
+        // Modal
+        const editClassModal   = document.getElementById('editClassModal');
+        const deleteClassModal = document.getElementById('deleteClassModal');
+
+        const closeEditClassModalBtn   = document.getElementById('closeEditClassModalBtn');
+        const cancelEditClassBtn       = document.getElementById('cancelEditClassBtn');
+
+        const closeDeleteClassModalBtn = document.getElementById('closeDeleteClassModalBtn');
+        const cancelDeleteClassBtn     = document.getElementById('cancelDeleteClassBtn');
+        const deleteClassMessage       = document.getElementById('deleteClassMessage');
+        const btnConfirmDeleteClass    = document.getElementById('btnConfirmDeleteClass');
+
+        // Input trong form Sửa lớp
+        const classCodeEdit       = document.getElementById('classCodeEdit');
+        const classNameEdit       = document.getElementById('classNameEdit');
+        const gradeLevelEdit      = document.getElementById('gradeLevelEdit');
+        const homeroomTeacherEdit = document.getElementById('homeroomTeacherEdit');
+        const schoolYearEdit      = document.getElementById('schoolYearEdit');
+
+        let classSelectedRow  = null;
+        let classSelectModeOn = false;
+
+        function resetClassSelection() {
+            classSelectedRow = null;
+            classCheckboxes.forEach(cb => {
+                cb.checked = false;
+                cb.closest('tr').classList.remove('row-selected');
+            });
+        }
+
+        function enterClassSelectMode() {
+            classSelectModeOn = true;
+            document.body.classList.add('select-mode');        // hiện checkbox + thanh Sửa/Xóa
+            btnToggleClass.classList.add('btn-toggle-active'); // đổi màu nút Sửa đổi
+            resetClassSelection();
+        }
+
+        function exitClassSelectMode() {
+            classSelectModeOn = false;
+            document.body.classList.remove('select-mode');
+            btnToggleClass.classList.remove('btn-toggle-active');
+            resetClassSelection();
+        }
+
+        // Bấm nút "Sửa đổi"
+        btnToggleClass.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (classSelectModeOn) {
+                exitClassSelectMode();
+            } else {
+                enterClassSelectMode();
+            }
+        });
+
+        // Checkbox – chỉ cho chọn 1 dòng, chỉ hoạt động khi đang select-mode
+        classCheckboxes.forEach(cb => {
+            cb.addEventListener('change', () => {
+                if (!classSelectModeOn) {
+                    cb.checked = false;
+                    return;
+                }
+                if (cb.checked) {
+                    classCheckboxes.forEach(other => {
+                        if (other !== cb) {
+                            other.checked = false;
+                            other.closest('tr').classList.remove('row-selected');
+                        }
+                    });
+                    classSelectedRow = cb.closest('tr');
+                    classSelectedRow.classList.add('row-selected');
+                } else {
+                    cb.closest('tr').classList.remove('row-selected');
+                    if (classSelectedRow === cb.closest('tr')) classSelectedRow = null;
+                }
+            });
+        });
+
+        // Click cả dòng để toggle checkbox (khi đang select-mode)
+        classRows.forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (!classSelectModeOn) return;
+                if (e.target.classList.contains('row-select-checkbox')) return;
+
+                const cb = row.querySelector('.row-select-checkbox');
+                cb.checked = !cb.checked;
+                cb.dispatchEvent(new Event('change'));
+            });
+        });
+
+        // ========= POPUP SỬA LỚP =========
+        const editClassForm = document.getElementById('editClassForm');
+
+        btnEditClass.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            if (!classSelectModeOn) {
+                alert('Hãy bấm "Sửa đổi" và chọn một lớp trước.');
+                return;
+            }
+            if (!classSelectedRow) {
+                alert('Vui lòng chọn một lớp để sửa.');
+                return;
+            }
+
+            const cells = classSelectedRow.querySelectorAll('td');
+            const maLop  = cells[1].textContent.trim();
+            const tenLop = cells[2].textContent.trim();
+            const khoi   = cells[3].textContent.trim();
+            const gvcn   = cells[5].textContent.trim();
+            const namHoc = cells[6].textContent.trim();
+
+            classCodeEdit.value       = maLop;
+            classNameEdit.value       = tenLop;
+            gradeLevelEdit.value      = khoi;
+            homeroomTeacherEdit.value = gvcn;
+            schoolYearEdit.value      = namHoc;
+
+            editClassModal.classList.add('show');
+        });
+
+        function closeEditClassModal() {
+            editClassModal.classList.remove('show');
+            editClassForm.reset();
+        }
+
+        closeEditClassModalBtn.addEventListener('click', closeEditClassModal);
+        cancelEditClassBtn.addEventListener('click', closeEditClassModal);
+
+        editClassModal.addEventListener('click', (e) => {
+            if (e.target === editClassModal) {
+                closeEditClassModal();
+            }
+        });
+
+        editClassForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // TODO: gửi dữ liệu cập nhật lên server
+            alert('Đã nhấn Lưu (Sửa lớp) – demo UI, chưa kết nối DB.');
+            closeEditClassModal();
+            exitClassSelectMode();
+        });
+
+        // ========= POPUP XÓA LỚP =========
+        btnDeleteClass.addEventListener('click', (e) => {
+            e.preventDefault();
+
+            if (!classSelectModeOn) {
+                alert('Hãy bấm "Sửa đổi" và chọn một lớp trước.');
+                return;
+            }
+            if (!classSelectedRow) {
+                alert('Vui lòng chọn một lớp để xóa.');
+                return;
+            }
+
+            const cells = classSelectedRow.querySelectorAll('td');
+            const maLop  = cells[1].textContent.trim();
+            const tenLop = cells[2].textContent.trim();
+
+            deleteClassMessage.textContent =
+                `Bạn có chắc chắn muốn xóa lớp ${tenLop} (Mã lớp: ${maLop}) không?`;
+
+            deleteClassModal.classList.add('show');
+        });
+
+        function closeDeleteClassModal() {
+            deleteClassModal.classList.remove('show');
+        }
+
+        closeDeleteClassModalBtn.addEventListener('click', closeDeleteClassModal);
+        cancelDeleteClassBtn.addEventListener('click', closeDeleteClassModal);
+
+        deleteClassModal.addEventListener('click', (e) => {
+            if (e.target === deleteClassModal) {
+                closeDeleteClassModal();
+            }
+        });
+
+        btnConfirmDeleteClass.addEventListener('click', () => {
+            // TODO: gọi API xóa lớp trong DB
+            alert('Đã nhấn Xóa lớp – demo UI, chưa kết nối DB.');
+            closeDeleteClassModal();
+            exitClassSelectMode();
+        });
+    </script>
+
+</body>
+</html>

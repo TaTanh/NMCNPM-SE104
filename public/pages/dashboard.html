@@ -19,6 +19,7 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html" class="active">Dashboard</a>
             <a href="/pages/students.html">Quản lý học sinh</a>
+            <a href="/pages/classes.html">Quản lý lớp</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_select.html">Nhập điểm</a>
             <a href="/pages/teaching_assignment.html">Phân công</a>
@@ -61,6 +62,98 @@
                     <h3>Môn học</h3>
                     <p>12</p>
                 </div>
+            </div>
+                        <!-- BÁO CÁO TỔNG KẾT (BM7) -->
+            <h2 class="page-title" style="margin-top: 24px; margin-bottom: 12px;">
+                Báo cáo tổng kết
+            </h2>
+
+            <!-- Filters: năm học, học kì, lớp -->
+            <div class="filters-row">
+                <div class="filter-item">
+                    <label class="filter-label" for="reportYear">Năm học</label>
+                    <select id="reportYear">
+                        <option>2024–2025</option>
+                        <option>2023–2024</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label class="filter-label" for="reportSemester">Học kì</label>
+                    <select id="reportSemester">
+                        <option>Cả năm</option>
+                        <option>Học kì 1</option>
+                        <option>Học kì 2</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label class="filter-label" for="reportClass">Lớp</label>
+                    <select id="reportClass">
+                        <option>Tất cả lớp</option>
+                        <option>10A1</option>
+                        <option>10A2</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Bảng tổng kết theo môn -->
+            <div class="table-wrapper" style="margin-top: 10px; margin-bottom: 16px;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Môn học</th>
+                            <th>Số HS đạt</th>
+                            <th>Số HS chưa đạt</th>
+                            <th>Tỉ lệ đạt (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Toán</td>
+                            <td>120</td>
+                            <td>15</td>
+                            <td>88.9</td>
+                        </tr>
+                        <tr>
+                            <td>Văn</td>
+                            <td>118</td>
+                            <td>17</td>
+                            <td>87.4</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Bảng tổng kết theo học sinh -->
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Mã HS</th>
+                            <th>Họ tên</th>
+                            <th>Lớp</th>
+                            <th>Điểm TB năm</th>
+                            <th>Xếp loại</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>HS001</td>
+                            <td>Nguyễn Văn A</td>
+                            <td>10A1</td>
+                            <td>8.3</td>
+                            <td>Giỏi</td>
+                        </tr>
+                        <tr>
+                            <td>HS002</td>
+                            <td>Trần Thị B</td>
+                            <td>10A1</td>
+                            <td>7.2</td>
+                            <td>Khá</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
             <!-- BIỂU ĐỒ PLACEHOLDER -->

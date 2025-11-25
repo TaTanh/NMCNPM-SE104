@@ -19,6 +19,7 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html">Dashboard</a>
             <a href="/pages/students.html" class="active">Quản lý học sinh</a>
+            <a href="/pages/classes.html">Quản lý lớp</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_select.html">Nhập điểm</a>
             <a href="/pages/teaching_assignment.html">Phân công</a>
@@ -40,7 +41,27 @@
 
         <!-- CONTENT -->
         <div class="content">
+            <!-- FILTER: NĂM HỌC + LỚP -->
+            <div class="filters-row">
+                <div class="filter-item">
+                    <label class="filter-label" for="yearFilter">Năm học</label>
+                    <select id="yearFilter">
+                        <option value="">Tất cả năm học</option>
+                        <option>2023–2024</option>
+                        <option>2024–2025</option>
+                    </select>
+                </div>
 
+                <div class="filter-item">
+                    <label class="filter-label" for="classFilter">Lớp</label>
+                    <select id="classFilter">
+                        <option value="">Tất cả lớp</option>
+                        <option>10A1</option>
+                        <option>10A2</option>
+                        <option>10A3</option>
+                    </select>
+                </div>
+            </div>
             <!-- TOOLBAR: search trái, nút phải -->
             <div class="toolbar">
                 <div class="search-box">
