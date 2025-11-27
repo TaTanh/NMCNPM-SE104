@@ -312,12 +312,35 @@
             }
         });
 
-        addSubjectForm.addEventListener('submit', (e) => {
+        addSubjectForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: gửi dữ liệu lên server thêm môn học
-            alert('Đã nhấn Lưu (Thêm môn học) – demo UI, chưa kết nối DB.');
-            addSubjectModal.classList.remove('show');
-            addSubjectForm.reset();
+            
+            const data = {
+                MaMonHoc: document.getElementById('subjectIdAdd').value,
+                TenMonHoc: document.getElementById('subjectNameAdd').value,
+                HeSo: document.getElementById('subjectCoefficientAdd').value
+            };
+            
+            try {
+                const response = await fetch('/api/subjects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi thêm môn học');
+                }
+                
+                alert('Thêm môn học thành công!');
+                addSubjectModal.classList.remove('show');
+                addSubjectForm.reset();
+                location.reload();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         });
 
         /* ========= POPUP SỬA MÔN HỌC ========= */
@@ -358,13 +381,36 @@
             }
         });
 
-        editSubjectForm.addEventListener('submit', (e) => {
+        editSubjectForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: gửi dữ liệu cập nhật lên server
-            alert('Đã nhấn Lưu (Sửa môn học) – demo UI, chưa kết nối DB.');
-            editSubjectModal.classList.remove('show');
-            editSubjectForm.reset();
-            exitSelectMode();
+            
+            const maMonHoc = document.getElementById('subjectIdEdit').value;
+            const data = {
+                TenMonHoc: document.getElementById('subjectNameEdit').value,
+                HeSo: document.getElementById('subjectCoefficientEdit').value
+            };
+            
+            try {
+                const response = await fetch(`/api/subjects/${maMonHoc}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi cập nhật môn học');
+                }
+                
+                alert('Cập nhật môn học thành công!');
+                editSubjectModal.classList.remove('show');
+                editSubjectForm.reset();
+                exitSelectMode();
+                location.reload();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         });
 
         /* ========= POPUP XÓA MÔN HỌC ========= */
@@ -404,11 +450,27 @@
             }
         });
 
-        document.getElementById('btnConfirmDeleteSubject').onclick = () => {
-            // TODO: gọi API xóa môn học
-            alert('Đã nhấn Xóa môn học – demo UI, chưa kết nối DB.');
-            deleteSubjectModal.classList.remove('show');
-            exitSelectMode();
+        document.getElementById('btnConfirmDeleteSubject').onclick = async () => {
+            const maMonHoc = selectedRow.querySelectorAll('td')[1].textContent.trim();
+            
+            try {
+                const response = await fetch(`/api/subjects/${maMonHoc}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi xóa môn học');
+                }
+                
+                alert('Đã xóa môn học!');
+                deleteSubjectModal.classList.remove('show');
+                exitSelectMode();
+                location.reload();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         };
     </script>
 

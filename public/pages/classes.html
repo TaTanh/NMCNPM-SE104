@@ -367,11 +367,35 @@
             }
         });
 
-        addClassForm.addEventListener('submit', (e) => {
+        addClassForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: gửi dữ liệu thêm lớp lên server
-            alert('Đã nhấn Lưu (Thêm lớp) – demo UI, chưa kết nối DB.');
-            closeAddClassModal();
+            
+            const data = {
+                MaLop: document.getElementById('classCodeAdd').value,
+                TenLop: document.getElementById('classNameAdd').value,
+                MaKhoiLop: document.getElementById('gradeLevelAdd').value,
+                MaNamHoc: document.getElementById('schoolYearAdd').value
+            };
+            
+            try {
+                const response = await fetch('/api/classes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi thêm lớp');
+                }
+                
+                alert('Thêm lớp thành công!');
+                closeAddClassModal();
+                location.reload();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         });
 
         // ========= POPUP SỬA LỚP =========
@@ -419,12 +443,36 @@
             }
         });
 
-        editClassForm.addEventListener('submit', (e) => {
+        editClassForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: gửi dữ liệu cập nhật lên server
-            alert('Đã nhấn Lưu (Sửa lớp) – demo UI, chưa kết nối DB.');
-            closeEditClassModal();
-            exitClassSelectMode();
+            
+            const maLop = classCodeEdit.value;
+            const data = {
+                TenLop: classNameEdit.value,
+                MaKhoiLop: gradeLevelEdit.value,
+                MaNamHoc: schoolYearEdit.value
+            };
+            
+            try {
+                const response = await fetch(`/api/classes/${maLop}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi cập nhật lớp');
+                }
+                
+                alert('Cập nhật lớp thành công!');
+                closeEditClassModal();
+                exitClassSelectMode();
+                location.reload();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         });
 
         // ========= POPUP XÓA LỚP =========
@@ -463,11 +511,27 @@
             }
         });
 
-        btnConfirmDeleteClass.addEventListener('click', () => {
-            // TODO: gọi API xóa lớp trong DB
-            alert('Đã nhấn Xóa lớp – demo UI, chưa kết nối DB.');
-            closeDeleteClassModal();
-            exitClassSelectMode();
+        btnConfirmDeleteClass.addEventListener('click', async () => {
+            const maLop = classSelectedRow.querySelectorAll('td')[1].textContent.trim();
+            
+            try {
+                const response = await fetch(`/api/classes/${maLop}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi xóa lớp');
+                }
+                
+                alert('Đã xóa lớp!');
+                closeDeleteClassModal();
+                exitClassSelectMode();
+                location.reload();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         });
     </script>
 

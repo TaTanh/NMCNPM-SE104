@@ -389,12 +389,38 @@
             }
         });
 
-        addForm.addEventListener('submit', (e) => {
+        addForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: gửi dữ liệu lên server thêm học sinh
-            alert('Đã nhấn Lưu (Thêm) – demo UI, chưa kết nối DB.');
-            addModal.classList.remove('show');
-            addForm.reset();
+            
+            const data = {
+                MaHocSinh: document.getElementById('studentIdAdd').value,
+                HoTen: document.getElementById('fullNameAdd').value,
+                GioiTinh: document.getElementById('genderAdd').value,
+                NgaySinh: document.getElementById('dobAdd').value,
+                DiaChi: document.getElementById('addressAdd').value,
+                Email: document.getElementById('emailAdd').value
+            };
+            
+            try {
+                const response = await fetch('/api/students', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi thêm học sinh');
+                }
+                
+                alert('Thêm học sinh thành công!');
+                addModal.classList.remove('show');
+                addForm.reset();
+                location.reload(); // Reload để cập nhật bảng
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         });
 
         /* ========= POPUP SỬA ========= */
@@ -438,13 +464,39 @@
             }
         });
 
-        editForm.addEventListener('submit', (e) => {
+        editForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // TODO: gửi dữ liệu cập nhật lên server
-            alert('Đã nhấn Lưu (Sửa) – demo UI, chưa kết nối DB.');
-            editModal.classList.remove('show');
-            editForm.reset();
-            exitSelectMode(); // sau khi sửa xong thì thoát chế độ chỉnh sửa
+            
+            const maHocSinh = document.getElementById('studentIdEdit').value;
+            const data = {
+                HoTen: document.getElementById('fullNameEdit').value,
+                GioiTinh: document.getElementById('genderEdit').value,
+                NgaySinh: document.getElementById('dobEdit').value,
+                DiaChi: document.getElementById('addressEdit').value,
+                Email: document.getElementById('emailEdit').value
+            };
+            
+            try {
+                const response = await fetch(`/api/students/${maHocSinh}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi cập nhật học sinh');
+                }
+                
+                alert('Cập nhật học sinh thành công!');
+                editModal.classList.remove('show');
+                editForm.reset();
+                exitSelectMode();
+                location.reload();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         });
 
         /* ========= POPUP XÓA ========= */
@@ -484,11 +536,27 @@
             }
         });
 
-        document.getElementById('btnConfirmDelete').onclick = () => {
-            // TODO: gọi API xóa học sinh
-            alert('Đã nhấn Xóa – demo UI, chưa kết nối DB.');
-            deleteModal.classList.remove('show');
-            exitSelectMode(); // sau khi xóa xong thì thoát chế độ chỉnh sửa
+        document.getElementById('btnConfirmDelete').onclick = async () => {
+            const maHocSinh = selectedRow.querySelectorAll('td')[1].textContent.trim();
+            
+            try {
+                const response = await fetch(`/api/students/${maHocSinh}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi xóa học sinh');
+                }
+                
+                alert('Đã xóa học sinh!');
+                deleteModal.classList.remove('show');
+                exitSelectMode();
+                location.reload();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
         };
     </script>
 
