@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Cài đặt hệ thống</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/layout/styles.css">
+</head>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="/assets/uit_logo.png" alt="UIT Logo">
+            <span>QL Học Sinh</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/pages/dashboard.html">Dashboard</a>
+            <a href="/pages/students.html">Quản lý học sinh</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
+            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/settings.html" class="active">Cài đặt hệ thống</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- HEADER -->
+        <header class="topbar">
+            <div class="page-title">Cài đặt hệ thống</div>
+            <div class="user-info">
+                <span id="userGreeting">Xin chào, Admin</span>
+                <img src="/assets/user.png" class="avatar" alt="user">
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <!-- THÔNG BÁO -->
+            <div class="alert alert-info" id="settingsAlert" style="display: none;">
+                <span id="alertMessage"></span>
+                <button class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
+            </div>
+
+            <!-- FORM CÀI ĐẶT -->
+            <form id="settingsForm">
+                
+                <!-- SECTION: QUY ĐỊNH VỀ ĐIỂM -->
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">📊</span>
+                        Quy định về điểm số
+                    </h3>
+                    
+                    <div class="config-grid">
+                        <div class="config-card">
+                            <div class="config-label">Điểm đạt môn (DiemDatMon)</div>
+                            <input type="number" id="diemDatMon" value="5" min="0" max="10" step="0.5">
+                            <div class="config-hint">Điểm tối thiểu để đạt môn học</div>
+                        </div>
+
+                        <div class="config-card">
+                            <div class="config-label">Điểm đạt (DiemDat)</div>
+                            <input type="number" id="diemDat" value="5" min="0" max="10" step="0.5">
+                            <div class="config-hint">Điểm tối thiểu để đạt (có thể khác DiemDatMon)</div>
+                        </div>
+
+                        <div class="config-card">
+                            <div class="config-label">Điểm tối thiểu (DiemToiThieu)</div>
+                            <input type="number" id="diemToiThieu" value="0" min="0" max="10" step="0.5">
+                            <div class="config-hint">Điểm thấp nhất có thể nhập</div>
+                        </div>
+
+                        <div class="config-card">
+                            <div class="config-label">Điểm tối đa (DiemToiDa)</div>
+                            <input type="number" id="diemToiDa" value="10" min="0" max="10" step="0.5">
+                            <div class="config-hint">Điểm cao nhất có thể nhập</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: QUY ĐỊNH VỀ TUỔI -->
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">👤</span>
+                        Quy định về tuổi học sinh
+                    </h3>
+                    
+                    <div class="config-grid">
+                        <div class="config-card">
+                            <div class="config-label">Tuổi tối thiểu (TuoiToiThieu)</div>
+                            <input type="number" id="tuoiToiThieu" value="15" min="1" max="25">
+                            <div class="config-hint">Tuổi tối thiểu khi nhập học</div>
+                        </div>
+
+                        <div class="config-card">
+                            <div class="config-label">Tuổi tối đa (TuoiToiDa)</div>
+                            <input type="number" id="tuoiToiDa" value="20" min="1" max="30">
+                            <div class="config-hint">Tuổi tối đa khi nhập học</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: QUY ĐỊNH VỀ LỚP HỌC -->
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">🏫</span>
+                        Quy định về lớp học
+                    </h3>
+                    
+                    <div class="config-grid">
+                        <div class="config-card">
+                            <div class="config-label">Sĩ số tối đa (SiSoToiDa)</div>
+                            <input type="number" id="siSoToiDa" value="40" min="1" max="60">
+                            <div class="config-hint">Số học sinh tối đa trong một lớp</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION: HỆ SỐ ĐIỂM (LOẠI HÌNH KIỂM TRA) -->
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">📝</span>
+                        Loại hình kiểm tra & Hệ số
+                    </h3>
+                    <p class="section-desc">Quản lý các loại hình kiểm tra và hệ số tương ứng (bảng LOAIHINHKIEMTRA)</p>
+                    
+                    <div class="table-wrapper" style="margin-top: 12px;">
+                        <table class="data-table" id="examTypeTable">
+                            <thead>
+                                <tr>
+                                    <th>Mã loại</th>
+                                    <th>Tên loại kiểm tra</th>
+                                    <th>Hệ số</th>
+                                    <th style="width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="examTypeBody">
+                                <tr data-id="KT15">
+                                    <td>KT15</td>
+                                    <td>
+                                        <input type="text" class="inline-input" value="Kiểm tra 15 phút">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="inline-input" value="1" min="1" max="5" step="1">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger btn-delete-exam">Xóa</button>
+                                    </td>
+                                </tr>
+                                <tr data-id="KT1T">
+                                    <td>KT1T</td>
+                                    <td>
+                                        <input type="text" class="inline-input" value="Kiểm tra 1 tiết">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="inline-input" value="2" min="1" max="5" step="1">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger btn-delete-exam">Xóa</button>
+                                    </td>
+                                </tr>
+                                <tr data-id="KTCK">
+                                    <td>KTCK</td>
+                                    <td>
+                                        <input type="text" class="inline-input" value="Kiểm tra cuối kỳ">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="inline-input" value="3" min="1" max="5" step="1">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger btn-delete-exam">Xóa</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 12px;">
+                        <button type="button" class="btn btn-outline" id="btnAddExamType">+ Thêm loại kiểm tra</button>
+                    </div>
+                </div>
+
+                <!-- SECTION: QUẢN LÝ HỌC KỲ -->
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">📅</span>
+                        Quản lý học kỳ
+                    </h3>
+                    <p class="section-desc">Thiết lập các học kỳ trong năm học (bảng HOCKY)</p>
+                    
+                    <div class="table-wrapper" style="margin-top: 12px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã học kỳ</th>
+                                    <th>Tên học kỳ</th>
+                                    <th style="width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="semesterBody">
+                                <tr>
+                                    <td>HK1</td>
+                                    <td>
+                                        <input type="text" class="inline-input" value="Học kỳ 1">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger btn-delete-semester">Xóa</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>HK2</td>
+                                    <td>
+                                        <input type="text" class="inline-input" value="Học kỳ 2">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger btn-delete-semester">Xóa</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 12px;">
+                        <button type="button" class="btn btn-outline" id="btnAddSemester">+ Thêm học kỳ</button>
+                    </div>
+                </div>
+
+                <!-- SECTION: QUẢN LÝ NĂM HỌC -->
+                <div class="settings-section">
+                    <h3 class="section-title">
+                        <span class="section-icon">📆</span>
+                        Quản lý năm học
+                    </h3>
+                    <p class="section-desc">Thiết lập các năm học (bảng NAMHOC)</p>
+                    
+                    <div class="table-wrapper" style="margin-top: 12px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã năm học</th>
+                                    <th>Năm bắt đầu</th>
+                                    <th>Năm kết thúc</th>
+                                    <th style="width: 100px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="yearBody">
+                                <tr>
+                                    <td>2024-2025</td>
+                                    <td>
+                                        <input type="number" class="inline-input" value="2024" min="2000" max="2100">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="inline-input" value="2025" min="2000" max="2100">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger btn-delete-year">Xóa</button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>2023-2024</td>
+                                    <td>
+                                        <input type="number" class="inline-input" value="2023" min="2000" max="2100">
+                                    </td>
+                                    <td>
+                                        <input type="number" class="inline-input" value="2024" min="2000" max="2100">
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger btn-delete-year">Xóa</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 12px;">
+                        <button type="button" class="btn btn-outline" id="btnAddYear">+ Thêm năm học</button>
+                    </div>
+                </div>
+
+                <!-- NÚT LƯU -->
+                <div class="settings-footer">
+                    <button type="button" class="btn btn-outline" id="btnResetSettings">Khôi phục mặc định</button>
+                    <button type="submit" class="btn btn-primary">Lưu tất cả thay đổi</button>
+                </div>
+
+            </form>
+
+        </div><!-- content -->
+    </div><!-- main -->
+
+    <!-- ======================== SCRIPT ======================== -->
+    <script>
+        // Form submit
+        document.getElementById('settingsForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Collect all settings data
+            const settings = {
+                diemDatMon: document.getElementById('diemDatMon').value,
+                diemDat: document.getElementById('diemDat').value,
+                diemToiThieu: document.getElementById('diemToiThieu').value,
+                diemToiDa: document.getElementById('diemToiDa').value,
+                tuoiToiThieu: document.getElementById('tuoiToiThieu').value,
+                tuoiToiDa: document.getElementById('tuoiToiDa').value,
+                siSoToiDa: document.getElementById('siSoToiDa').value
+            };
+
+            // TODO: Send to server
+            console.log('Settings to save:', settings);
+
+            // Show success message
+            showAlert('Đã lưu thay đổi thành công!', 'success');
+        });
+
+        // Reset settings
+        document.getElementById('btnResetSettings').addEventListener('click', () => {
+            if (confirm('Bạn có chắc muốn khôi phục về cài đặt mặc định?')) {
+                document.getElementById('diemDatMon').value = 5;
+                document.getElementById('diemDat').value = 5;
+                document.getElementById('diemToiThieu').value = 0;
+                document.getElementById('diemToiDa').value = 10;
+                document.getElementById('tuoiToiThieu').value = 15;
+                document.getElementById('tuoiToiDa').value = 20;
+                document.getElementById('siSoToiDa').value = 40;
+                
+                showAlert('Đã khôi phục về cài đặt mặc định!', 'info');
+            }
+        });
+
+        // Add exam type
+        document.getElementById('btnAddExamType').addEventListener('click', () => {
+            const tbody = document.getElementById('examTypeBody');
+            const newId = 'NEW' + Date.now();
+            const tr = document.createElement('tr');
+            tr.dataset.id = newId;
+            tr.innerHTML = `
+                <td><input type="text" class="inline-input" placeholder="Mã loại" style="width: 80px;"></td>
+                <td><input type="text" class="inline-input" placeholder="Tên loại kiểm tra"></td>
+                <td><input type="number" class="inline-input" value="1" min="1" max="5" step="1"></td>
+                <td><button type="button" class="btn btn-sm btn-danger btn-delete-exam">Xóa</button></td>
+            `;
+            tbody.appendChild(tr);
+            attachDeleteHandler(tr.querySelector('.btn-delete-exam'));
+        });
+
+        // Add semester
+        document.getElementById('btnAddSemester').addEventListener('click', () => {
+            const tbody = document.getElementById('semesterBody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="inline-input" placeholder="Mã HK" style="width: 80px;"></td>
+                <td><input type="text" class="inline-input" placeholder="Tên học kỳ"></td>
+                <td><button type="button" class="btn btn-sm btn-danger btn-delete-semester">Xóa</button></td>
+            `;
+            tbody.appendChild(tr);
+            attachDeleteHandler(tr.querySelector('.btn-delete-semester'));
+        });
+
+        // Add year
+        document.getElementById('btnAddYear').addEventListener('click', () => {
+            const tbody = document.getElementById('yearBody');
+            const currentYear = new Date().getFullYear();
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><input type="text" class="inline-input" placeholder="Mã năm học" style="width: 100px;"></td>
+                <td><input type="number" class="inline-input" value="${currentYear}" min="2000" max="2100"></td>
+                <td><input type="number" class="inline-input" value="${currentYear + 1}" min="2000" max="2100"></td>
+                <td><button type="button" class="btn btn-sm btn-danger btn-delete-year">Xóa</button></td>
+            `;
+            tbody.appendChild(tr);
+            attachDeleteHandler(tr.querySelector('.btn-delete-year'));
+        });
+
+        // Delete handlers
+        function attachDeleteHandler(btn) {
+            btn.addEventListener('click', function() {
+                if (confirm('Bạn có chắc muốn xóa mục này?')) {
+                    this.closest('tr').remove();
+                }
+            });
+        }
+
+        // Attach delete handlers to existing buttons
+        document.querySelectorAll('.btn-delete-exam, .btn-delete-semester, .btn-delete-year').forEach(btn => {
+            attachDeleteHandler(btn);
+        });
+
+        // Show alert function
+        function showAlert(message, type = 'info') {
+            const alert = document.getElementById('settingsAlert');
+            const alertMessage = document.getElementById('alertMessage');
+            
+            alertMessage.textContent = message;
+            alert.className = 'alert alert-' + type;
+            alert.style.display = 'flex';
+
+            // Auto hide after 3 seconds
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+
+</body>
+</html>

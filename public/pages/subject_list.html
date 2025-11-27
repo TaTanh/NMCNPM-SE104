@@ -19,10 +19,11 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html">Dashboard</a>
             <a href="/pages/students.html">Quản lý học sinh</a>
-            <a href="/pages/classes.html">Quản lý lớp</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
             <a href="/pages/subject_list.html" class="active">Quản lý môn học</a>
-            <a href="/pages/grade_select.html">Nhập điểm</a>
-            <a href="/pages/teaching_assignment.html">Phân công</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/settings.html">Cài đặt hệ thống</a>
         </nav>
     </aside>
 
@@ -70,7 +71,7 @@
                             <th class="select-col"></th>
                             <th>Mã môn</th>
                             <th>Tên môn</th>
-                            <th>Số tiết</th>
+                            <th>Hệ số</th>
                         </tr>
                     </thead>
                     <tbody id="subjectTableBody">
@@ -80,7 +81,7 @@
                             </td>
                             <td>MH001</td>
                             <td>Toán</td>
-                            <td>60</td>
+                            <td>2</td>
                         </tr>
                         <tr>
                             <td class="select-cell">
@@ -88,7 +89,7 @@
                             </td>
                             <td>MH002</td>
                             <td>Vật lý</td>
-                            <td>45</td>
+                            <td>1</td>
                         </tr>
                         <tr>
                             <td class="select-cell">
@@ -96,7 +97,7 @@
                             </td>
                             <td>MH003</td>
                             <td>Ngữ văn</td>
-                            <td>60</td>
+                            <td>2</td>
                         </tr>
                         <tr>
                             <td class="select-cell">
@@ -104,7 +105,15 @@
                             </td>
                             <td>MH004</td>
                             <td>Hóa học</td>
-                            <td>45</td>
+                            <td>1</td>
+                        </tr>
+                        <tr>
+                            <td class="select-cell">
+                                <input type="checkbox" class="row-select-checkbox">
+                            </td>
+                            <td>MH005</td>
+                            <td>Tiếng Anh</td>
+                            <td>2</td>
                         </tr>
                     </tbody>
                 </table>
@@ -113,12 +122,104 @@
         </div><!-- content -->
     </div><!-- main -->
 
-    <!-- SCRIPT: chế độ Sửa đổi + chọn môn giống trang học sinh, nhưng chỉ alert demo -->
+    <!-- ========== POPUP THÊM MÔN HỌC ========== -->
+    <div class="modal-overlay" id="addSubjectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Thêm môn học</h2>
+                <button class="modal-close" id="closeAddSubjectModalBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="addSubjectForm">
+                    <div class="modal-grid">
+                        <div class="form-group">
+                            <label>Mã môn học</label>
+                            <input type="text" id="subjectIdAdd" placeholder="VD: MH001" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tên môn học</label>
+                            <input type="text" id="subjectNameAdd" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Hệ số</label>
+                            <input type="number" id="subjectCoefficientAdd" min="1" max="3" value="1" required>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="btnCancelAddSubject">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== POPUP SỬA MÔN HỌC ========== -->
+    <div class="modal-overlay" id="editSubjectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Sửa môn học</h2>
+                <button class="modal-close" id="closeEditSubjectModalBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="editSubjectForm">
+                    <div class="modal-grid">
+                        <div class="form-group">
+                            <label>Mã môn học</label>
+                            <input type="text" id="subjectIdEdit" readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tên môn học</label>
+                            <input type="text" id="subjectNameEdit" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Hệ số</label>
+                            <input type="number" id="subjectCoefficientEdit" min="1" max="3" required>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="btnCancelEditSubject">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== POPUP XÓA MÔN HỌC ========== -->
+    <div class="modal-overlay" id="deleteSubjectModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Xóa môn học</h2>
+                <button class="modal-close" id="closeDeleteSubjectModalBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <p id="deleteSubjectMessage">Bạn có chắc chắn muốn xóa môn học này không?</p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" id="btnCancelDeleteSubject">Hủy</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmDeleteSubject">Xóa</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT: chế độ Sửa đổi + chọn môn giống trang học sinh -->
     <script>
         const tableBody   = document.getElementById('subjectTableBody');
         const rows        = tableBody.querySelectorAll('tr');
         const checkboxes  = tableBody.querySelectorAll('.row-select-checkbox');
 
+        const btnAdd      = document.getElementById('btnAddSubject');
         const btnToggle   = document.getElementById('btnToggleEditMode');
         const btnEdit     = document.getElementById('btnEditSubject');
         const btnDelete   = document.getElementById('btnDeleteSubject');
@@ -136,8 +237,8 @@
 
         function enterSelectMode() {
             selectModeOn = true;
-            document.body.classList.add('select-mode');       // dùng lại CSS đã có
-            btnToggle.classList.add('btn-toggle-active');     // đổi style nút Sửa đổi
+            document.body.classList.add('select-mode');
+            btnToggle.classList.add('btn-toggle-active');
             resetSelection();
         }
 
@@ -189,9 +290,43 @@
             });
         });
 
-        // Demo hành vi khi bấm Sửa / Xóa (hiện tại chỉ alert, chưa có popup)
+        /* ========= POPUP THÊM MÔN HỌC ========= */
+        const addSubjectModal = document.getElementById('addSubjectModal');
+        const addSubjectForm  = document.getElementById('addSubjectForm');
+
+        btnAdd.addEventListener('click', (e) => {
+            e.preventDefault();
+            addSubjectModal.classList.add('show');
+        });
+
+        document.getElementById('closeAddSubjectModalBtn').onclick =
+        document.getElementById('btnCancelAddSubject').onclick = () => {
+            addSubjectModal.classList.remove('show');
+            addSubjectForm.reset();
+        };
+
+        addSubjectModal.addEventListener('click', (e) => {
+            if (e.target === addSubjectModal) {
+                addSubjectModal.classList.remove('show');
+                addSubjectForm.reset();
+            }
+        });
+
+        addSubjectForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // TODO: gửi dữ liệu lên server thêm môn học
+            alert('Đã nhấn Lưu (Thêm môn học) – demo UI, chưa kết nối DB.');
+            addSubjectModal.classList.remove('show');
+            addSubjectForm.reset();
+        });
+
+        /* ========= POPUP SỬA MÔN HỌC ========= */
+        const editSubjectModal = document.getElementById('editSubjectModal');
+        const editSubjectForm  = document.getElementById('editSubjectForm');
+
         btnEdit.addEventListener('click', (e) => {
             e.preventDefault();
+
             if (!selectModeOn) {
                 alert('Hãy bấm "Sửa đổi" và chọn một môn học trước.');
                 return;
@@ -200,14 +335,45 @@
                 alert('Vui lòng chọn một môn học để sửa.');
                 return;
             }
+
+            // Cột: 0=checkbox, 1=Mã môn, 2=Tên môn, 3=Hệ số
             const cells = selectedRow.querySelectorAll('td');
-            const maMon = cells[1].textContent.trim();
-            const tenMon = cells[2].textContent.trim();
-            alert(`(DEMO) Sửa môn: ${tenMon} (Mã: ${maMon})`);
+            document.getElementById('subjectIdEdit').value          = cells[1].textContent.trim();
+            document.getElementById('subjectNameEdit').value        = cells[2].textContent.trim();
+            document.getElementById('subjectCoefficientEdit').value = cells[3].textContent.trim();
+
+            editSubjectModal.classList.add('show');
         });
+
+        document.getElementById('closeEditSubjectModalBtn').onclick =
+        document.getElementById('btnCancelEditSubject').onclick = () => {
+            editSubjectModal.classList.remove('show');
+            editSubjectForm.reset();
+        };
+
+        editSubjectModal.addEventListener('click', (e) => {
+            if (e.target === editSubjectModal) {
+                editSubjectModal.classList.remove('show');
+                editSubjectForm.reset();
+            }
+        });
+
+        editSubjectForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            // TODO: gửi dữ liệu cập nhật lên server
+            alert('Đã nhấn Lưu (Sửa môn học) – demo UI, chưa kết nối DB.');
+            editSubjectModal.classList.remove('show');
+            editSubjectForm.reset();
+            exitSelectMode();
+        });
+
+        /* ========= POPUP XÓA MÔN HỌC ========= */
+        const deleteSubjectModal   = document.getElementById('deleteSubjectModal');
+        const deleteSubjectMessage = document.getElementById('deleteSubjectMessage');
 
         btnDelete.addEventListener('click', (e) => {
             e.preventDefault();
+
             if (!selectModeOn) {
                 alert('Hãy bấm "Sửa đổi" và chọn một môn học trước.');
                 return;
@@ -216,16 +382,34 @@
                 alert('Vui lòng chọn một môn học để xóa.');
                 return;
             }
-            const cells = selectedRow.querySelectorAll('td');
-            const maMon = cells[1].textContent.trim();
+
+            const cells  = selectedRow.querySelectorAll('td');
+            const maMon  = cells[1].textContent.trim();
             const tenMon = cells[2].textContent.trim();
-            const ok = confirm(`(DEMO) Bạn có chắc muốn xóa môn ${tenMon} (Mã: ${maMon}) không?`);
-            if (ok) {
-                // Demo: chỉ xóa trên giao diện
-                selectedRow.remove();
-                exitSelectMode();
+
+            deleteSubjectMessage.textContent =
+                `Bạn có chắc chắn muốn xóa môn học ${tenMon} (Mã: ${maMon}) không?`;
+
+            deleteSubjectModal.classList.add('show');
+        });
+
+        document.getElementById('closeDeleteSubjectModalBtn').onclick =
+        document.getElementById('btnCancelDeleteSubject').onclick = () => {
+            deleteSubjectModal.classList.remove('show');
+        };
+
+        deleteSubjectModal.addEventListener('click', (e) => {
+            if (e.target === deleteSubjectModal) {
+                deleteSubjectModal.classList.remove('show');
             }
         });
+
+        document.getElementById('btnConfirmDeleteSubject').onclick = () => {
+            // TODO: gọi API xóa môn học
+            alert('Đã nhấn Xóa môn học – demo UI, chưa kết nối DB.');
+            deleteSubjectModal.classList.remove('show');
+            exitSelectMode();
+        };
     </script>
 
 </body>

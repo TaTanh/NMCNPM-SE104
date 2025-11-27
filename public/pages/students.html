@@ -19,10 +19,11 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html">Dashboard</a>
             <a href="/pages/students.html" class="active">Quản lý học sinh</a>
-            <a href="/pages/classes.html">Quản lý lớp</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
-            <a href="/pages/grade_select.html">Nhập điểm</a>
-            <a href="/pages/teaching_assignment.html">Phân công</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/settings.html">Cài đặt hệ thống</a>
         </nav>
 
     </aside>
@@ -93,11 +94,10 @@
                             <th class="select-col"></th>
                             <th>Mã học sinh</th>
                             <th>Họ tên</th>
-                            <th>Lớp</th>
-                            <th>Ngày sinh</th>
                             <th>Giới tính</th>
+                            <th>Ngày sinh</th>
                             <th>Địa chỉ</th>
-                            <th>Số điện thoại</th>
+                            <th>Email</th>
                         </tr>
                     </thead>
 
@@ -108,11 +108,10 @@
                             </td>
                             <td>HS001</td>
                             <td>Nguyễn Văn A</td>
-                            <td>10A1</td>
-                            <td>01/01/2008</td>
                             <td>Nam</td>
+                            <td>01/01/2008</td>
                             <td>TP. HCM</td>
-                            <td>0901 234 567</td>
+                            <td>nguyenvana@gmail.com</td>
                         </tr>
 
                         <tr>
@@ -121,11 +120,10 @@
                             </td>
                             <td>HS002</td>
                             <td>Trần Thị B</td>
-                            <td>10A1</td>
-                            <td>15/03/2008</td>
                             <td>Nữ</td>
+                            <td>15/03/2008</td>
                             <td>TP. HCM</td>
-                            <td>0902 345 678</td>
+                            <td>tranthib@gmail.com</td>
                         </tr>
 
                         <tr>
@@ -134,11 +132,10 @@
                             </td>
                             <td>HS003</td>
                             <td>Lê Văn C</td>
-                            <td>10A2</td>
-                            <td>25/07/2008</td>
                             <td>Nam</td>
+                            <td>25/07/2008</td>
                             <td>Đồng Nai</td>
-                            <td>0903 456 789</td>
+                            <td>levanc@gmail.com</td>
                         </tr>
                     </tbody>
                 </table>
@@ -168,41 +165,35 @@
                 <form id="addStudentForm">
                     <div class="modal-grid">
                         <div class="form-group">
-                            <label>Họ tên</label>
-                            <input type="text" id="fullNameAdd">
-                        </div>
-
-                        <div class="form-group">
                             <label>Mã học sinh</label>
-                            <input type="text" id="studentIdAdd">
+                            <input type="text" id="studentIdAdd" placeholder="VD: HS001" required>
                         </div>
 
                         <div class="form-group">
-                            <label>Ngày sinh</label>
-                            <input type="date" id="dobAdd">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Lớp</label>
-                            <input type="text" id="classNameAdd">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Số điện thoại</label>
-                            <input type="text" id="phoneAdd">
+                            <label>Họ tên</label>
+                            <input type="text" id="fullNameAdd" required>
                         </div>
 
                         <div class="form-group">
                             <label>Giới tính</label>
-                            <select id="genderAdd">
+                            <select id="genderAdd" required>
                                 <option value="">-- Chọn --</option>
-                                <option>Nam</option>
-                                <option>Nữ</option>
-                                <option>Khác</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
                             </select>
                         </div>
 
-                        <div class="form-group form-group-full">
+                        <div class="form-group">
+                            <label>Ngày sinh</label>
+                            <input type="date" id="dobAdd" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="emailAdd" placeholder="email@example.com">
+                        </div>
+
+                        <div class="form-group">
                             <label>Địa chỉ</label>
                             <input type="text" id="addressAdd">
                         </div>
@@ -229,41 +220,35 @@
                 <form id="editStudentForm">
                     <div class="modal-grid">
                         <div class="form-group">
-                            <label>Họ tên</label>
-                            <input type="text" id="fullNameEdit">
-                        </div>
-
-                        <div class="form-group">
                             <label>Mã học sinh</label>
-                            <input type="text" id="studentIdEdit">
+                            <input type="text" id="studentIdEdit" readonly>
                         </div>
 
                         <div class="form-group">
-                            <label>Ngày sinh</label>
-                            <input type="date" id="dobEdit">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Lớp</label>
-                            <input type="text" id="classNameEdit">
-                        </div>
-
-                        <div class="form-group">
-                            <label>Số điện thoại</label>
-                            <input type="text" id="phoneEdit">
+                            <label>Họ tên</label>
+                            <input type="text" id="fullNameEdit" required>
                         </div>
 
                         <div class="form-group">
                             <label>Giới tính</label>
-                            <select id="genderEdit">
+                            <select id="genderEdit" required>
                                 <option value="">-- Chọn --</option>
-                                <option>Nam</option>
-                                <option>Nữ</option>
-                                <option>Khác</option>
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
                             </select>
                         </div>
 
-                        <div class="form-group form-group-full">
+                        <div class="form-group">
+                            <label>Ngày sinh</label>
+                            <input type="date" id="dobEdit" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="emailEdit" placeholder="email@example.com">
+                        </div>
+
+                        <div class="form-group">
                             <label>Địa chỉ</label>
                             <input type="text" id="addressEdit">
                         </div>
@@ -428,14 +413,14 @@
                 return;
             }
 
+            // Cột: 0=checkbox, 1=Mã HS, 2=Họ tên, 3=Giới tính, 4=Ngày sinh, 5=Địa chỉ, 6=Email
             const cells = selectedRow.querySelectorAll('td');
             document.getElementById('studentIdEdit').value = cells[1].textContent.trim();
             document.getElementById('fullNameEdit').value  = cells[2].textContent.trim();
-            document.getElementById('classNameEdit').value = cells[3].textContent.trim();
+            document.getElementById('genderEdit').value    = cells[3].textContent.trim();
             document.getElementById('dobEdit').value       = formatDateForInput(cells[4].textContent.trim());
-            document.getElementById('genderEdit').value    = cells[5].textContent.trim();
-            document.getElementById('addressEdit').value   = cells[6].textContent.trim();
-            document.getElementById('phoneEdit').value     = cells[7].textContent.trim();
+            document.getElementById('addressEdit').value   = cells[5].textContent.trim();
+            document.getElementById('emailEdit').value     = cells[6].textContent.trim();
 
             editModal.classList.add('show');
         });

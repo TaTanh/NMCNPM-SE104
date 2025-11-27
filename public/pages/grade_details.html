@@ -19,10 +19,11 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html">Dashboard</a>
             <a href="/pages/students.html">Quản lý học sinh</a>
-            <a href="/pages/classes.html">Quản lý lớp</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
-            <a href="/pages/grade_select.html" class="active">Nhập điểm</a>
-            <a href="/pages/teaching_assignment.html">Phân công</a>
+            <a href="/pages/grade_select.html" class="active">Bảng điểm</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/settings.html">Cài đặt hệ thống</a>
         </nav>
     </aside>
 
@@ -59,30 +60,30 @@
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>MSSV</th>
+                            <th>Mã HS</th>
                             <th>Họ tên</th>
-                            <th>15 phút</th>
-                            <th>1 tiết</th>
-                            <th>Cuối kỳ</th>
-                            <th>Điểm TB</th>
+                            <th>KT 15 phút (x1)</th>
+                            <th>KT 1 tiết (x2)</th>
+                            <th>Cuối kỳ (x3)</th>
+                            <th>Điểm TB Môn</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="gradeTableBody">
                         <tr>
                             <td>HS001</td>
                             <td>Nguyễn Văn A</td>
                             <td><input type="number" min="0" max="10" step="0.1" value="8.0"></td>
                             <td><input type="number" min="0" max="10" step="0.1" value="7.5"></td>
                             <td><input type="number" min="0" max="10" step="0.1" value="9.0"></td>
-                            <td>8.3</td>
+                            <td class="grade-avg">8.3</td>
                         </tr>
                         <tr>
                             <td>HS002</td>
                             <td>Trần Thị B</td>
-                            <td><input type="number" min="0" max="10" step="0.1"></td>
-                            <td><input type="number" min="0" max="10" step="0.1"></td>
-                            <td><input type="number" min="0" max="10" step="0.1"></td>
-                            <td>–</td>
+                            <td><input type="number" min="0" max="10" step="0.1" value="7.0"></td>
+                            <td><input type="number" min="0" max="10" step="0.1" value="8.0"></td>
+                            <td><input type="number" min="0" max="10" step="0.1" value="7.5"></td>
+                            <td class="grade-avg">7.6</td>
                         </tr>
                         <tr>
                             <td>HS003</td>
@@ -90,7 +91,23 @@
                             <td><input type="number" min="0" max="10" step="0.1"></td>
                             <td><input type="number" min="0" max="10" step="0.1"></td>
                             <td><input type="number" min="0" max="10" step="0.1"></td>
-                            <td>–</td>
+                            <td class="grade-avg">–</td>
+                        </tr>
+                        <tr>
+                            <td>HS004</td>
+                            <td>Phạm Thị D</td>
+                            <td><input type="number" min="0" max="10" step="0.1" value="9.0"></td>
+                            <td><input type="number" min="0" max="10" step="0.1" value="8.5"></td>
+                            <td><input type="number" min="0" max="10" step="0.1" value="9.5"></td>
+                            <td class="grade-avg">9.0</td>
+                        </tr>
+                        <tr>
+                            <td>HS005</td>
+                            <td>Hoàng Văn E</td>
+                            <td><input type="number" min="0" max="10" step="0.1" value="6.5"></td>
+                            <td><input type="number" min="0" max="10" step="0.1" value="7.0"></td>
+                            <td><input type="number" min="0" max="10" step="0.1" value="6.0"></td>
+                            <td class="grade-avg">6.5</td>
                         </tr>
                     </tbody>
                 </table>

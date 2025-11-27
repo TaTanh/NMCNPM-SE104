@@ -23,16 +23,26 @@
             </div>
 
             <!-- Form đăng nhập -->
-            <form class="auth-form">
+            <form class="auth-form" id="loginForm">
 
                 <div class="form-group">
                     <label for="username">Tên đăng nhập</label>
-                    <input type="text" id="username" name="username" placeholder="Nhập tên đăng nhập">
+                    <input type="text" id="username" name="username" placeholder="Nhập tên đăng nhập" required>
                 </div>
 
                 <div class="form-group">
                     <label for="password">Mật khẩu</label>
-                    <input type="password" id="password" name="password" placeholder="Nhập mật khẩu">
+                    <input type="password" id="password" name="password" placeholder="Nhập mật khẩu" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="role">Vai trò</label>
+                    <select id="role" name="role" style="padding: 10px 12px; border-radius: 8px; border: 1px solid #d1d5db; font-size: 14px; width: 100%;">
+                        <option value="admin">Quản lý</option>
+                        <option value="teacher">Giáo viên</option>
+                        <option value="student">Học sinh</option>
+                        <option value="parent">Phụ huynh</option>
+                    </select>
                 </div>
 
                 <!-- Hàng: Ghi nhớ đăng nhập + Quên mật khẩu -->
@@ -96,6 +106,28 @@
 
         updateBg();
         setInterval(updateBg, 5000);
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+
+            // Demo: Save user info to localStorage
+            const userInfo = {
+                username: username,
+                role: role,
+                loginTime: new Date().toISOString()
+            };
+            localStorage.setItem('userInfo', JSON.stringify(userInfo));
+
+            // TODO: Thực hiện xác thực với server
+            // Hiện tại demo chuyển thẳng đến dashboard
+            alert(`Đăng nhập thành công!\nVai trò: ${role}\n(Demo UI - chưa kết nối backend)`);
+            window.location.href = '/pages/dashboard.html';
+        });
     </script>
 
 </body>
