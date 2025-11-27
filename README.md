@@ -73,6 +73,8 @@ Có thể mở trực tiếp các trang khác:
 - /pages/grade_select.html  
 - /pages/teaching_assignment.html  
 
+CTRL + C để đóng server
+
 ## 6. Lưu ý khi phát triển
 
 - Không mở tệp HTML trực tiếp bằng đường dẫn dạng file:///  
