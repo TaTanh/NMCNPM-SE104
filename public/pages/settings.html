@@ -142,42 +142,7 @@
                                 </tr>
                             </thead>
                             <tbody id="examTypeBody">
-                                <tr data-id="KT15">
-                                    <td>KT15</td>
-                                    <td>
-                                        <input type="text" class="inline-input" value="Kiểm tra 15 phút">
-                                    </td>
-                                    <td>
-                                        <input type="number" class="inline-input" value="1" min="1" max="5" step="1">
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger btn-delete-exam">Xóa</button>
-                                    </td>
-                                </tr>
-                                <tr data-id="KT1T">
-                                    <td>KT1T</td>
-                                    <td>
-                                        <input type="text" class="inline-input" value="Kiểm tra 1 tiết">
-                                    </td>
-                                    <td>
-                                        <input type="number" class="inline-input" value="2" min="1" max="5" step="1">
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger btn-delete-exam">Xóa</button>
-                                    </td>
-                                </tr>
-                                <tr data-id="KTCK">
-                                    <td>KTCK</td>
-                                    <td>
-                                        <input type="text" class="inline-input" value="Kiểm tra cuối kỳ">
-                                    </td>
-                                    <td>
-                                        <input type="number" class="inline-input" value="3" min="1" max="5" step="1">
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger btn-delete-exam">Xóa</button>
-                                    </td>
-                                </tr>
+                                <tr><td colspan="4" style="text-align: center;">Đang tải dữ liệu...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -205,24 +170,7 @@
                                 </tr>
                             </thead>
                             <tbody id="semesterBody">
-                                <tr>
-                                    <td>HK1</td>
-                                    <td>
-                                        <input type="text" class="inline-input" value="Học kỳ 1">
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger btn-delete-semester">Xóa</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>HK2</td>
-                                    <td>
-                                        <input type="text" class="inline-input" value="Học kỳ 2">
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger btn-delete-semester">Xóa</button>
-                                    </td>
-                                </tr>
+                                <tr><td colspan="3" style="text-align: center;">Đang tải dữ liệu...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -251,30 +199,7 @@
                                 </tr>
                             </thead>
                             <tbody id="yearBody">
-                                <tr>
-                                    <td>2024-2025</td>
-                                    <td>
-                                        <input type="number" class="inline-input" value="2024" min="2000" max="2100">
-                                    </td>
-                                    <td>
-                                        <input type="number" class="inline-input" value="2025" min="2000" max="2100">
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger btn-delete-year">Xóa</button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>2023-2024</td>
-                                    <td>
-                                        <input type="number" class="inline-input" value="2023" min="2000" max="2100">
-                                    </td>
-                                    <td>
-                                        <input type="number" class="inline-input" value="2024" min="2000" max="2100">
-                                    </td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-danger btn-delete-year">Xóa</button>
-                                    </td>
-                                </tr>
+                                <tr><td colspan="4" style="text-align: center;">Đang tải dữ liệu...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -297,26 +222,173 @@
 
     <!-- ======================== SCRIPT ======================== -->
     <script>
-        // Form submit
-        document.getElementById('settingsForm').addEventListener('submit', (e) => {
+        // ========== LOAD THAM SỐ TỪ DATABASE ==========
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/settings/params');
+                const params = await response.json();
+                
+                params.forEach(p => {
+                    const fieldMap = {
+                        'DiemDatMon': 'diemDatMon',
+                        'DiemDat': 'diemDat',
+                        'DiemToiThieu': 'diemToiThieu',
+                        'DiemToiDa': 'diemToiDa',
+                        'TuoiToiThieu': 'tuoiToiThieu',
+                        'TuoiToiDa': 'tuoiToiDa',
+                        'SiSoToiDa': 'siSoToiDa'
+                    };
+                    
+                    const fieldId = fieldMap[p.tenthamso];
+                    if (fieldId) {
+                        const input = document.getElementById(fieldId);
+                        if (input) input.value = p.giatri;
+                    }
+                });
+            } catch (error) {
+                console.error('Lỗi load tham số:', error);
+            }
+        }
+
+        // ========== LOAD LOẠI HÌNH KIỂM TRA ==========
+        async function loadExamTypes() {
+            try {
+                const response = await fetch('/api/settings/exam-types');
+                const examTypes = await response.json();
+                
+                const tbody = document.getElementById('examTypeBody');
+                tbody.innerHTML = examTypes.map(et => `
+                    <tr data-id="${et.malhkt}">
+                        <td>${et.malhkt}</td>
+                        <td>
+                            <input type="text" class="inline-input" value="${et.tenlhkt}">
+                        </td>
+                        <td>
+                            <input type="number" class="inline-input" value="${et.heso}" min="1" max="5" step="1">
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger btn-delete-exam">Xóa</button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+                // Attach delete handlers
+                tbody.querySelectorAll('.btn-delete-exam').forEach(btn => {
+                    attachDeleteHandler(btn);
+                });
+            } catch (error) {
+                console.error('Lỗi load loại hình kiểm tra:', error);
+            }
+        }
+
+        // ========== LOAD HỌC KỲ ==========
+        async function loadSemesters() {
+            try {
+                const response = await fetch('/api/settings/semesters');
+                const semesters = await response.json();
+                
+                const tbody = document.getElementById('semesterBody');
+                tbody.innerHTML = semesters.map(s => `
+                    <tr data-id="${s.mahocky}">
+                        <td>${s.mahocky}</td>
+                        <td>
+                            <input type="text" class="inline-input" value="${s.tenhocky}">
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-danger btn-delete-semester">Xóa</button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+                tbody.querySelectorAll('.btn-delete-semester').forEach(btn => {
+                    attachDeleteHandler(btn);
+                });
+            } catch (error) {
+                console.error('Lỗi load học kỳ:', error);
+            }
+        }
+
+        // ========== LOAD NĂM HỌC ==========
+        async function loadSchoolYears() {
+            try {
+                const response = await fetch('/api/settings/school-years');
+                const years = await response.json();
+                
+                const tbody = document.getElementById('yearBody');
+                tbody.innerHTML = years.map(y => {
+                    const parts = y.tennamhoc.split('–');
+                    const startYear = parts[0] || '';
+                    const endYear = parts[1] || '';
+                    return `
+                        <tr data-id="${y.manamhoc}">
+                            <td>${y.manamhoc}</td>
+                            <td>
+                                <input type="number" class="inline-input" value="${startYear.trim()}" min="2000" max="2100">
+                            </td>
+                            <td>
+                                <input type="number" class="inline-input" value="${endYear.trim()}" min="2000" max="2100">
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-danger btn-delete-year">Xóa</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                tbody.querySelectorAll('.btn-delete-year').forEach(btn => {
+                    attachDeleteHandler(btn);
+                });
+            } catch (error) {
+                console.error('Lỗi load năm học:', error);
+            }
+        }
+
+        // ========== LƯU TẤT CẢ THAY ĐỔI ==========
+        document.getElementById('settingsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // Collect all settings data
             const settings = {
-                diemDatMon: document.getElementById('diemDatMon').value,
-                diemDat: document.getElementById('diemDat').value,
-                diemToiThieu: document.getElementById('diemToiThieu').value,
-                diemToiDa: document.getElementById('diemToiDa').value,
-                tuoiToiThieu: document.getElementById('tuoiToiThieu').value,
-                tuoiToiDa: document.getElementById('tuoiToiDa').value,
-                siSoToiDa: document.getElementById('siSoToiDa').value
+                DiemDatMon: document.getElementById('diemDatMon').value,
+                DiemDat: document.getElementById('diemDat').value,
+                DiemToiThieu: document.getElementById('diemToiThieu').value,
+                DiemToiDa: document.getElementById('diemToiDa').value,
+                TuoiToiThieu: document.getElementById('tuoiToiThieu').value,
+                TuoiToiDa: document.getElementById('tuoiToiDa').value,
+                SiSoToiDa: document.getElementById('siSoToiDa').value
             };
 
-            // TODO: Send to server
-            console.log('Settings to save:', settings);
+            try {
+                // Lưu từng tham số
+                for (const [name, value] of Object.entries(settings)) {
+                    await fetch(`/api/settings/params/${name}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ GiaTri: value })
+                    });
+                }
 
-            // Show success message
-            showAlert('Đã lưu thay đổi thành công!', 'success');
+                // Lưu loại hình kiểm tra
+                const examRows = document.querySelectorAll('#examTypeBody tr');
+                for (const row of examRows) {
+                    const id = row.dataset.id;
+                    const inputs = row.querySelectorAll('input');
+                    if (id && !id.startsWith('NEW')) {
+                        await fetch(`/api/settings/exam-types/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                TenLHKT: inputs[0].value,
+                                HeSo: inputs[1].value
+                            })
+                        });
+                    }
+                }
+
+                showAlert('Đã lưu thay đổi thành công!', 'success');
+            } catch (error) {
+                console.error('Lỗi:', error);
+                showAlert('Lỗi khi lưu thay đổi!', 'error');
+            }
         });
 
         // Reset settings
@@ -387,11 +459,6 @@
             });
         }
 
-        // Attach delete handlers to existing buttons
-        document.querySelectorAll('.btn-delete-exam, .btn-delete-semester, .btn-delete-year').forEach(btn => {
-            attachDeleteHandler(btn);
-        });
-
         // Show alert function
         function showAlert(message, type = 'info') {
             const alert = document.getElementById('settingsAlert');
@@ -401,11 +468,18 @@
             alert.className = 'alert alert-' + type;
             alert.style.display = 'flex';
 
-            // Auto hide after 3 seconds
             setTimeout(() => {
                 alert.style.display = 'none';
             }, 3000);
         }
+
+        // ========== KHỞI TẠO ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            loadExamTypes();
+            loadSemesters();
+            loadSchoolYears();
+        });
     </script>
 
 </body>

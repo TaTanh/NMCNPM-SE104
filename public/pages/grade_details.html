@@ -33,7 +33,7 @@
         <!-- HEADER -->
         <header class="topbar">
             <div class="page-title">
-                10A1 – Toán – Học kỳ 1
+                <span id="pageTitle">Bảng nhập điểm</span>
                 <span class="tag-pill">Bảng nhập điểm</span>
             </div>
             <div class="user-info">
@@ -47,8 +47,8 @@
 
             <!-- HÀNG TIÊU ĐỀ + NÚT QUY ĐỊNH -->
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <div style="font-size:14px; color:#6b7280;">
-                    Nhập điểm cho lớp 10A1 – môn Toán – Học kỳ 1
+                <div style="font-size:14px; color:#6b7280;" id="gradeSubtitle">
+                    Đang tải...
                 </div>
                 <button id="btn-open-rules" class="btn btn-outline">
                     Thay đổi quy định
@@ -59,63 +59,21 @@
             <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
-                        <tr>
+                        <tr id="gradeTableHead">
                             <th>Mã HS</th>
                             <th>Họ tên</th>
-                            <th>KT 15 phút (x1)</th>
-                            <th>KT 1 tiết (x2)</th>
-                            <th>Cuối kỳ (x3)</th>
                             <th>Điểm TB Môn</th>
                         </tr>
                     </thead>
                     <tbody id="gradeTableBody">
-                        <tr>
-                            <td>HS001</td>
-                            <td>Nguyễn Văn A</td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="8.0"></td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="7.5"></td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="9.0"></td>
-                            <td class="grade-avg">8.3</td>
-                        </tr>
-                        <tr>
-                            <td>HS002</td>
-                            <td>Trần Thị B</td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="7.0"></td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="8.0"></td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="7.5"></td>
-                            <td class="grade-avg">7.6</td>
-                        </tr>
-                        <tr>
-                            <td>HS003</td>
-                            <td>Lê Văn C</td>
-                            <td><input type="number" min="0" max="10" step="0.1"></td>
-                            <td><input type="number" min="0" max="10" step="0.1"></td>
-                            <td><input type="number" min="0" max="10" step="0.1"></td>
-                            <td class="grade-avg">–</td>
-                        </tr>
-                        <tr>
-                            <td>HS004</td>
-                            <td>Phạm Thị D</td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="9.0"></td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="8.5"></td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="9.5"></td>
-                            <td class="grade-avg">9.0</td>
-                        </tr>
-                        <tr>
-                            <td>HS005</td>
-                            <td>Hoàng Văn E</td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="6.5"></td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="7.0"></td>
-                            <td><input type="number" min="0" max="10" step="0.1" value="6.0"></td>
-                            <td class="grade-avg">6.5</td>
-                        </tr>
+                        <tr><td colspan="3" style="text-align:center;">Đang tải dữ liệu...</td></tr>
                     </tbody>
                 </table>
             </div>
 
             <div class="modal-footer" style="margin-top: 14px;">
                 <button class="btn btn-outline">Xuất Excel</button>
-                <button class="btn btn-primary">Lưu</button>
+                <button class="btn btn-primary" id="btnSaveGrades">Lưu</button>
             </div>
 
         </div><!-- content -->
@@ -189,13 +147,188 @@
                 rulesModal.style.display = 'none';
             });
 
-            // click ra ngoài để tắt
             rulesModal.addEventListener('click', (e) => {
                 if (e.target === rulesModal) {
                     rulesModal.style.display = 'none';
                 }
             });
         }
+
+        // ========== LẤY THAM SỐ TỪ URL ==========
+        const urlParams = new URLSearchParams(window.location.search);
+        const subjectId = urlParams.get('subject');
+        const classId = urlParams.get('class');
+        const semester = urlParams.get('semester');
+
+        let examTypes = [];
+        let maBangDiem = null;
+
+        // ========== LOAD DỮ LIỆU ==========
+        async function loadGradeData() {
+            if (!subjectId || !classId || !semester) {
+                alert('Thiếu tham số. Vui lòng chọn lại từ trang bảng điểm.');
+                window.location.href = '/pages/grade_select.html';
+                return;
+            }
+
+            try {
+                // Lấy thông tin môn học
+                const subjectRes = await fetch(`/api/subjects/${subjectId}`);
+                const subject = await subjectRes.json();
+
+                // Lấy thông tin lớp
+                const classRes = await fetch(`/api/classes/${classId}`);
+                const classInfo = await classRes.json();
+
+                // Cập nhật tiêu đề
+                document.getElementById('pageTitle').textContent = 
+                    `${classId} – ${subject.tenmonhoc} – ${semester}`;
+                document.getElementById('gradeSubtitle').textContent = 
+                    `Nhập điểm cho lớp ${classId} – môn ${subject.tenmonhoc} – ${semester}`;
+
+                // Lấy loại hình kiểm tra
+                const examTypesRes = await fetch('/api/grades/exam-types');
+                examTypes = await examTypesRes.json();
+
+                // Tạo hoặc lấy bảng điểm
+                const bdmRes = await fetch('/api/grades/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        MaLop: classId,
+                        MaMonHoc: subjectId,
+                        MaHocKy: semester
+                    })
+                });
+                const bdm = await bdmRes.json();
+                maBangDiem = bdm.mabangdiem;
+
+                // Cập nhật header bảng
+                const thead = document.getElementById('gradeTableHead');
+                thead.innerHTML = `
+                    <th>Mã HS</th>
+                    <th>Họ tên</th>
+                    ${examTypes.map(et => `<th>${et.tenlhkt} (x${et.heso})</th>`).join('')}
+                    <th>Điểm TB Môn</th>
+                `;
+
+                // Lấy học sinh và điểm
+                const gradesRes = await fetch(`/api/grades/class/${classId}/subject/${subjectId}?hocky=${semester}`);
+                const grades = await gradesRes.json();
+
+                renderGradeTable(grades);
+            } catch (error) {
+                console.error('Lỗi:', error);
+                document.getElementById('gradeTableBody').innerHTML = 
+                    '<tr><td colspan="6" style="text-align:center;color:red;">Lỗi tải dữ liệu</td></tr>';
+            }
+        }
+
+        function renderGradeTable(students) {
+            const tbody = document.getElementById('gradeTableBody');
+            
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Không có học sinh trong lớp</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = students.map(hs => {
+                const gradeInputs = examTypes.map(et => {
+                    const diem = hs.Diem && hs.Diem[et.tenlhkt] ? hs.Diem[et.tenlhkt][0] : '';
+                    return `<td>
+                        <input type="number" min="0" max="10" step="0.1" 
+                               data-student="${hs.MaHocSinh}" 
+                               data-examtype="${et.malhkt}"
+                               data-heso="${et.heso}"
+                               value="${diem}"
+                               onchange="calculateAvg(this)">
+                    </td>`;
+                }).join('');
+
+                // Tính điểm TB
+                let avg = '–';
+                if (hs.Diem && Object.keys(hs.Diem).length > 0) {
+                    let totalWeight = 0;
+                    let totalScore = 0;
+                    examTypes.forEach(et => {
+                        if (hs.Diem[et.tenlhkt] && hs.Diem[et.tenlhkt].length > 0) {
+                            totalScore += hs.Diem[et.tenlhkt][0] * et.heso;
+                            totalWeight += et.heso;
+                        }
+                    });
+                    if (totalWeight > 0) {
+                        avg = (totalScore / totalWeight).toFixed(1);
+                    }
+                }
+
+                return `
+                    <tr data-student="${hs.MaHocSinh}">
+                        <td>${hs.MaHocSinh}</td>
+                        <td>${hs.HoTen}</td>
+                        ${gradeInputs}
+                        <td class="grade-avg">${avg}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function calculateAvg(input) {
+            const row = input.closest('tr');
+            const inputs = row.querySelectorAll('input[type="number"]');
+            let totalWeight = 0;
+            let totalScore = 0;
+
+            inputs.forEach(inp => {
+                const val = parseFloat(inp.value);
+                const heso = parseInt(inp.dataset.heso) || 1;
+                if (!isNaN(val)) {
+                    totalScore += val * heso;
+                    totalWeight += heso;
+                }
+            });
+
+            const avgCell = row.querySelector('.grade-avg');
+            if (totalWeight > 0) {
+                avgCell.textContent = (totalScore / totalWeight).toFixed(1);
+            } else {
+                avgCell.textContent = '–';
+            }
+        }
+
+        // ========== LƯU ĐIỂM ==========
+        document.getElementById('btnSaveGrades').addEventListener('click', async () => {
+            const inputs = document.querySelectorAll('#gradeTableBody input[type="number"]');
+            const updates = [];
+
+            inputs.forEach(input => {
+                const value = parseFloat(input.value);
+                if (!isNaN(value)) {
+                    updates.push({
+                        MaBangDiem: maBangDiem,
+                        MaHocSinh: input.dataset.student,
+                        MaLHKT: input.dataset.examtype,
+                        Diem: value
+                    });
+                }
+            });
+
+            try {
+                for (const update of updates) {
+                    await fetch('/api/grades/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(update)
+                    });
+                }
+                alert('Đã lưu điểm thành công!');
+            } catch (error) {
+                console.error('Lỗi:', error);
+                alert('Lỗi khi lưu điểm!');
+            }
+        });
+
+        // ========== KHỞI TẠO ==========
+        document.addEventListener('DOMContentLoaded', loadGradeData);
     </script>
 
 </body>

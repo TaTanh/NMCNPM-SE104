@@ -102,40 +102,9 @@
                     </thead>
 
                     <tbody id="studentTableBody">
+                        <!-- Dữ liệu sẽ được load từ database -->
                         <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>HS001</td>
-                            <td>Nguyễn Văn A</td>
-                            <td>Nam</td>
-                            <td>01/01/2008</td>
-                            <td>TP. HCM</td>
-                            <td>nguyenvana@gmail.com</td>
-                        </tr>
-
-                        <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>HS002</td>
-                            <td>Trần Thị B</td>
-                            <td>Nữ</td>
-                            <td>15/03/2008</td>
-                            <td>TP. HCM</td>
-                            <td>tranthib@gmail.com</td>
-                        </tr>
-
-                        <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>HS003</td>
-                            <td>Lê Văn C</td>
-                            <td>Nam</td>
-                            <td>25/07/2008</td>
-                            <td>Đồng Nai</td>
-                            <td>levanc@gmail.com</td>
+                            <td colspan="7" style="text-align:center;">Đang tải dữ liệu...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -285,9 +254,6 @@
     <!-- ======================== SCRIPT ======================== -->
     <script>
         const tableBody   = document.getElementById('studentTableBody');
-        const rows        = tableBody.querySelectorAll('tr');
-        const checkboxes  = tableBody.querySelectorAll('.row-select-checkbox');
-
         const btnAdd      = document.getElementById('btnAddStudent');
         const btnToggle   = document.getElementById('btnToggleEditMode');
         const btnEdit     = document.getElementById('btnEditStudent');
@@ -296,8 +262,99 @@
         let selectedRow   = null;
         let selectModeOn  = false;
 
+        // ========== LOAD DANH SÁCH HỌC SINH TỪ DATABASE ==========
+        async function loadStudents() {
+            try {
+                const response = await fetch('/api/students');
+                if (!response.ok) throw new Error('Lỗi tải dữ liệu');
+                
+                const students = await response.json();
+                renderStudentTable(students);
+            } catch (error) {
+                console.error('Lỗi:', error);
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Lỗi kết nối database</td></tr>';
+            }
+        }
+
+        // ========== RENDER BẢNG HỌC SINH ==========
+        function renderStudentTable(students) {
+            if (students.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có dữ liệu</td></tr>';
+                return;
+            }
+            
+            tableBody.innerHTML = students.map(hs => `
+                <tr data-id="${hs.mahocsinh}">
+                    <td class="select-cell">
+                        <input type="checkbox" class="row-select-checkbox">
+                    </td>
+                    <td>${hs.mahocsinh}</td>
+                    <td>${hs.hoten}</td>
+                    <td>${hs.gioitinh || ''}</td>
+                    <td>${formatDate(hs.ngaysinh)}</td>
+                    <td>${hs.diachi || ''}</td>
+                    <td>${hs.email || ''}</td>
+                </tr>
+            `).join('');
+            
+            // Gắn lại event cho checkbox và row click
+            attachRowEvents();
+        }
+
+        // ========== ĐỊNH DẠNG NGÀY ==========
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        // ========== GẮN EVENT CHO ROWS SAU KHI RENDER ==========
+        function attachRowEvents() {
+            const rows = tableBody.querySelectorAll('tr');
+            const checkboxes = tableBody.querySelectorAll('.row-select-checkbox');
+            
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    if (!selectModeOn) {
+                        cb.checked = false;
+                        return;
+                    }
+                    if (cb.checked) {
+                        checkboxes.forEach(other => {
+                            if (other !== cb) {
+                                other.checked = false;
+                                other.closest('tr').classList.remove('row-selected');
+                            }
+                        });
+                        selectedRow = cb.closest('tr');
+                        selectedRow.classList.add('row-selected');
+                    } else {
+                        cb.closest('tr').classList.remove('row-selected');
+                        if (selectedRow === cb.closest('tr')) selectedRow = null;
+                    }
+                });
+            });
+            
+            rows.forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (!selectModeOn) return;
+                    if (e.target.classList.contains('row-select-checkbox')) return;
+
+                    const cb = row.querySelector('.row-select-checkbox');
+                    if (cb) {
+                        cb.checked = !cb.checked;
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                });
+            });
+        }
+
         function resetSelection() {
             selectedRow = null;
+            const checkboxes = tableBody.querySelectorAll('.row-select-checkbox');
             checkboxes.forEach(cb => {
                 cb.checked = false;
                 cb.closest('tr').classList.remove('row-selected');
@@ -307,14 +364,14 @@
         function enterSelectMode() {
             selectModeOn = true;
             document.body.classList.add('select-mode');
-            btnToggle.classList.add('btn-toggle-active'); // sẽ thành trắng viền đỏ nhờ CSS
+            btnToggle.classList.add('btn-toggle-active');
             resetSelection();
         }
 
         function exitSelectMode() {
             selectModeOn = false;
             document.body.classList.remove('select-mode');
-            btnToggle.classList.remove('btn-toggle-active'); // trở lại màu xanh lá
+            btnToggle.classList.remove('btn-toggle-active');
             resetSelection();
         }
 
@@ -324,40 +381,8 @@
             else enterSelectMode();
         });
 
-        // Checkbox: chỉ cho 1 dòng được chọn, chỉ hoạt động khi đang select-mode
-        checkboxes.forEach(cb => {
-            cb.addEventListener('change', () => {
-                if (!selectModeOn) {
-                    cb.checked = false;
-                    return;
-                }
-                if (cb.checked) {
-                    checkboxes.forEach(other => {
-                        if (other !== cb) {
-                            other.checked = false;
-                            other.closest('tr').classList.remove('row-selected');
-                        }
-                    });
-                    selectedRow = cb.closest('tr');
-                    selectedRow.classList.add('row-selected');
-                } else {
-                    cb.closest('tr').classList.remove('row-selected');
-                    if (selectedRow === cb.closest('tr')) selectedRow = null;
-                }
-            });
-        });
-
-        // Click cả dòng để toggle checkbox (khi đang select-mode)
-        rows.forEach(row => {
-            row.addEventListener('click', (e) => {
-                if (!selectModeOn) return;
-                if (e.target.classList.contains('row-select-checkbox')) return;
-
-                const cb = row.querySelector('.row-select-checkbox');
-                cb.checked = !cb.checked;
-                cb.dispatchEvent(new Event('change'));
-            });
-        });
+        // Load dữ liệu khi trang load
+        document.addEventListener('DOMContentLoaded', loadStudents);
 
         // Chuyển dd/MM/yyyy -> yyyy-MM-dd
         function formatDateForInput(dmy) {
@@ -417,7 +442,7 @@
                 alert('Thêm học sinh thành công!');
                 addModal.classList.remove('show');
                 addForm.reset();
-                location.reload(); // Reload để cập nhật bảng
+                loadStudents(); // Reload bảng từ database
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
@@ -493,7 +518,7 @@
                 editModal.classList.remove('show');
                 editForm.reset();
                 exitSelectMode();
-                location.reload();
+                loadStudents(); // Reload bảng từ database
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
@@ -553,7 +578,7 @@
                 alert('Đã xóa học sinh!');
                 deleteModal.classList.remove('show');
                 exitSelectMode();
-                location.reload();
+                loadStudents(); // Reload bảng từ database
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }

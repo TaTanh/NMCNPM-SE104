@@ -79,29 +79,7 @@
                         </tr>
                     </thead>
                     <tbody id="classTableBody">
-                        <!-- Dữ liệu mẫu -->
-                        <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>10A1</td>
-                            <td>Lớp 10A1</td>
-                            <td>10</td>
-                            <td>45</td>
-                            <td>Nguyễn Văn A</td>
-                            <td>2024–2025</td>
-                        </tr>
-                        <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>10A2</td>
-                            <td>Lớp 10A2</td>
-                            <td>10</td>
-                            <td>43</td>
-                            <td>Trần Thị B</td>
-                            <td>2024–2025</td>
-                        </tr>
+                        <tr><td colspan="7" style="text-align:center;">Đang tải dữ liệu...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -143,10 +121,12 @@
                             <label>Khối</label>
                             <select id="gradeLevelAdd" required>
                                 <option value="">-- Chọn khối --</option>
-                                <option value="10">Khối 10</option>
-                                <option value="11">Khối 11</option>
-                                <option value="12">Khối 12</option>
                             </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Sĩ số</label>
+                            <input type="number" id="classSizeAdd" placeholder="VD: 40" min="0" max="60" value="0">
                         </div>
 
                         <div class="form-group">
@@ -158,9 +138,6 @@
                             <label>Năm học</label>
                             <select id="schoolYearAdd" required>
                                 <option value="">-- Chọn năm học --</option>
-                                <option value="2023–2024">2023–2024</option>
-                                <option value="2024–2025">2024–2025</option>
-                                <option value="2025–2026">2025–2026</option>
                             </select>
                         </div>
                     </div>
@@ -198,6 +175,11 @@
                         <div class="form-group">
                             <label>Khối</label>
                             <input type="number" id="gradeLevelEdit" min="1" max="12">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Sĩ số</label>
+                            <input type="number" id="classSizeEdit" min="0" max="60">
                         </div>
 
                         <div class="form-group">
@@ -244,8 +226,6 @@
     <script>
         // ====== Lấy các phần tử cần dùng ======
         const classTableBody   = document.getElementById('classTableBody');
-        const classRows        = classTableBody.querySelectorAll('tr');
-        const classCheckboxes  = classTableBody.querySelectorAll('.row-select-checkbox');
 
         const btnAddClass      = document.getElementById('btnAddClass');
         const btnToggleClass   = document.getElementById('btnToggleEditClass');
@@ -278,9 +258,113 @@
         let classSelectedRow  = null;
         let classSelectModeOn = false;
 
+        // ========== LOAD DỮ LIỆU TỪ DATABASE ==========
+        async function loadClasses() {
+            try {
+                const response = await fetch('/api/classes');
+                if (!response.ok) throw new Error('Lỗi tải dữ liệu');
+                
+                const classes = await response.json();
+                renderClassTable(classes);
+            } catch (error) {
+                console.error('Lỗi:', error);
+                classTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Lỗi kết nối database</td></tr>';
+            }
+        }
+
+        function renderClassTable(classes) {
+            if (classes.length === 0) {
+                classTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có dữ liệu</td></tr>';
+                return;
+            }
+            
+            classTableBody.innerHTML = classes.map(lop => `
+                <tr data-id="${lop.malop}">
+                    <td class="select-cell">
+                        <input type="checkbox" class="row-select-checkbox">
+                    </td>
+                    <td>${lop.malop}</td>
+                    <td>${lop.tenlop}</td>
+                    <td>${lop.khoi || ''}</td>
+                    <td>${lop.siso || 0}</td>
+                    <td></td>
+                    <td>${lop.namhoc || ''}</td>
+                </tr>
+            `).join('');
+            
+            attachRowEvents();
+        }
+
+        // ========== LOAD KHỐI VÀ NĂM HỌC CHO DROPDOWN ==========
+        async function loadDropdowns() {
+            try {
+                // Load khối lớp
+                const khoiRes = await fetch('/api/settings/grade-levels');
+                const khoiList = await khoiRes.json();
+                const gradeLevelAdd = document.getElementById('gradeLevelAdd');
+                gradeLevelAdd.innerHTML = '<option value="">-- Chọn khối --</option>';
+                khoiList.forEach(k => {
+                    gradeLevelAdd.innerHTML += `<option value="${k.makhoilop}">${k.tenkhoilop}</option>`;
+                });
+                
+                // Load năm học
+                const yearRes = await fetch('/api/settings/school-years');
+                const yearList = await yearRes.json();
+                const schoolYearAdd = document.getElementById('schoolYearAdd');
+                schoolYearAdd.innerHTML = '<option value="">-- Chọn năm học --</option>';
+                yearList.forEach(y => {
+                    schoolYearAdd.innerHTML += `<option value="${y.manamhoc}">${y.tennamhoc}</option>`;
+                });
+            } catch (error) {
+                console.error('Lỗi load dropdowns:', error);
+            }
+        }
+
+        // ========== GẮN EVENT CHO ROWS ==========
+        function attachRowEvents() {
+            const rows = classTableBody.querySelectorAll('tr');
+            const checkboxes = classTableBody.querySelectorAll('.row-select-checkbox');
+            
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    if (!classSelectModeOn) {
+                        cb.checked = false;
+                        return;
+                    }
+                    if (cb.checked) {
+                        checkboxes.forEach(other => {
+                            if (other !== cb) {
+                                other.checked = false;
+                                other.closest('tr').classList.remove('row-selected');
+                            }
+                        });
+                        classSelectedRow = cb.closest('tr');
+                        classSelectedRow.classList.add('row-selected');
+                    } else {
+                        cb.closest('tr').classList.remove('row-selected');
+                        if (classSelectedRow === cb.closest('tr')) classSelectedRow = null;
+                    }
+                });
+            });
+
+            rows.forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (!classSelectModeOn) return;
+                    if (e.target.classList.contains('row-select-checkbox')) return;
+
+                    const cb = row.querySelector('.row-select-checkbox');
+                    if (cb) {
+                        cb.checked = !cb.checked;
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                });
+            });
+        }
+
         function resetClassSelection() {
             classSelectedRow = null;
-            classCheckboxes.forEach(cb => {
+            const checkboxes = classTableBody.querySelectorAll('.row-select-checkbox');
+            checkboxes.forEach(cb => {
                 cb.checked = false;
                 cb.closest('tr').classList.remove('row-selected');
             });
@@ -288,8 +372,8 @@
 
         function enterClassSelectMode() {
             classSelectModeOn = true;
-            document.body.classList.add('select-mode');        // hiện checkbox + thanh Sửa/Xóa
-            btnToggleClass.classList.add('btn-toggle-active'); // đổi màu nút Sửa đổi
+            document.body.classList.add('select-mode');
+            btnToggleClass.classList.add('btn-toggle-active');
             resetClassSelection();
         }
 
@@ -308,41 +392,6 @@
             } else {
                 enterClassSelectMode();
             }
-        });
-
-        // Checkbox – chỉ cho chọn 1 dòng, chỉ hoạt động khi đang select-mode
-        classCheckboxes.forEach(cb => {
-            cb.addEventListener('change', () => {
-                if (!classSelectModeOn) {
-                    cb.checked = false;
-                    return;
-                }
-                if (cb.checked) {
-                    classCheckboxes.forEach(other => {
-                        if (other !== cb) {
-                            other.checked = false;
-                            other.closest('tr').classList.remove('row-selected');
-                        }
-                    });
-                    classSelectedRow = cb.closest('tr');
-                    classSelectedRow.classList.add('row-selected');
-                } else {
-                    cb.closest('tr').classList.remove('row-selected');
-                    if (classSelectedRow === cb.closest('tr')) classSelectedRow = null;
-                }
-            });
-        });
-
-        // Click cả dòng để toggle checkbox (khi đang select-mode)
-        classRows.forEach(row => {
-            row.addEventListener('click', (e) => {
-                if (!classSelectModeOn) return;
-                if (e.target.classList.contains('row-select-checkbox')) return;
-
-                const cb = row.querySelector('.row-select-checkbox');
-                cb.checked = !cb.checked;
-                cb.dispatchEvent(new Event('change'));
-            });
         });
 
         // ========= POPUP THÊM LỚP =========
@@ -374,7 +423,8 @@
                 MaLop: document.getElementById('classCodeAdd').value,
                 TenLop: document.getElementById('classNameAdd').value,
                 MaKhoiLop: document.getElementById('gradeLevelAdd').value,
-                MaNamHoc: document.getElementById('schoolYearAdd').value
+                MaNamHoc: document.getElementById('schoolYearAdd').value,
+                SiSo: document.getElementById('classSizeAdd').value || 0
             };
             
             try {
@@ -392,7 +442,7 @@
                 
                 alert('Thêm lớp thành công!');
                 closeAddClassModal();
-                location.reload();
+                loadClasses();
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
@@ -417,12 +467,14 @@
             const maLop  = cells[1].textContent.trim();
             const tenLop = cells[2].textContent.trim();
             const khoi   = cells[3].textContent.trim();
+            const siSo   = cells[4].textContent.trim();
             const gvcn   = cells[5].textContent.trim();
             const namHoc = cells[6].textContent.trim();
 
             classCodeEdit.value       = maLop;
             classNameEdit.value       = tenLop;
             gradeLevelEdit.value      = khoi;
+            document.getElementById('classSizeEdit').value = siSo;
             homeroomTeacherEdit.value = gvcn;
             schoolYearEdit.value      = namHoc;
 
@@ -450,7 +502,8 @@
             const data = {
                 TenLop: classNameEdit.value,
                 MaKhoiLop: gradeLevelEdit.value,
-                MaNamHoc: schoolYearEdit.value
+                MaNamHoc: schoolYearEdit.value,
+                SiSo: document.getElementById('classSizeEdit').value || 0
             };
             
             try {
@@ -469,7 +522,7 @@
                 alert('Cập nhật lớp thành công!');
                 closeEditClassModal();
                 exitClassSelectMode();
-                location.reload();
+                loadClasses();
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
@@ -528,10 +581,16 @@
                 alert('Đã xóa lớp!');
                 closeDeleteClassModal();
                 exitClassSelectMode();
-                location.reload();
+                loadClasses();
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
+        });
+
+        // ========== KHỞI TẠO ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDropdowns();
+            loadClasses();
         });
     </script>
 

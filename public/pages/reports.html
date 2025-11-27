@@ -58,11 +58,6 @@
                         <label class="filter-label" for="subjectSelect">Môn học</label>
                         <select id="subjectSelect">
                             <option value="">-- Chọn môn --</option>
-                            <option value="MH001">Toán</option>
-                            <option value="MH002">Vật lý</option>
-                            <option value="MH003">Hóa học</option>
-                            <option value="MH004">Ngữ văn</option>
-                            <option value="MH005">Tiếng Anh</option>
                         </select>
                     </div>
 
@@ -70,16 +65,13 @@
                         <label class="filter-label" for="semesterSelect1">Học kỳ</label>
                         <select id="semesterSelect1">
                             <option value="">-- Chọn học kỳ --</option>
-                            <option value="HK1">Học kỳ 1</option>
-                            <option value="HK2">Học kỳ 2</option>
                         </select>
                     </div>
 
                     <div class="filter-item">
                         <label class="filter-label" for="yearSelect1">Năm học</label>
                         <select id="yearSelect1">
-                            <option value="2024-2025" selected>2024-2025</option>
-                            <option value="2023-2024">2023-2024</option>
+                            <option value="">-- Chọn năm học --</option>
                         </select>
                     </div>
 
@@ -172,16 +164,13 @@
                         <label class="filter-label" for="semesterSelect2">Học kỳ</label>
                         <select id="semesterSelect2">
                             <option value="">-- Chọn học kỳ --</option>
-                            <option value="HK1">Học kỳ 1</option>
-                            <option value="HK2">Học kỳ 2</option>
                         </select>
                     </div>
 
                     <div class="filter-item">
                         <label class="filter-label" for="yearSelect2">Năm học</label>
                         <select id="yearSelect2">
-                            <option value="2024-2025" selected>2024-2025</option>
-                            <option value="2023-2024">2023-2024</option>
+                            <option value="">-- Chọn năm học --</option>
                         </select>
                     </div>
 
@@ -276,17 +265,50 @@
 
     <!-- ======================== SCRIPT ======================== -->
     <script>
+        // ========== LOAD DROPDOWNS ==========
+        async function loadDropdowns() {
+            try {
+                // Load môn học
+                const subjectsRes = await fetch('/api/subjects');
+                const subjects = await subjectsRes.json();
+                const subjectSelect = document.getElementById('subjectSelect');
+                subjects.forEach(s => {
+                    subjectSelect.innerHTML += `<option value="${s.mamonhoc}">${s.tenmonhoc}</option>`;
+                });
+
+                // Load học kỳ
+                const semRes = await fetch('/api/settings/semesters');
+                const semesters = await semRes.json();
+                ['semesterSelect1', 'semesterSelect2'].forEach(id => {
+                    const select = document.getElementById(id);
+                    semesters.forEach(s => {
+                        select.innerHTML += `<option value="${s.mahocky}">${s.tenhocky}</option>`;
+                    });
+                });
+
+                // Load năm học
+                const yearRes = await fetch('/api/settings/school-years');
+                const years = await yearRes.json();
+                ['yearSelect1', 'yearSelect2'].forEach(id => {
+                    const select = document.getElementById(id);
+                    years.forEach(y => {
+                        select.innerHTML += `<option value="${y.manamhoc}">${y.tennamhoc}</option>`;
+                    });
+                });
+            } catch (error) {
+                console.error('Lỗi load dropdowns:', error);
+            }
+        }
+
         // Tab switching
         const tabBtns = document.querySelectorAll('.tab-btn');
         const reportSections = document.querySelectorAll('.report-section');
 
         tabBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                // Remove active from all tabs
                 tabBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
 
-                // Show corresponding section
                 const tabId = btn.dataset.tab;
                 reportSections.forEach(section => {
                     section.style.display = section.id === tabId ? 'block' : 'none';
@@ -294,54 +316,160 @@
             });
         });
 
-        // Generate Subject Report
-        document.getElementById('btnGenerateSubjectReport').addEventListener('click', () => {
+        // ========== BÁO CÁO TỔNG KẾT MÔN ==========
+        document.getElementById('btnGenerateSubjectReport').addEventListener('click', async () => {
             const subject = document.getElementById('subjectSelect');
             const semester = document.getElementById('semesterSelect1');
             const year = document.getElementById('yearSelect1');
 
-            if (!subject.value || !semester.value) {
-                alert('Vui lòng chọn môn học và học kỳ!');
+            if (!subject.value || !semester.value || !year.value) {
+                alert('Vui lòng chọn đầy đủ môn học, học kỳ và năm học!');
                 return;
             }
 
-            // Update report header
-            document.getElementById('reportSubjectName').textContent = 
-                subject.options[subject.selectedIndex].text.toUpperCase();
-            document.getElementById('reportSemester1').textContent = 
-                semester.options[semester.selectedIndex].text;
-            document.getElementById('reportYear1').textContent = year.value;
+            try {
+                const response = await fetch(
+                    `/api/reports/subject?monhoc=${subject.value}&hocky=${semester.value}&namhoc=${year.value}`
+                );
+                const data = await response.json();
 
-            // Show report result
-            document.getElementById('subjectReportResult').style.display = 'block';
+                // Update header
+                document.getElementById('reportSubjectName').textContent = 
+                    subject.options[subject.selectedIndex].text.toUpperCase();
+                document.getElementById('reportSemester1').textContent = 
+                    semester.options[semester.selectedIndex].text;
+                document.getElementById('reportYear1').textContent = 
+                    year.options[year.selectedIndex].text;
+
+                // Render table
+                const tbody = document.getElementById('subjectReportBody');
+                let totalSiSo = 0;
+                let totalDat = 0;
+
+                tbody.innerHTML = data.map((row, index) => {
+                    const siso = parseInt(row.siso) || 0;
+                    const dat = parseInt(row.soluongdat) || 0;
+                    const tile = siso > 0 ? ((dat / siso) * 100).toFixed(1) : 0;
+                    
+                    totalSiSo += siso;
+                    totalDat += dat;
+
+                    let rateClass = 'rate-low';
+                    if (tile >= 85) rateClass = 'rate-good';
+                    else if (tile >= 70) rateClass = 'rate-medium';
+
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${row.tenlop}</td>
+                            <td>${siso}</td>
+                            <td>${dat}</td>
+                            <td><span class="${rateClass}">${tile}%</span></td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Footer total
+                const totalTile = totalSiSo > 0 ? ((totalDat / totalSiSo) * 100).toFixed(1) : 0;
+                let totalRateClass = 'rate-low';
+                if (totalTile >= 85) totalRateClass = 'rate-good';
+                else if (totalTile >= 70) totalRateClass = 'rate-medium';
+
+                document.querySelector('#subject-report tfoot').innerHTML = `
+                    <tr class="total-row">
+                        <td colspan="2"><strong>Toàn trường</strong></td>
+                        <td><strong>${totalSiSo}</strong></td>
+                        <td><strong>${totalDat}</strong></td>
+                        <td><strong><span class="${totalRateClass}">${totalTile}%</span></strong></td>
+                    </tr>
+                `;
+
+                document.getElementById('subjectReportResult').style.display = 'block';
+            } catch (error) {
+                console.error('Lỗi:', error);
+                alert('Lỗi tải báo cáo!');
+            }
         });
 
-        // Generate Semester Report
-        document.getElementById('btnGenerateSemesterReport').addEventListener('click', () => {
+        // ========== BÁO CÁO TỔNG KẾT HỌC KỲ ==========
+        document.getElementById('btnGenerateSemesterReport').addEventListener('click', async () => {
             const semester = document.getElementById('semesterSelect2');
             const year = document.getElementById('yearSelect2');
 
-            if (!semester.value) {
-                alert('Vui lòng chọn học kỳ!');
+            if (!semester.value || !year.value) {
+                alert('Vui lòng chọn học kỳ và năm học!');
                 return;
             }
 
-            // Update report header
-            document.getElementById('reportSemester2').textContent = 
-                semester.options[semester.selectedIndex].text;
-            document.getElementById('reportYear2').textContent = year.value;
+            try {
+                const response = await fetch(
+                    `/api/reports/semester?hocky=${semester.value}&namhoc=${year.value}`
+                );
+                const data = await response.json();
 
-            // Show report result
-            document.getElementById('semesterReportResult').style.display = 'block';
+                // Update header
+                document.getElementById('reportSemester2').textContent = 
+                    semester.options[semester.selectedIndex].text;
+                document.getElementById('reportYear2').textContent = 
+                    year.options[year.selectedIndex].text;
+
+                // Render table
+                const tbody = document.getElementById('semesterReportBody');
+                let totalSiSo = 0;
+                let totalDat = 0;
+
+                tbody.innerHTML = data.map((row, index) => {
+                    const siso = parseInt(row.siso) || 0;
+                    const dat = parseInt(row.soluongdat) || 0;
+                    const tile = siso > 0 ? ((dat / siso) * 100).toFixed(1) : 0;
+                    
+                    totalSiSo += siso;
+                    totalDat += dat;
+
+                    let rateClass = 'rate-low';
+                    if (tile >= 85) rateClass = 'rate-good';
+                    else if (tile >= 70) rateClass = 'rate-medium';
+
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${row.tenlop}</td>
+                            <td>${siso}</td>
+                            <td>${dat}</td>
+                            <td><span class="${rateClass}">${tile}%</span></td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Footer total
+                const totalTile = totalSiSo > 0 ? ((totalDat / totalSiSo) * 100).toFixed(1) : 0;
+                let totalRateClass = 'rate-low';
+                if (totalTile >= 85) totalRateClass = 'rate-good';
+                else if (totalTile >= 70) totalRateClass = 'rate-medium';
+
+                document.querySelector('#semester-report tfoot').innerHTML = `
+                    <tr class="total-row">
+                        <td colspan="2"><strong>Toàn trường</strong></td>
+                        <td><strong>${totalSiSo}</strong></td>
+                        <td><strong>${totalDat}</strong></td>
+                        <td><strong><span class="${totalRateClass}">${totalTile}%</span></strong></td>
+                    </tr>
+                `;
+
+                document.getElementById('semesterReportResult').style.display = 'block';
+            } catch (error) {
+                console.error('Lỗi:', error);
+                alert('Lỗi tải báo cáo!');
+            }
         });
 
-        // Print/Export buttons (demo)
+        // Print/Export buttons
         document.getElementById('btnPrintSubjectReport').addEventListener('click', () => {
             window.print();
         });
 
         document.getElementById('btnExportSubjectReport').addEventListener('click', () => {
-            alert('Xuất Excel - Demo UI, chưa kết nối backend');
+            alert('Chức năng xuất Excel đang phát triển!');
         });
 
         document.getElementById('btnPrintSemesterReport').addEventListener('click', () => {
@@ -349,8 +477,11 @@
         });
 
         document.getElementById('btnExportSemesterReport').addEventListener('click', () => {
-            alert('Xuất Excel - Demo UI, chưa kết nối backend');
+            alert('Chức năng xuất Excel đang phát triển!');
         });
+
+        // Khởi tạo
+        document.addEventListener('DOMContentLoaded', loadDropdowns);
     </script>
 
 </body>

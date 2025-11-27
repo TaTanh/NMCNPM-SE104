@@ -6,7 +6,7 @@ const pool = require('../db');
 router.get('/', async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT MaMonHoc, TenMonHoc, HeSo FROM MONHOC ORDER BY TenMonHoc'
+            'SELECT MaMonHoc, TenMonHoc, HeSo FROM MONHOC ORDER BY MaMonHoc ASC'
         );
         res.json(result.rows);
     } catch (err) {

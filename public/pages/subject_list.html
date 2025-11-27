@@ -75,46 +75,7 @@
                         </tr>
                     </thead>
                     <tbody id="subjectTableBody">
-                        <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>MH001</td>
-                            <td>Toán</td>
-                            <td>2</td>
-                        </tr>
-                        <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>MH002</td>
-                            <td>Vật lý</td>
-                            <td>1</td>
-                        </tr>
-                        <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>MH003</td>
-                            <td>Ngữ văn</td>
-                            <td>2</td>
-                        </tr>
-                        <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>MH004</td>
-                            <td>Hóa học</td>
-                            <td>1</td>
-                        </tr>
-                        <tr>
-                            <td class="select-cell">
-                                <input type="checkbox" class="row-select-checkbox">
-                            </td>
-                            <td>MH005</td>
-                            <td>Tiếng Anh</td>
-                            <td>2</td>
-                        </tr>
+                        <tr><td colspan="4" style="text-align:center;">Đang tải dữ liệu...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -216,8 +177,6 @@
     <!-- SCRIPT: chế độ Sửa đổi + chọn môn giống trang học sinh -->
     <script>
         const tableBody   = document.getElementById('subjectTableBody');
-        const rows        = tableBody.querySelectorAll('tr');
-        const checkboxes  = tableBody.querySelectorAll('.row-select-checkbox');
 
         const btnAdd      = document.getElementById('btnAddSubject');
         const btnToggle   = document.getElementById('btnToggleEditMode');
@@ -227,8 +186,84 @@
         let selectedRow   = null;
         let selectModeOn  = false;
 
+        // ========== LOAD DỮ LIỆU TỪ DATABASE ==========
+        async function loadSubjects() {
+            try {
+                const response = await fetch('/api/subjects');
+                if (!response.ok) throw new Error('Lỗi tải dữ liệu');
+                
+                const subjects = await response.json();
+                renderSubjectTable(subjects);
+            } catch (error) {
+                console.error('Lỗi:', error);
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Lỗi kết nối database</td></tr>';
+            }
+        }
+
+        function renderSubjectTable(subjects) {
+            if (subjects.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Không có dữ liệu</td></tr>';
+                return;
+            }
+            
+            tableBody.innerHTML = subjects.map(mh => `
+                <tr data-id="${mh.mamonhoc}">
+                    <td class="select-cell">
+                        <input type="checkbox" class="row-select-checkbox">
+                    </td>
+                    <td>${mh.mamonhoc}</td>
+                    <td>${mh.tenmonhoc}</td>
+                    <td>${mh.heso}</td>
+                </tr>
+            `).join('');
+            
+            attachRowEvents();
+        }
+
+        // ========== GẮN EVENT CHO ROWS ==========
+        function attachRowEvents() {
+            const rows = tableBody.querySelectorAll('tr');
+            const checkboxes = tableBody.querySelectorAll('.row-select-checkbox');
+            
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', () => {
+                    if (!selectModeOn) {
+                        cb.checked = false;
+                        return;
+                    }
+                    if (cb.checked) {
+                        checkboxes.forEach(other => {
+                            if (other !== cb) {
+                                other.checked = false;
+                                other.closest('tr').classList.remove('row-selected');
+                            }
+                        });
+                        selectedRow = cb.closest('tr');
+                        selectedRow.classList.add('row-selected');
+                    } else {
+                        cb.closest('tr').classList.remove('row-selected');
+                        if (selectedRow === cb.closest('tr')) selectedRow = null;
+                    }
+                });
+            });
+
+            rows.forEach(row => {
+                row.addEventListener('click', (e) => {
+                    if (!selectModeOn) return;
+                    if (e.target.classList.contains('row-select-checkbox')) return;
+
+                    const cb = row.querySelector('.row-select-checkbox');
+                    if (cb) {
+                        cb.checked = !cb.checked;
+                        cb.dispatchEvent(new Event('change'));
+                    }
+                });
+            });
+        }
+
         function resetSelection() {
             selectedRow = null;
+            const checkboxes = tableBody.querySelectorAll('.row-select-checkbox');
             checkboxes.forEach(cb => {
                 cb.checked = false;
                 cb.closest('tr').classList.remove('row-selected');
@@ -253,41 +288,6 @@
             e.preventDefault();
             if (selectModeOn) exitSelectMode();
             else enterSelectMode();
-        });
-
-        // Checkbox: chỉ cho chọn 1 dòng khi đang ở chế độ sửa đổi
-        checkboxes.forEach(cb => {
-            cb.addEventListener('change', () => {
-                if (!selectModeOn) {
-                    cb.checked = false;
-                    return;
-                }
-                if (cb.checked) {
-                    checkboxes.forEach(other => {
-                        if (other !== cb) {
-                            other.checked = false;
-                            other.closest('tr').classList.remove('row-selected');
-                        }
-                    });
-                    selectedRow = cb.closest('tr');
-                    selectedRow.classList.add('row-selected');
-                } else {
-                    cb.closest('tr').classList.remove('row-selected');
-                    if (selectedRow === cb.closest('tr')) selectedRow = null;
-                }
-            });
-        });
-
-        // Click cả dòng để toggle checkbox (khi đang select-mode)
-        rows.forEach(row => {
-            row.addEventListener('click', (e) => {
-                if (!selectModeOn) return;
-                if (e.target.classList.contains('row-select-checkbox')) return;
-
-                const cb = row.querySelector('.row-select-checkbox');
-                cb.checked = !cb.checked;
-                cb.dispatchEvent(new Event('change'));
-            });
         });
 
         /* ========= POPUP THÊM MÔN HỌC ========= */
@@ -337,7 +337,7 @@
                 alert('Thêm môn học thành công!');
                 addSubjectModal.classList.remove('show');
                 addSubjectForm.reset();
-                location.reload();
+                loadSubjects();
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
@@ -359,7 +359,6 @@
                 return;
             }
 
-            // Cột: 0=checkbox, 1=Mã môn, 2=Tên môn, 3=Hệ số
             const cells = selectedRow.querySelectorAll('td');
             document.getElementById('subjectIdEdit').value          = cells[1].textContent.trim();
             document.getElementById('subjectNameEdit').value        = cells[2].textContent.trim();
@@ -407,7 +406,7 @@
                 editSubjectModal.classList.remove('show');
                 editSubjectForm.reset();
                 exitSelectMode();
-                location.reload();
+                loadSubjects();
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
@@ -467,11 +466,14 @@
                 alert('Đã xóa môn học!');
                 deleteSubjectModal.classList.remove('show');
                 exitSelectMode();
-                location.reload();
+                loadSubjects();
             } catch (error) {
                 alert('Lỗi: ' + error.message);
             }
         };
+
+        // ========== KHỞI TẠO ==========
+        document.addEventListener('DOMContentLoaded', loadSubjects);
     </script>
 
 </body>

@@ -67,13 +67,13 @@ router.get('/:id', async (req, res) => {
 // ========== THÊM LỚP ==========
 router.post('/', async (req, res) => {
     try {
-        const { MaLop, TenLop, MaKhoiLop, MaNamHoc } = req.body;
+        const { MaLop, TenLop, MaKhoiLop, MaNamHoc, SiSo } = req.body;
         
         const result = await pool.query(
             `INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc)
-             VALUES ($1, $2, $3, 0, $4)
+             VALUES ($1, $2, $3, $4, $5)
              RETURNING *`,
-            [MaLop, TenLop, MaKhoiLop, MaNamHoc]
+            [MaLop, TenLop, MaKhoiLop, SiSo || 0, MaNamHoc]
         );
         
         res.status(201).json(result.rows[0]);
@@ -91,14 +91,14 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const { TenLop, MaKhoiLop, MaNamHoc } = req.body;
+        const { TenLop, MaKhoiLop, MaNamHoc, SiSo } = req.body;
         
         const result = await pool.query(
             `UPDATE LOP 
-             SET TenLop = $1, MaKhoiLop = $2, MaNamHoc = $3
-             WHERE MaLop = $4
+             SET TenLop = $1, MaKhoiLop = $2, MaNamHoc = $3, SiSo = $4
+             WHERE MaLop = $5
              RETURNING *`,
-            [TenLop, MaKhoiLop, MaNamHoc, id]
+            [TenLop, MaKhoiLop, MaNamHoc, SiSo || 0, id]
         );
         
         if (result.rows.length === 0) {

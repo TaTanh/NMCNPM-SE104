@@ -39,7 +39,8 @@ router.get('/', async (req, res) => {
             query += ' WHERE ' + conditions.join(' AND ');
         }
         
-        query += ' ORDER BY hs.HoTen';
+        // Sắp xếp theo mã học sinh tăng dần (HS001, HS002, HS003...)
+        query += ' ORDER BY hs.MaHocSinh ASC';
         
         const result = await pool.query(query, params);
         res.json(result.rows);
