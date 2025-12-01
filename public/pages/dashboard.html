@@ -24,6 +24,7 @@
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
             <a href="/pages/settings.html">Cài đặt hệ thống</a>
+            <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
     </aside>
 
@@ -46,22 +47,22 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3>Học sinh</h3>
-                    <p>450</p>
+                    <p id="statStudents">--</p>
                 </div>
 
                 <div class="stat-card">
                     <h3>Giáo viên</h3>
-                    <p>35</p>
+                    <p id="statTeachers">--</p>
                 </div>
 
                 <div class="stat-card">
                     <h3>Lớp học</h3>
-                    <p>18</p>
+                    <p id="statClasses">--</p>
                 </div>
 
                 <div class="stat-card">
                     <h3>Môn học</h3>
-                    <p>12</p>
+                    <p id="statSubjects">--</p>
                 </div>
             </div>
                         <!-- BÁO CÁO TỔNG KẾT (BM7) -->
@@ -165,6 +166,43 @@
         </div>
 
     </div>
+
+    <script>
+        // ========== LOAD THỐNG KÊ DASHBOARD ==========
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/dashboard/stats');
+                const stats = await response.json();
+                
+                document.getElementById('statStudents').textContent = stats.students || 0;
+                document.getElementById('statTeachers').textContent = stats.teachers || 0;
+                document.getElementById('statClasses').textContent = stats.classes || 0;
+                document.getElementById('statSubjects').textContent = stats.subjects || 0;
+            } catch (error) {
+                console.error('Lỗi load thống kê:', error);
+            }
+        }
+
+        // Kiểm tra quyền và hiển thị menu phù hợp
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load thống kê
+            loadDashboardStats();
+
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            
+            // Hiển thị menu quản lý người dùng cho admin
+            if (userInfo.quyen && (userInfo.quyen.phanQuyen || userInfo.quyen.all)) {
+                const menuUsers = document.getElementById('menuUsers');
+                if (menuUsers) menuUsers.style.display = 'block';
+            }
+            
+            // Cập nhật lời chào
+            const greeting = document.querySelector('.user-info span');
+            if (greeting && userInfo.hoTen) {
+                greeting.textContent = `Xin chào, ${userInfo.hoTen}`;
+            }
+        });
+    </script>
 
 </body>
 </html>

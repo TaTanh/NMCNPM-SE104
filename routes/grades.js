@@ -77,9 +77,20 @@ router.post('/update', async (req, res) => {
     try {
         const { MaBangDiem, MaHocSinh, MaLHKT, Diem } = req.body;
         
-        // Kiểm tra điểm hợp lệ (0-10)
-        if (Diem < 0 || Diem > 10) {
-            return res.status(400).json({ error: 'Điểm phải từ 0 đến 10' });
+        // QĐ6: Lấy giới hạn điểm từ THAMSO
+        const diemResult = await pool.query(
+            "SELECT TenThamSo, GiaTri FROM THAMSO WHERE TenThamSo IN ('DiemToiThieu', 'DiemToiDa')"
+        );
+        
+        let diemMin = 0, diemMax = 10;
+        diemResult.rows.forEach(row => {
+            if (row.tenthamso === 'DiemToiThieu') diemMin = parseFloat(row.giatri);
+            if (row.tenthamso === 'DiemToiDa') diemMax = parseFloat(row.giatri);
+        });
+        
+        // Kiểm tra điểm hợp lệ
+        if (Diem < diemMin || Diem > diemMax) {
+            return res.status(400).json({ error: `Điểm phải từ ${diemMin} đến ${diemMax}` });
         }
         
         // Upsert điểm
@@ -127,6 +138,122 @@ router.post('/create', async (req, res) => {
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error('Lỗi tạo bảng điểm:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+});
+
+// ========== QĐ6: TÍNH ĐIỂM TRUNG BÌNH MÔN ==========
+router.get('/average/:maBangDiem/:maHocSinh', async (req, res) => {
+    try {
+        const { maBangDiem, maHocSinh } = req.params;
+        
+        // Lấy tất cả điểm và hệ số
+        const result = await pool.query(
+            `SELECT ct.Diem, lhkt.HeSo 
+             FROM CT_BANGDIEMMON_HOCSINH ct
+             JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+             WHERE ct.MaBangDiem = $1 AND ct.MaHocSinh = $2`,
+            [maBangDiem, maHocSinh]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.json({ diemTB: null, dat: null, message: 'Chưa có điểm' });
+        }
+        
+        // Tính điểm TB = (∑ điểm × trọng số) / ∑ trọng số
+        let tongDiem = 0;
+        let tongHeSo = 0;
+        
+        result.rows.forEach(row => {
+            tongDiem += parseFloat(row.diem) * parseInt(row.heso);
+            tongHeSo += parseInt(row.heso);
+        });
+        
+        // Làm tròn 0.1
+        const diemTB = Math.round((tongDiem / tongHeSo) * 10) / 10;
+        
+        // QĐ7: Kiểm tra đạt môn
+        const diemDatResult = await pool.query(
+            "SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'DiemDatMon'"
+        );
+        const diemDat = diemDatResult.rows.length > 0 ? parseFloat(diemDatResult.rows[0].giatri) : 5;
+        
+        const dat = diemTB >= diemDat;
+        
+        res.json({ 
+            diemTB, 
+            dat, 
+            diemDatMon: diemDat,
+            message: dat ? 'Đạt' : 'Chưa đạt'
+        });
+    } catch (err) {
+        console.error('Lỗi tính điểm TB:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+});
+
+// ========== LẤY BẢNG ĐIỂM TỔNG HỢP CỦA HỌC SINH ==========
+router.get('/student/:maHocSinh', async (req, res) => {
+    try {
+        const { maHocSinh } = req.params;
+        const { namhoc, hocky } = req.query;
+        
+        let query = `
+            SELECT 
+                mh.MaMonHoc, mh.TenMonHoc,
+                bdm.MaBangDiem, bdm.MaHocKy,
+                hk.TenHocKy,
+                ct.Diem, lhkt.TenLHKT, lhkt.HeSo
+            FROM QUATRINHHOC qth
+            JOIN LOP l ON qth.MaLop = l.MaLop
+            JOIN BANGDIEMMON bdm ON bdm.MaLop = l.MaLop
+            JOIN MONHOC mh ON bdm.MaMonHoc = mh.MaMonHoc
+            JOIN HOCKY hk ON bdm.MaHocKy = hk.MaHocKy
+            LEFT JOIN CT_BANGDIEMMON_HOCSINH ct ON ct.MaBangDiem = bdm.MaBangDiem AND ct.MaHocSinh = qth.MaHocSinh
+            LEFT JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+            WHERE qth.MaHocSinh = $1
+        `;
+        
+        const params = [maHocSinh];
+        
+        if (namhoc) {
+            params.push(namhoc);
+            query += ` AND l.MaNamHoc = $${params.length}`;
+        }
+        
+        if (hocky) {
+            params.push(hocky);
+            query += ` AND bdm.MaHocKy = $${params.length}`;
+        }
+        
+        query += ' ORDER BY mh.TenMonHoc, lhkt.HeSo';
+        
+        const result = await pool.query(query, params);
+        
+        // Gom điểm theo môn học
+        const monHocMap = new Map();
+        result.rows.forEach(row => {
+            if (!monHocMap.has(row.mamonhoc)) {
+                monHocMap.set(row.mamonhoc, {
+                    MaMonHoc: row.mamonhoc,
+                    TenMonHoc: row.tenmonhoc,
+                    MaHocKy: row.mahocky,
+                    TenHocKy: row.tenhocky,
+                    Diem: {}
+                });
+            }
+            if (row.tenlhkt && row.diem !== null) {
+                const mon = monHocMap.get(row.mamonhoc);
+                if (!mon.Diem[row.tenlhkt]) {
+                    mon.Diem[row.tenlhkt] = [];
+                }
+                mon.Diem[row.tenlhkt].push({ diem: row.diem, heso: row.heso });
+            }
+        });
+        
+        res.json(Array.from(monHocMap.values()));
+    } catch (err) {
+        console.error('Lỗi lấy bảng điểm học sinh:', err);
         res.status(500).json({ error: 'Lỗi server' });
     }
 });

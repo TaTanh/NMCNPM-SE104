@@ -49,6 +49,7 @@
                 </div>
 
                 <div class="toolbar-actions">
+                    <button class="btn btn-print" onclick="window.print()">🖨️ In</button>
                     <button class="btn btn-outline" id="btnExportClass">Xuất Excel</button>
 
                     <div class="toolbar-actions-main">
@@ -76,10 +77,11 @@
                             <th>Sĩ số</th>
                             <th>GVCN</th>
                             <th>Năm học</th>
+                            <th>Học sinh</th>
                         </tr>
                     </thead>
                     <tbody id="classTableBody">
-                        <tr><td colspan="7" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+                        <tr><td colspan="8" style="text-align:center;">Đang tải dữ liệu...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -105,28 +107,32 @@
             </div>
 
             <div class="modal-body">
-                <form id="addClassForm">
+                <form id="addClassForm" novalidate>
                     <div class="modal-grid">
                         <div class="form-group">
-                            <label>Mã lớp</label>
+                            <label class="required-label">Mã lớp</label>
                             <input type="text" id="classCodeAdd" placeholder="VD: 10A3" required>
+                            <span class="error-message">Vui lòng nhập mã lớp</span>
                         </div>
 
                         <div class="form-group">
-                            <label>Tên lớp</label>
+                            <label class="required-label">Tên lớp</label>
                             <input type="text" id="classNameAdd" placeholder="VD: Lớp 10A3" required>
+                            <span class="error-message">Vui lòng nhập tên lớp</span>
                         </div>
 
                         <div class="form-group">
-                            <label>Khối</label>
+                            <label class="required-label">Khối</label>
                             <select id="gradeLevelAdd" required>
                                 <option value="">-- Chọn khối --</option>
                             </select>
+                            <span class="error-message">Vui lòng chọn khối</span>
                         </div>
 
                         <div class="form-group">
                             <label>Sĩ số</label>
                             <input type="number" id="classSizeAdd" placeholder="VD: 40" min="0" max="60" value="0">
+                            <span class="input-hint">Tối đa 60 học sinh</span>
                         </div>
 
                         <div class="form-group">
@@ -135,10 +141,11 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Năm học</label>
+                            <label class="required-label">Năm học</label>
                             <select id="schoolYearAdd" required>
                                 <option value="">-- Chọn năm học --</option>
                             </select>
+                            <span class="error-message">Vui lòng chọn năm học</span>
                         </div>
                     </div>
 
@@ -222,10 +229,47 @@
         </div>
     </div>
 
+    <!-- ========== POPUP XEM DANH SÁCH HỌC SINH ========== -->
+    <div class="modal-overlay" id="viewStudentsModal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h2 id="viewStudentsTitle">Danh sách học sinh lớp</h2>
+                <button class="modal-close" id="closeViewStudentsModalBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã HS</th>
+                                <th>Họ tên</th>
+                                <th>Giới tính</th>
+                                <th>Ngày sinh</th>
+                                <th>Địa chỉ</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody id="classStudentsTableBody">
+                            <tr><td colspan="7" style="text-align:center;">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="modal-footer" style="margin-top: 16px;">
+                    <span id="studentCountInfo" style="margin-right: auto; color: #666;"></span>
+                    <button type="button" class="btn btn-outline" id="closeViewStudentsBtn">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- SCRIPT -->
     <script>
         // ====== Lấy các phần tử cần dùng ======
         const classTableBody   = document.getElementById('classTableBody');
+        const searchInput      = document.querySelector('.search-box input');
 
         const btnAddClass      = document.getElementById('btnAddClass');
         const btnToggleClass   = document.getElementById('btnToggleEditClass');
@@ -257,6 +301,23 @@
 
         let classSelectedRow  = null;
         let classSelectModeOn = false;
+        let allClasses = []; // Lưu toàn bộ dữ liệu để tìm kiếm
+
+        // ========== TÌM KIẾM LỚP HỌC ==========
+        searchInput.addEventListener('input', () => {
+            const keyword = searchInput.value.toLowerCase().trim();
+            if (!keyword) {
+                renderClassTable(allClasses);
+                return;
+            }
+            const filtered = allClasses.filter(lop => 
+                lop.malop.toLowerCase().includes(keyword) ||
+                lop.tenlop.toLowerCase().includes(keyword) ||
+                (lop.khoi && lop.khoi.toString().includes(keyword)) ||
+                (lop.namhoc && lop.namhoc.toLowerCase().includes(keyword))
+            );
+            renderClassTable(filtered);
+        });
 
         // ========== LOAD DỮ LIỆU TỪ DATABASE ==========
         async function loadClasses() {
@@ -265,6 +326,7 @@
                 if (!response.ok) throw new Error('Lỗi tải dữ liệu');
                 
                 const classes = await response.json();
+                allClasses = classes; // Lưu lại để tìm kiếm
                 renderClassTable(classes);
             } catch (error) {
                 console.error('Lỗi:', error);
@@ -274,7 +336,7 @@
 
         function renderClassTable(classes) {
             if (classes.length === 0) {
-                classTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có dữ liệu</td></tr>';
+                classTableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Không có dữ liệu</td></tr>';
                 return;
             }
             
@@ -289,6 +351,11 @@
                     <td>${lop.siso || 0}</td>
                     <td></td>
                     <td>${lop.namhoc || ''}</td>
+                    <td>
+                        <button class="btn-view-students" onclick="viewClassStudents('${lop.malop}', '${lop.tenlop}')">
+                            👁 Xem
+                        </button>
+                    </td>
                 </tr>
             `).join('');
             
@@ -591,6 +658,68 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadDropdowns();
             loadClasses();
+        });
+
+        /* ========= POPUP XEM DANH SÁCH HỌC SINH ========= */
+        const viewStudentsModal = document.getElementById('viewStudentsModal');
+        const classStudentsTableBody = document.getElementById('classStudentsTableBody');
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        async function viewClassStudents(maLop, tenLop) {
+            document.getElementById('viewStudentsTitle').textContent = `Danh sách học sinh lớp ${tenLop}`;
+            classStudentsTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Đang tải...</td></tr>';
+            viewStudentsModal.classList.add('show');
+            
+            try {
+                const response = await fetch(`/api/classes/${maLop}/students`);
+                if (!response.ok) throw new Error('Lỗi tải dữ liệu');
+                
+                const students = await response.json();
+                
+                if (students.length === 0) {
+                    classStudentsTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Lớp chưa có học sinh nào</td></tr>';
+                    document.getElementById('studentCountInfo').textContent = 'Sĩ số: 0 học sinh';
+                    return;
+                }
+                
+                classStudentsTableBody.innerHTML = students.map((hs, index) => `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${hs.mahocsinh}</td>
+                        <td>${hs.hoten}</td>
+                        <td>${hs.gioitinh || ''}</td>
+                        <td>${formatDate(hs.ngaysinh)}</td>
+                        <td>${hs.diachi || ''}</td>
+                        <td>${hs.email || ''}</td>
+                    </tr>
+                `).join('');
+                
+                document.getElementById('studentCountInfo').textContent = `Sĩ số: ${students.length} học sinh`;
+            } catch (error) {
+                console.error('Lỗi:', error);
+                classStudentsTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:red;">Lỗi tải dữ liệu</td></tr>';
+            }
+        }
+
+        function closeViewStudentsModal() {
+            viewStudentsModal.classList.remove('show');
+        }
+
+        document.getElementById('closeViewStudentsModalBtn').onclick = closeViewStudentsModal;
+        document.getElementById('closeViewStudentsBtn').onclick = closeViewStudentsModal;
+
+        viewStudentsModal.addEventListener('click', (e) => {
+            if (e.target === viewStudentsModal) {
+                closeViewStudentsModal();
+            }
         });
     </script>
 

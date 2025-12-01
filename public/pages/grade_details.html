@@ -72,6 +72,7 @@
             </div>
 
             <div class="modal-footer" style="margin-top: 14px;">
+                <button class="btn btn-print" onclick="window.print()">🖨️ In</button>
                 <button class="btn btn-outline">Xuất Excel</button>
                 <button class="btn btn-primary" id="btnSaveGrades">Lưu</button>
             </div>
@@ -241,7 +242,8 @@
                                data-examtype="${et.malhkt}"
                                data-heso="${et.heso}"
                                value="${diem}"
-                               onchange="calculateAvg(this)">
+                               onchange="validateAndCalculate(this)"
+                               oninput="validateGradeInput(this)">
                     </td>`;
                 }).join('');
 
@@ -270,6 +272,34 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        // ========== VALIDATION ĐIỂM ==========
+        function validateGradeInput(input) {
+            let value = parseFloat(input.value);
+            
+            // Không cho nhập số âm
+            if (value < 0) {
+                input.value = 0;
+                input.classList.add('input-error');
+                return false;
+            }
+            
+            // Không cho nhập quá 10
+            if (value > 10) {
+                input.value = 10;
+                input.classList.add('input-error');
+                return false;
+            }
+            
+            input.classList.remove('input-error');
+            return true;
+        }
+
+        function validateAndCalculate(input) {
+            if (validateGradeInput(input)) {
+                calculateAvg(input);
+            }
         }
 
         function calculateAvg(input) {

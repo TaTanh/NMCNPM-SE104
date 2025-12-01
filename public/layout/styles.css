@@ -1073,3 +1073,154 @@ body.select-mode .edit-actions {
     justify-content: flex-end;
     margin-top: 18px;
 }
+
+/* ============================= */
+/* REQUIRED FIELDS & VALIDATION */
+/* ============================= */
+
+/* Dấu * đỏ cho required fields */
+.required-label::after {
+    content: " *";
+    color: #dc2626;
+    font-weight: 600;
+}
+
+/* Input lỗi */
+.input-error {
+    border-color: #dc2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.15) !important;
+}
+
+/* Thông báo lỗi */
+.error-message {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 4px;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+}
+
+/* Input validation states */
+input:invalid:not(:placeholder-shown) {
+    border-color: #dc2626;
+}
+
+input:valid:not(:placeholder-shown) {
+    border-color: #10b981;
+}
+
+/* Tooltip hint */
+.input-hint {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+/* ============================= */
+/* NÚT IN */
+/* ============================= */
+.btn-print {
+    background-color: #6366f1;
+    color: white;
+}
+
+.btn-print:hover {
+    background-color: #4f46e5;
+}
+
+/* ============================= */
+/* CLASS BADGE (XẾP LỚP) */
+/* ============================= */
+.class-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    background-color: #dbeafe;
+    color: #1e40af;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.class-badge:hover {
+    background-color: #bfdbfe;
+    transform: scale(1.05);
+}
+
+.class-badge.no-class {
+    background-color: #fee2e2;
+    color: #dc2626;
+}
+
+.class-badge.no-class:hover {
+    background-color: #fecaca;
+}
+
+/* ============================= */
+/* BTN XEM HỌC SINH */
+/* ============================= */
+.btn-view-students {
+    padding: 4px 10px;
+    background-color: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-view-students:hover {
+    background-color: #059669;
+}
+
+/* ============================= */
+/* MODAL LỚN (XEM DS HỌC SINH) */
+/* ============================= */
+.modal.modal-large {
+    max-width: 900px;
+    width: 95%;
+}
+
+.modal-large .table-wrapper {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+@media print {
+    .sidebar,
+    .topbar,
+    .toolbar,
+    .edit-actions,
+    .pagination,
+    .btn,
+    .modal-overlay {
+        display: none !important;
+    }
+    
+    .main {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .content {
+        padding: 20px !important;
+    }
+    
+    .data-table {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .data-table th,
+    .data-table td {
+        border: 1px solid #000 !important;
+    }
+    
+    body {
+        background: white !important;
+    }
+}
