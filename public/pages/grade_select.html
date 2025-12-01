@@ -5,6 +5,8 @@
     <title>Nhập điểm – Chọn lớp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
+    <script src="/js/auth.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -19,10 +21,13 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html">Dashboard</a>
             <a href="/pages/students.html">Quản lý học sinh</a>
-            <a href="/pages/classes.html">Quản lý lớp</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
-            <a href="/pages/grade_select.html" class="active">Nhập điểm</a>
-            <a href="/pages/teaching_assignment.html">Phân công</a>
+            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/grade_select.html" class="active">Bảng điểm</a>
+            <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
 
     </aside>
@@ -32,85 +37,180 @@
 
         <!-- HEADER -->
         <header class="topbar">
-            <div class="page-title">Nhập điểm</div>
+            <div class="page-title">Bảng điểm</div>
             <div class="user-info">
-                <span>Xin chào, Admin</span>
+                <span id="userGreeting">Xin chào, Admin</span>
                 <img src="/assets/user.png" class="avatar" alt="user">
+                <button class="btn btn-outline btn-sm" onclick="logout()" style="margin-left:10px;">Đăng xuất</button>
             </div>
         </header>
 
         <!-- CONTENT -->
         <div class="content">
 
-            <!-- Filters: khối + lớp -->
-            <div class="filters-row">
-                <div class="filter-item">
-                    <label class="filter-label" for="gradeSelect">Khối</label>
-                    <select id="gradeSelect">
-                        <option>Chọn khối</option>
-                        <option>Khối 10</option>
-                        <option>Khối 11</option>
-                        <option>Khối 12</option>
-                    </select>
-                </div>
+            <!-- Filters: Năm học + Học kỳ + Khối + Lớp -->
+            <div class="filters-row" style="justify-content: space-between;">
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;">
+                    <div class="filter-item">
+                        <label class="filter-label" for="yearSelect">Năm học</label>
+                        <select id="yearSelect">
+                            <option value="">-- Chọn năm học --</option>
+                        </select>
+                    </div>
 
-                <div class="filter-item">
-                    <label class="filter-label" for="classSelect">Lớp</label>
-                    <select id="classSelect">
-                        <option>Chọn lớp</option>
-                        <option>10A1</option>
-                        <option>10A2</option>
-                        <option>10A3</option>
-                    </select>
+                    <div class="filter-item">
+                        <label class="filter-label" for="semesterSelect">Học kỳ</label>
+                        <select id="semesterSelect">
+                            <option value="">-- Chọn học kỳ --</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-item">
+                        <label class="filter-label" for="gradeSelect">Khối</label>
+                        <select id="gradeSelect">
+                            <option value="">-- Chọn khối --</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-item">
+                        <label class="filter-label" for="classSelect">Lớp</label>
+                        <select id="classSelect">
+                            <option value="">-- Chọn lớp --</option>
+                        </select>
+                    </div>
                 </div>
             </div>
 
-            <!-- Bảng danh sách môn -->
+            <!-- Bảng danh sách môn để nhập điểm -->
             <div class="table-wrapper">
                 <table class="data-table">
                     <thead>
                         <tr>
                             <th>Mã môn</th>
                             <th>Tên môn</th>
-                            <th>Số tiết</th>
+                            <th>Hệ số</th>
                             <th>Học kỳ</th>
                             <th style="width: 120px; text-align: right;">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td>MH001</td>
-                            <td>Toán</td>
-                            <td>60</td>
-                            <td>HKI</td>
-                            <td style="text-align: right;">
-                                <a href="/pages/grade_details.html" class="btn btn-primary" style="padding:6px 14px; font-size:14px;">Nhập điểm</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>MH002</td>
-                            <td>Vật lý</td>
-                            <td>45</td>
-                            <td>HKI</td>
-                            <td style="text-align: right;">
-                                <a href="/pages/grade_details.html" class="btn btn-primary" style="padding:6px 14px; font-size:14px;">Nhập điểm</a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>MH003</td>
-                            <td>Ngữ văn</td>
-                            <td>60</td>
-                            <td>HKII</td>
-                            <td style="text-align: right;">
-                                <a href="/pages/grade_details.html" class="btn btn-primary" style="padding:6px 14px; font-size:14px;">Nhập điểm</a>
-                            </td>
-                        </tr>
+                    <tbody id="subjectGradeBody">
+                        <tr><td colspan="5" style="text-align:center;">Vui lòng chọn lớp và học kỳ</td></tr>
                     </tbody>
                 </table>
             </div>
 
         </div><!-- content -->
     </div><!-- main -->
+
+    <!-- SCRIPT -->
+    <script>
+        // ========== LOAD DROPDOWNS ==========
+        async function loadDropdowns() {
+            try {
+                // Load năm học
+                const yearRes = await fetch('/api/settings/school-years');
+                const years = await yearRes.json();
+                const yearSelect = document.getElementById('yearSelect');
+                years.forEach(y => {
+                    yearSelect.innerHTML += `<option value="${y.manamhoc}">${y.tennamhoc}</option>`;
+                });
+
+                // Load học kỳ
+                const semRes = await fetch('/api/settings/semesters');
+                const semesters = await semRes.json();
+                const semesterSelect = document.getElementById('semesterSelect');
+                semesters.forEach(s => {
+                    semesterSelect.innerHTML += `<option value="${s.mahocky}">${s.tenhocky}</option>`;
+                });
+
+                // Load khối
+                const gradeRes = await fetch('/api/settings/grade-levels');
+                const grades = await gradeRes.json();
+                const gradeSelect = document.getElementById('gradeSelect');
+                grades.forEach(g => {
+                    gradeSelect.innerHTML += `<option value="${g.makhoilop}">${g.tenkhoilop}</option>`;
+                });
+            } catch (error) {
+                console.error('Lỗi load dropdowns:', error);
+            }
+        }
+
+        // ========== LOAD LỚP THEO KHỐI ==========
+        async function loadClasses() {
+            const khoi = document.getElementById('gradeSelect').value;
+            const namhoc = document.getElementById('yearSelect').value;
+            const classSelect = document.getElementById('classSelect');
+            
+            classSelect.innerHTML = '<option value="">-- Chọn lớp --</option>';
+            
+            if (!khoi) return;
+
+            try {
+                let url = '/api/classes';
+                const params = new URLSearchParams();
+                if (khoi) params.append('khoi', khoi);
+                if (namhoc) params.append('namhoc', namhoc);
+                if (params.toString()) url += '?' + params.toString();
+
+                const response = await fetch(url);
+                const classes = await response.json();
+                
+                classes.forEach(c => {
+                    classSelect.innerHTML += `<option value="${c.malop}">${c.tenlop}</option>`;
+                });
+            } catch (error) {
+                console.error('Lỗi load lớp:', error);
+            }
+        }
+
+        // ========== LOAD DANH SÁCH MÔN ĐỂ NHẬP ĐIỂM ==========
+        async function loadSubjectsForGrade() {
+            const classId = document.getElementById('classSelect').value;
+            const semester = document.getElementById('semesterSelect').value;
+            const tbody = document.getElementById('subjectGradeBody');
+            
+            if (!classId || !semester) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Vui lòng chọn lớp và học kỳ</td></tr>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/subjects');
+                const subjects = await response.json();
+                
+                if (subjects.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Không có môn học</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = subjects.map(mh => `
+                    <tr>
+                        <td>${mh.mamonhoc}</td>
+                        <td>${mh.tenmonhoc}</td>
+                        <td>${mh.heso}</td>
+                        <td>${semester}</td>
+                        <td style="text-align: right;">
+                            <a href="/pages/grade_details.html?subject=${mh.mamonhoc}&class=${classId}&semester=${semester}" 
+                               class="btn btn-primary" style="padding:6px 14px; font-size:14px;">Xem điểm</a>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Lỗi:', error);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Lỗi tải dữ liệu</td></tr>';
+            }
+        }
+
+        // ========== EVENT LISTENERS ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDropdowns();
+            
+            document.getElementById('gradeSelect').addEventListener('change', loadClasses);
+            document.getElementById('yearSelect').addEventListener('change', loadClasses);
+            document.getElementById('classSelect').addEventListener('change', loadSubjectsForGrade);
+            document.getElementById('semesterSelect').addEventListener('change', loadSubjectsForGrade);
+        });
+    </script>
 
 </body>
 </html>

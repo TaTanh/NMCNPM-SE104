@@ -1,38 +1,42 @@
-// ========== QUẢN LÝ MÔN HỌC - KẾT NỐI API ==========
+// ========== QUẢN LÝ LỚP HỌC - KẾT NỐI API ==========
 
-const API_URL = '/api/subjects';
+const API_URL = '/api/classes';
 
-// ========== LOAD DANH SÁCH MÔN HỌC ==========
-async function loadSubjects() {
+// ========== LOAD DANH SÁCH LỚP ==========
+async function loadClasses() {
     try {
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error('Lỗi tải dữ liệu');
         
-        const subjects = await response.json();
-        renderSubjectTable(subjects);
+        const classes = await response.json();
+        renderClassTable(classes);
     } catch (error) {
         console.error('Lỗi:', error);
-        alert('Không thể tải danh sách môn học. Kiểm tra kết nối database.');
+        // Giữ dữ liệu mẫu nếu không kết nối được DB
+        console.log('Sử dụng dữ liệu mẫu');
     }
 }
 
-// ========== RENDER BẢNG MÔN HỌC ==========
-function renderSubjectTable(subjects) {
-    const tbody = document.getElementById('subjectTableBody');
+// ========== RENDER BẢNG LỚP ==========
+function renderClassTable(classes) {
+    const tbody = document.getElementById('classTableBody');
     
-    if (subjects.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Không có dữ liệu</td></tr>';
+    if (!classes || classes.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có dữ liệu</td></tr>';
         return;
     }
     
-    tbody.innerHTML = subjects.map(mh => `
-        <tr data-id="${mh.mamonhoc}">
+    tbody.innerHTML = classes.map(lop => `
+        <tr data-id="${lop.malop}">
             <td class="select-cell">
                 <input type="checkbox" class="row-select-checkbox">
             </td>
-            <td>${mh.mamonhoc}</td>
-            <td>${mh.tenmonhoc}</td>
-            <td>${mh.heso}</td>
+            <td>${lop.malop}</td>
+            <td>${lop.tenlop}</td>
+            <td>${lop.khoi || ''}</td>
+            <td>${lop.siso || 0}</td>
+            <td>${lop.gvcn || ''}</td>
+            <td>${lop.namhoc || ''}</td>
         </tr>
     `).join('');
     
@@ -40,27 +44,28 @@ function renderSubjectTable(subjects) {
     attachCheckboxEvents();
 }
 
-// ========== THÊM MÔN HỌC ==========
-async function addSubject(data) {
+// ========== THÊM LỚP ==========
+async function addClass(data) {
     try {
         const response = await fetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                MaMonHoc: data.MaMonHoc || document.getElementById('subjectIdAdd').value,
-                TenMonHoc: data.TenMonHoc || document.getElementById('subjectNameAdd').value,
-                HeSo: data.HeSo || document.getElementById('subjectCoefficientAdd').value
+                MaLop: data.MaLop,
+                TenLop: data.TenLop,
+                MaKhoiLop: data.MaKhoiLop,
+                MaNamHoc: data.MaNamHoc
             })
         });
         
         const result = await response.json();
         
         if (!response.ok) {
-            throw new Error(result.error || 'Lỗi thêm môn học');
+            throw new Error(result.error || 'Lỗi thêm lớp');
         }
         
-        alert('Thêm môn học thành công!');
-        loadSubjects(); // Reload bảng
+        alert('Thêm lớp thành công!');
+        loadClasses();
         return true;
     } catch (error) {
         console.error('Lỗi:', error);
@@ -69,10 +74,10 @@ async function addSubject(data) {
     }
 }
 
-// ========== CẬP NHẬT MÔN HỌC ==========
-async function updateSubject(maMonHoc, data) {
+// ========== CẬP NHẬT LỚP ==========
+async function updateClass(maLop, data) {
     try {
-        const response = await fetch(`${API_URL}/${maMonHoc}`, {
+        const response = await fetch(`${API_URL}/${maLop}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -81,11 +86,11 @@ async function updateSubject(maMonHoc, data) {
         const result = await response.json();
         
         if (!response.ok) {
-            throw new Error(result.error || 'Lỗi cập nhật môn học');
+            throw new Error(result.error || 'Lỗi cập nhật lớp');
         }
         
-        alert('Cập nhật môn học thành công!');
-        loadSubjects(); // Reload bảng
+        alert('Cập nhật lớp thành công!');
+        loadClasses();
         return true;
     } catch (error) {
         console.error('Lỗi:', error);
@@ -94,21 +99,21 @@ async function updateSubject(maMonHoc, data) {
     }
 }
 
-// ========== XÓA MÔN HỌC ==========
-async function deleteSubject(maMonHoc) {
+// ========== XÓA LỚP ==========
+async function deleteClass(maLop) {
     try {
-        const response = await fetch(`${API_URL}/${maMonHoc}`, {
+        const response = await fetch(`${API_URL}/${maLop}`, {
             method: 'DELETE'
         });
         
         const result = await response.json();
         
         if (!response.ok) {
-            throw new Error(result.error || 'Lỗi xóa môn học');
+            throw new Error(result.error || 'Lỗi xóa lớp');
         }
         
-        alert('Đã xóa môn học!');
-        loadSubjects(); // Reload bảng
+        alert('Đã xóa lớp!');
+        loadClasses();
         return true;
     } catch (error) {
         console.error('Lỗi:', error);
@@ -119,13 +124,13 @@ async function deleteSubject(maMonHoc) {
 
 // ========== GẮN EVENT CHO CHECKBOX ==========
 function attachCheckboxEvents() {
-    const tableBody = document.getElementById('subjectTableBody');
+    const tableBody = document.getElementById('classTableBody');
     const checkboxes = tableBody.querySelectorAll('.row-select-checkbox');
     const rows = tableBody.querySelectorAll('tr');
     
     checkboxes.forEach(cb => {
         cb.addEventListener('change', () => {
-            if (!window.selectModeOn) {
+            if (!window.classSelectModeOn) {
                 cb.checked = false;
                 return;
             }
@@ -136,18 +141,18 @@ function attachCheckboxEvents() {
                         other.closest('tr').classList.remove('row-selected');
                     }
                 });
-                window.selectedRow = cb.closest('tr');
-                window.selectedRow.classList.add('row-selected');
+                window.classSelectedRow = cb.closest('tr');
+                window.classSelectedRow.classList.add('row-selected');
             } else {
                 cb.closest('tr').classList.remove('row-selected');
-                if (window.selectedRow === cb.closest('tr')) window.selectedRow = null;
+                if (window.classSelectedRow === cb.closest('tr')) window.classSelectedRow = null;
             }
         });
     });
     
     rows.forEach(row => {
         row.addEventListener('click', (e) => {
-            if (!window.selectModeOn) return;
+            if (!window.classSelectModeOn) return;
             if (e.target.classList.contains('row-select-checkbox')) return;
             
             const cb = row.querySelector('.row-select-checkbox');
@@ -161,5 +166,5 @@ function attachCheckboxEvents() {
 
 // ========== KHỞI TẠO KHI TRANG LOAD ==========
 document.addEventListener('DOMContentLoaded', () => {
-    loadSubjects();
+    loadClasses();
 });

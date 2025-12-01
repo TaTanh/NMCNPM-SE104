@@ -5,6 +5,7 @@
     <title>Phân công giảng dạy</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -19,10 +20,12 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html">Dashboard</a>
             <a href="/pages/students.html">Quản lý học sinh</a>
-            <a href="/pages/classes.html">Quản lý lớp</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
-            <a href="/pages/grade_select.html">Nhập điểm</a>
-            <a href="/pages/teaching_assignment.html" class="active">Phân công</a>
+            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
         </nav>
 
     </aside>
@@ -193,7 +196,7 @@
 
         assignForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            alert('Lưu phân công (demo UI, chưa nối DB).');
+            toastInfo('Lưu phân công (demo UI, chưa nối DB).');
             assignModal.classList.remove('show');
             assignForm.reset();
         });

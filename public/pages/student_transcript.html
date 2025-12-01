@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Tra cứu điểm học sinh</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
+    <script src="/js/auth.js"></script>
+</head>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="/assets/uit_logo.png" alt="UIT Logo">
+            <span>QL Học Sinh</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/pages/dashboard.html">Dashboard</a>
+            <a href="/pages/students.html">Quản lý học sinh</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
+            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/student_transcript.html" class="active">Tra cứu điểm HS</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- HEADER -->
+        <header class="topbar">
+            <div class="page-title">Tra cứu điểm học sinh</div>
+            <div class="user-info">
+                <span id="userGreeting">Xin chào, Admin</span>
+                <img src="/assets/user.png" class="avatar" alt="user">
+                <button class="btn btn-outline btn-sm" onclick="logout()" style="margin-left:10px;">Đăng xuất</button>
+            </div>
+        </header>
+
+        <!-- CONTENT - SPLIT LAYOUT -->
+        <div class="content">
+            <div class="split-container">
+                
+                <!-- LEFT PANEL: DANH SÁCH HỌC SINH -->
+                <div class="left-panel">
+                    <div class="panel-header">
+                        <h3>📋 Danh sách học sinh</h3>
+                        <button class="btn-refresh" onclick="resetFilters()" title="Làm mới bộ lọc">🔄</button>
+                    </div>
+                    
+                    <!-- Bộ lọc -->
+                    <div class="filter-compact">
+                        <select id="yearSelect" title="Năm học">
+                            <option value="">-- Năm học --</option>
+                        </select>
+                        <select id="gradeSelect" title="Khối">
+                            <option value="">-- Khối --</option>
+                        </select>
+                        <select id="classSelect" title="Lớp">
+                            <option value="">-- Lớp --</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Tìm kiếm -->
+                    <div class="search-box">
+                        <input type="text" id="searchStudent" placeholder="🔍 Tìm tên hoặc mã HS...">
+                    </div>
+                    
+                    <!-- Danh sách học sinh -->
+                    <div class="student-list" id="studentList">
+                        <div class="empty-state">
+                            <p>Chọn lớp hoặc tìm kiếm để xem danh sách học sinh</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- RIGHT PANEL: CHI TIẾT ĐIỂM -->
+                <div class="right-panel">
+                    <!-- Placeholder khi chưa chọn học sinh -->
+                    <div id="placeholder" class="placeholder-state">
+                        <div class="placeholder-icon">📊</div>
+                        <h3>Chọn học sinh để xem điểm</h3>
+                        <p>Chọn một học sinh từ danh sách bên trái để xem bảng điểm chi tiết</p>
+                    </div>
+                    
+                    <!-- Chi tiết điểm (ẩn mặc định) -->
+                    <div id="studentDetail" style="display: none;">
+                        <!-- Thông tin học sinh -->
+                        <div class="student-info-header">
+                            <div class="student-avatar">👤</div>
+                            <div class="student-info-text">
+                                <h2 id="infoHoTen">-</h2>
+                                <div class="student-meta">
+                                    <span><strong>Mã HS:</strong> <span id="infoMaHS">-</span></span>
+                                    <span><strong>Lớp:</strong> <span id="infoLop">-</span></span>
+                                    <span><strong>Ngày sinh:</strong> <span id="infoNgaySinh">-</span></span>
+                                </div>
+                            </div>
+                            <button class="btn btn-print" onclick="window.print()" title="In phiếu điểm">🖨️ In</button>
+                        </div>
+                        
+                        <!-- Filter học kỳ -->
+                        <div class="semester-filter">
+                            <label>Học kỳ:</label>
+                            <select id="semesterFilter">
+                                <option value="">-- Tất cả --</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Bảng điểm -->
+                        <div class="table-wrapper">
+                            <table class="data-table transcript-table">
+                                <thead>
+                                    <tr id="transcriptHead">
+                                        <th>Môn học</th>
+                                        <th>Học kỳ</th>
+                                        <th>ĐTB Môn</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="transcriptBody">
+                                    <tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Tổng kết -->
+                        <div class="summary-cards">
+                            <div class="summary-card blue">
+                                <div class="summary-label">Điểm TB</div>
+                                <div class="summary-value" id="avgScore">-</div>
+                            </div>
+                            <div class="summary-card green">
+                                <div class="summary-label">Xếp loại</div>
+                                <div class="summary-value" id="ranking">-</div>
+                            </div>
+                            <div class="summary-card yellow">
+                                <div class="summary-label">Môn đạt</div>
+                                <div class="summary-value" id="passedSubjects">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div><!-- content -->
+    </div><!-- main -->
+
+    <!-- SCRIPT -->
+    <script>
+        let selectedStudent = null;
+        let examTypes = [];
+        let allStudents = [];
+
+        // ========== LOAD DROPDOWNS ==========
+        async function loadDropdowns() {
+            try {
+                // Load năm học
+                const yearRes = await fetch('/api/settings/school-years');
+                const years = await yearRes.json();
+                const yearSelect = document.getElementById('yearSelect');
+                years.forEach(y => {
+                    yearSelect.innerHTML += `<option value="${y.manamhoc}">${y.tennamhoc}</option>`;
+                });
+
+                // Load khối
+                const gradeRes = await fetch('/api/settings/grade-levels');
+                const grades = await gradeRes.json();
+                const gradeSelect = document.getElementById('gradeSelect');
+                grades.forEach(g => {
+                    gradeSelect.innerHTML += `<option value="${g.makhoilop}">${g.tenkhoilop}</option>`;
+                });
+
+                // Load học kỳ
+                const semRes = await fetch('/api/settings/semesters');
+                const semesters = await semRes.json();
+                const semesterFilter = document.getElementById('semesterFilter');
+                semesters.forEach(s => {
+                    semesterFilter.innerHTML += `<option value="${s.mahocky}">${s.tenhocky}</option>`;
+                });
+
+                // Load loại hình kiểm tra
+                const examRes = await fetch('/api/grades/exam-types');
+                examTypes = await examRes.json();
+            } catch (error) {
+                console.error('Lỗi load dropdowns:', error);
+            }
+        }
+
+        // ========== LOAD LỚP THEO KHỐI ==========
+        async function loadClasses() {
+            const khoi = document.getElementById('gradeSelect').value;
+            const namhoc = document.getElementById('yearSelect').value;
+            const classSelect = document.getElementById('classSelect');
+            
+            classSelect.innerHTML = '<option value="">-- Lớp --</option>';
+            
+            try {
+                let url = '/api/classes';
+                const params = new URLSearchParams();
+                if (khoi) params.append('khoi', khoi);
+                if (namhoc) params.append('namhoc', namhoc);
+                if (params.toString()) url += '?' + params.toString();
+
+                const response = await fetch(url);
+                const classes = await response.json();
+                
+                classes.forEach(c => {
+                    classSelect.innerHTML += `<option value="${c.malop}">${c.tenlop}</option>`;
+                });
+            } catch (error) {
+                console.error('Lỗi load lớp:', error);
+            }
+        }
+
+        // ========== TÌM KIẾM HỌC SINH ==========
+        async function searchStudents() {
+            const keyword = document.getElementById('searchStudent').value.trim();
+            const classId = document.getElementById('classSelect').value;
+            const gradeLevel = document.getElementById('gradeSelect').value;
+            const namhoc = document.getElementById('yearSelect').value;
+            
+            // Nếu không có filter nào, không tìm
+            if (!keyword && !classId && !gradeLevel) {
+                document.getElementById('studentList').innerHTML = `
+                    <div class="empty-state">
+                        <p>Chọn lớp hoặc nhập từ khóa để tìm kiếm</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                let url = '/api/students?';
+                const params = new URLSearchParams();
+                if (keyword) params.append('search', keyword);
+                if (classId) params.append('lop', classId);
+                if (gradeLevel) params.append('khoi', gradeLevel);
+                if (namhoc) params.append('namhoc', namhoc);
+                
+                url += params.toString();
+                
+                const response = await fetch(url);
+                const students = await response.json();
+                
+                allStudents = students;
+                renderStudentList(students);
+            } catch (error) {
+                console.error('Lỗi tìm kiếm:', error);
+                toastError('Lỗi tìm kiếm học sinh');
+            }
+        }
+
+        function renderStudentList(students) {
+            const listDiv = document.getElementById('studentList');
+            
+            if (students.length === 0) {
+                listDiv.innerHTML = `
+                    <div class="empty-state">
+                        <p>Không tìm thấy học sinh</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            listDiv.innerHTML = students.map(hs => `
+                <div class="student-item ${selectedStudent?.mahocsinh === hs.mahocsinh ? 'active' : ''}" 
+                     onclick="selectStudent('${hs.mahocsinh}')" data-id="${hs.mahocsinh}">
+                    <div class="student-item-avatar">${hs.gioitinh === 'Nam' ? '👨' : '👩'}</div>
+                    <div class="student-item-info">
+                        <div class="student-item-name">${hs.hoten}</div>
+                        <div class="student-item-meta">${hs.mahocsinh} • ${hs.tenlop || '-'}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('vi-VN');
+        }
+
+        // ========== CHỌN HỌC SINH ==========
+        async function selectStudent(maHocSinh) {
+            try {
+                // Highlight trong danh sách
+                document.querySelectorAll('.student-item').forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.id === maHocSinh) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                // Lấy thông tin học sinh
+                const student = allStudents.find(s => s.mahocsinh === maHocSinh);
+                if (!student) {
+                    const res = await fetch(`/api/students/${maHocSinh}`);
+                    selectedStudent = await res.json();
+                } else {
+                    selectedStudent = student;
+                }
+                
+                // Hiển thị thông tin
+                document.getElementById('infoMaHS').textContent = selectedStudent.mahocsinh;
+                document.getElementById('infoHoTen').textContent = selectedStudent.hoten;
+                document.getElementById('infoNgaySinh').textContent = formatDate(selectedStudent.ngaysinh);
+                document.getElementById('infoLop').textContent = selectedStudent.tenlop || selectedStudent.malop || '-';
+                
+                // Ẩn placeholder, hiện chi tiết
+                document.getElementById('placeholder').style.display = 'none';
+                document.getElementById('studentDetail').style.display = 'block';
+                
+                // Load điểm
+                await loadStudentGrades(maHocSinh);
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi tải thông tin học sinh');
+            }
+        }
+
+        async function loadStudentGrades(maHocSinh) {
+            const semester = document.getElementById('semesterFilter').value;
+            
+            try {
+                let url = `/api/grades/student/${maHocSinh}`;
+                if (semester) url += `?hocky=${semester}`;
+                
+                const response = await fetch(url);
+                const grades = await response.json();
+                
+                renderTranscript(grades);
+            } catch (error) {
+                console.error('Lỗi load điểm:', error);
+                document.getElementById('transcriptBody').innerHTML = 
+                    '<tr><td colspan="10" style="text-align:center;color:red;">Lỗi tải dữ liệu điểm</td></tr>';
+            }
+        }
+
+        function renderTranscript(grades) {
+            const thead = document.getElementById('transcriptHead');
+            const tbody = document.getElementById('transcriptBody');
+            
+            // Header
+            thead.innerHTML = `
+                <th>Môn học</th>
+                <th>Học kỳ</th>
+                ${examTypes.map(et => `<th>${et.tenlhkt}<br><small>(x${et.heso})</small></th>`).join('')}
+                <th class="col-avg">ĐTB Môn</th>
+            `;
+            
+            if (grades.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="' + (examTypes.length + 3) + '" style="text-align:center;">Chưa có dữ liệu điểm</td></tr>';
+                document.getElementById('avgScore').textContent = '-';
+                document.getElementById('ranking').textContent = '-';
+                document.getElementById('passedSubjects').textContent = '-';
+                return;
+            }
+            
+            let totalAvg = 0;
+            let countAvg = 0;
+            let passedCount = 0;
+            
+            tbody.innerHTML = grades.map(mon => {
+                const gradeDisplay = examTypes.map(et => {
+                    const diemArr = mon.Diem[et.tenlhkt];
+                    if (diemArr && diemArr.length > 0) {
+                        return `<td>${diemArr.map(d => d.diem).join(', ')}</td>`;
+                    }
+                    return '<td class="no-grade">–</td>';
+                }).join('');
+                
+                // Tính ĐTB
+                let avg = '–';
+                let avgNum = null;
+                let totalWeight = 0;
+                let totalScore = 0;
+                
+                examTypes.forEach(et => {
+                    const diemArr = mon.Diem[et.tenlhkt];
+                    if (diemArr && diemArr.length > 0) {
+                        diemArr.forEach(d => {
+                            totalScore += d.diem * et.heso;
+                            totalWeight += et.heso;
+                        });
+                    }
+                });
+                
+                if (totalWeight > 0) {
+                    avgNum = totalScore / totalWeight;
+                    avg = avgNum.toFixed(1);
+                    totalAvg += avgNum;
+                    countAvg++;
+                    if (avgNum >= 5) passedCount++;
+                }
+                
+                let avgClass = '';
+                if (avgNum !== null) {
+                    if (avgNum >= 8) avgClass = 'rate-excellent';
+                    else if (avgNum >= 6.5) avgClass = 'rate-good';
+                    else if (avgNum >= 5) avgClass = 'rate-average';
+                    else avgClass = 'rate-low';
+                }
+                
+                return `
+                    <tr>
+                        <td><strong>${mon.TenMonHoc}</strong></td>
+                        <td>${mon.TenHocKy || mon.MaHocKy}</td>
+                        ${gradeDisplay}
+                        <td class="col-avg"><span class="${avgClass}">${avg}</span></td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Tổng kết
+            if (countAvg > 0) {
+                const finalAvg = totalAvg / countAvg;
+                document.getElementById('avgScore').textContent = finalAvg.toFixed(2);
+                
+                let ranking = '';
+                if (finalAvg >= 8) ranking = 'Giỏi';
+                else if (finalAvg >= 6.5) ranking = 'Khá';
+                else if (finalAvg >= 5) ranking = 'TB';
+                else ranking = 'Yếu';
+                document.getElementById('ranking').textContent = ranking;
+                document.getElementById('passedSubjects').textContent = `${passedCount}/${countAvg}`;
+            } else {
+                document.getElementById('avgScore').textContent = '-';
+                document.getElementById('ranking').textContent = '-';
+                document.getElementById('passedSubjects').textContent = '-';
+            }
+        }
+
+        // ========== RESET FILTERS ==========
+        function resetFilters() {
+            // Reset dropdowns
+            document.getElementById('yearSelect').value = '';
+            document.getElementById('gradeSelect').value = '';
+            document.getElementById('classSelect').innerHTML = '<option value="">-- Lớp --</option>';
+            
+            // Reset search
+            document.getElementById('searchStudent').value = '';
+            
+            // Reset danh sách học sinh
+            document.getElementById('studentList').innerHTML = `
+                <div class="empty-state">
+                    <p>Chọn lớp hoặc tìm kiếm để xem danh sách học sinh</p>
+                </div>
+            `;
+            
+            // Reset panel phải
+            document.getElementById('placeholder').style.display = 'flex';
+            document.getElementById('studentDetail').style.display = 'none';
+            
+            // Reset biến
+            selectedStudent = null;
+            allStudents = [];
+        }
+
+        // ========== EVENT LISTENERS ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDropdowns();
+            
+            document.getElementById('gradeSelect').addEventListener('change', () => {
+                loadClasses();
+                searchStudents();
+            });
+            document.getElementById('yearSelect').addEventListener('change', () => {
+                loadClasses();
+                searchStudents();
+            });
+            document.getElementById('classSelect').addEventListener('change', searchStudents);
+            
+            // Tìm kiếm realtime
+            let searchTimeout;
+            document.getElementById('searchStudent').addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(searchStudents, 300);
+            });
+            
+            document.getElementById('semesterFilter').addEventListener('change', () => {
+                if (selectedStudent) {
+                    loadStudentGrades(selectedStudent.mahocsinh);
+                }
+            });
+        });
+    </script>
+
+    <style>
+        /* ===== SPLIT LAYOUT ===== */
+        .split-container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 140px);
+            min-height: 500px;
+        }
+        
+        /* LEFT PANEL */
+        .left-panel {
+            width: 320px;
+            min-width: 280px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .panel-header {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .panel-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #1f2937;
+        }
+        
+        .btn-refresh {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .btn-refresh:hover {
+            background: #e0e0e0;
+        }
+        
+        .filter-compact {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .filter-compact select {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 12px;
+            background: white;
+        }
+        
+        .search-box {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        
+        /* Student List */
+        .student-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        
+        .student-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-bottom: 4px;
+        }
+        
+        .student-item:hover {
+            background: #f3f4f6;
+        }
+        
+        .student-item.active {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+        }
+        
+        .student-item-avatar {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f3f4f6;
+            border-radius: 50%;
+        }
+        
+        .student-item.active .student-item-avatar {
+            background: #bfdbfe;
+        }
+        
+        .student-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .student-item-name {
+            font-weight: 600;
+            color: #1f2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .student-item-meta {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+        }
+        
+        /* RIGHT PANEL */
+        .right-panel {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .placeholder-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #9ca3af;
+            text-align: center;
+        }
+        
+        .placeholder-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        .placeholder-state h3 {
+            margin: 0 0 8px;
+            color: #6b7280;
+        }
+        
+        /* Student Info Header */
+        .student-info-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            color: white;
+        }
+        
+        .student-avatar {
+            font-size: 48px;
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+        }
+        
+        .student-info-text {
+            flex: 1;
+        }
+        
+        .student-info-text h2 {
+            margin: 0 0 8px;
+            font-size: 22px;
+        }
+        
+        .student-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .student-info-header .btn-print {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+        }
+        
+        .student-info-header .btn-print:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        /* Semester Filter */
+        .semester-filter {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .semester-filter label {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .semester-filter select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+        }
+        
+        /* Transcript Table */
+        .transcript-table th, .transcript-table td {
+            padding: 10px 8px;
+            font-size: 13px;
+        }
+        
+        .col-avg {
+            background: #e0f2fe !important;
+            font-weight: 600;
+        }
+        
+        .no-grade {
+            color: #9ca3af;
+        }
+        
+        .rate-excellent { color: #059669; font-weight: 600; }
+        .rate-good { color: #2563eb; font-weight: 600; }
+        .rate-average { color: #d97706; font-weight: 600; }
+        .rate-low { color: #dc2626; font-weight: 600; }
+        
+        /* Summary Cards */
+        .summary-cards {
+            display: flex;
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .summary-card {
+            flex: 1;
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+        
+        .summary-card.blue { background: #dbeafe; }
+        .summary-card.green { background: #d1fae5; }
+        .summary-card.yellow { background: #fef3c7; }
+        
+        .summary-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .summary-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .summary-card.blue .summary-value { color: #1e40af; }
+        .summary-card.green .summary-value { color: #059669; }
+        .summary-card.yellow .summary-value { color: #d97706; }
+        
+        /* Print */
+        @media print {
+            .sidebar, .topbar, .left-panel { display: none !important; }
+            .main { margin-left: 0 !important; }
+            .content { padding: 0 !important; }
+            .split-container { display: block; }
+            .right-panel { box-shadow: none; padding: 0; }
+            .student-info-header { background: #333 !important; -webkit-print-color-adjust: exact; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 900px) {
+            .split-container {
+                flex-direction: column;
+                height: auto;
+            }
+            .left-panel {
+                width: 100%;
+                max-height: 300px;
+            }
+        }
+    </style>
+
+</body>
+</html>

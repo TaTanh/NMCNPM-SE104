@@ -5,6 +5,8 @@
     <title>Đăng nhập hệ thống quản lý học sinh</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/login_styles.css">
+    <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
 </head>
 <body class="auth-body">
 
@@ -23,16 +25,18 @@
             </div>
 
             <!-- Form đăng nhập -->
-            <form class="auth-form">
+            <form class="auth-form" id="loginForm" novalidate>
 
                 <div class="form-group">
-                    <label for="username">Tên đăng nhập</label>
-                    <input type="text" id="username" name="username" placeholder="Nhập tên đăng nhập">
+                    <label for="username" class="required-label">Tên đăng nhập</label>
+                    <input type="text" id="username" name="username" placeholder="Nhập tên đăng nhập" required>
+                    <span class="error-message" id="errorUsername">Vui lòng nhập tên đăng nhập</span>
                 </div>
 
                 <div class="form-group">
-                    <label for="password">Mật khẩu</label>
-                    <input type="password" id="password" name="password" placeholder="Nhập mật khẩu">
+                    <label for="password" class="required-label">Mật khẩu</label>
+                    <input type="password" id="password" name="password" placeholder="Nhập mật khẩu" required>
+                    <span class="error-message" id="errorPassword">Vui lòng nhập mật khẩu</span>
                 </div>
 
                 <!-- Hàng: Ghi nhớ đăng nhập + Quên mật khẩu -->
@@ -96,6 +100,41 @@
 
         updateBg();
         setInterval(updateBg, 5000);
+
+        // Login form handler
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Đăng nhập thất bại');
+                }
+                
+                // Lưu thông tin user vào localStorage
+                localStorage.setItem('userInfo', JSON.stringify(result.user));
+                localStorage.setItem('isLoggedIn', 'true');
+                
+                toastSuccess(`Đăng nhập thành công! Xin chào, ${result.user.hoTen}`);
+                
+                // Tất cả vai trò đều vào dashboard
+                setTimeout(() => {
+                    window.location.href = '/pages/dashboard.html';
+                }, 1000);
+            } catch (error) {
+                toastError(error.message);
+            }
+        });
     </script>
 
 </body>

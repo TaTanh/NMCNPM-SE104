@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Báo cáo tổng kết</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
+    <script src="/js/auth.js"></script>
+</head>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="/assets/uit_logo.png" alt="UIT Logo">
+            <span>QL Học Sinh</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/pages/dashboard.html">Dashboard</a>
+            <a href="/pages/students.html">Quản lý học sinh</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
+            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/reports.html" class="active">Báo cáo tổng kết</a>
+            <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- HEADER -->
+        <header class="topbar">
+            <div class="page-title">Báo cáo tổng kết</div>
+            <div class="user-info">
+                <span id="userGreeting">Xin chào, Admin</span>
+                <img src="/assets/user.png" class="avatar" alt="user">
+                <button class="btn btn-outline btn-sm" onclick="logout()" style="margin-left:10px;">Đăng xuất</button>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <!-- TAB CHỌN LOẠI BÁO CÁO -->
+            <div class="report-tabs">
+                <button class="tab-btn active" data-tab="subject-report">Báo cáo tổng kết môn</button>
+                <button class="tab-btn" data-tab="semester-report">Báo cáo tổng kết học kỳ</button>
+            </div>
+
+            <!-- ========== BÁO CÁO TỔNG KẾT MÔN ========== -->
+            <div class="report-section" id="subject-report">
+                <h3 class="section-title">Báo cáo tổng kết môn học</h3>
+                
+                <!-- FILTERS -->
+                <div class="filters-row">
+                    <div class="filter-item">
+                        <label class="filter-label" for="subjectSelect">Môn học</label>
+                        <select id="subjectSelect">
+                            <option value="">-- Chọn môn --</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-item">
+                        <label class="filter-label" for="semesterSelect1">Học kỳ</label>
+                        <select id="semesterSelect1">
+                            <option value="">-- Chọn học kỳ --</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-item">
+                        <label class="filter-label" for="yearSelect1">Năm học</label>
+                        <select id="yearSelect1">
+                            <option value="">-- Chọn năm học --</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-item" style="align-self: flex-end;">
+                        <button class="btn btn-primary" id="btnGenerateSubjectReport">Xem báo cáo</button>
+                        <button class="btn btn-print" onclick="window.print()">🖨️ In</button>
+                    </div>
+                </div>
+
+                <!-- KẾT QUẢ BÁO CÁO MÔN -->
+                <div class="report-result" id="subjectReportResult" style="display: none;">
+                    <div class="report-header">
+                        <h4>BÁO CÁO TỔNG KẾT MÔN: <span id="reportSubjectName">TOÁN</span></h4>
+                        <p>Học kỳ: <span id="reportSemester1">HK1</span> - Năm học: <span id="reportYear1">2024-2025</span></p>
+                    </div>
+
+                    <!-- BẢNG BÁO CÁO THEO LỚP -->
+                    <div class="table-wrapper">
+                        <table class="data-table report-table">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Lớp</th>
+                                    <th>Sĩ số</th>
+                                    <th>Số lượng đạt</th>
+                                    <th>Tỷ lệ đạt (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subjectReportBody">
+                                <tr>
+                                    <td>1</td>
+                                    <td>10A1</td>
+                                    <td>42</td>
+                                    <td>38</td>
+                                    <td><span class="rate-good">90.5%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>10A2</td>
+                                    <td>40</td>
+                                    <td>32</td>
+                                    <td><span class="rate-medium">80.0%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>10A3</td>
+                                    <td>38</td>
+                                    <td>25</td>
+                                    <td><span class="rate-low">65.8%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>11A1</td>
+                                    <td>45</td>
+                                    <td>40</td>
+                                    <td><span class="rate-good">88.9%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>11A2</td>
+                                    <td>43</td>
+                                    <td>35</td>
+                                    <td><span class="rate-medium">81.4%</span></td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td colspan="2"><strong>Toàn trường</strong></td>
+                                    <td><strong>208</strong></td>
+                                    <td><strong>170</strong></td>
+                                    <td><strong><span class="rate-medium">81.7%</span></strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="report-footer">
+                        <button class="btn btn-outline" id="btnPrintSubjectReport">In báo cáo</button>
+                        <button class="btn btn-primary" id="btnExportSubjectReport">Xuất Excel</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== BÁO CÁO TỔNG KẾT HỌC KỲ ========== -->
+            <div class="report-section" id="semester-report" style="display: none;">
+                <h3 class="section-title">Báo cáo tổng kết học kỳ</h3>
+                
+                <!-- FILTERS -->
+                <div class="filters-row">
+                    <div class="filter-item">
+                        <label class="filter-label" for="semesterSelect2">Học kỳ</label>
+                        <select id="semesterSelect2">
+                            <option value="">-- Chọn học kỳ --</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-item">
+                        <label class="filter-label" for="yearSelect2">Năm học</label>
+                        <select id="yearSelect2">
+                            <option value="">-- Chọn năm học --</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-item" style="align-self: flex-end;">
+                        <button class="btn btn-primary" id="btnGenerateSemesterReport">Xem báo cáo</button>
+                        <button class="btn btn-print" onclick="window.print()">🖨️ In</button>
+                    </div>
+                </div>
+
+                <!-- KẾT QUẢ BÁO CÁO HỌC KỲ -->
+                <div class="report-result" id="semesterReportResult" style="display: none;">
+                    <div class="report-header">
+                        <h4>BÁO CÁO TỔNG KẾT HỌC KỲ</h4>
+                        <p>Học kỳ: <span id="reportSemester2">HK1</span> - Năm học: <span id="reportYear2">2024-2025</span></p>
+                    </div>
+
+                    <!-- BẢNG BÁO CÁO THEO LỚP -->
+                    <div class="table-wrapper">
+                        <table class="data-table report-table">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Lớp</th>
+                                    <th>Sĩ số</th>
+                                    <th>Số lượng đạt</th>
+                                    <th>Tỷ lệ đạt (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="semesterReportBody">
+                                <tr>
+                                    <td>1</td>
+                                    <td>10A1</td>
+                                    <td>42</td>
+                                    <td>40</td>
+                                    <td><span class="rate-good">95.2%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td>10A2</td>
+                                    <td>40</td>
+                                    <td>36</td>
+                                    <td><span class="rate-good">90.0%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td>10A3</td>
+                                    <td>38</td>
+                                    <td>30</td>
+                                    <td><span class="rate-medium">78.9%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td>11A1</td>
+                                    <td>45</td>
+                                    <td>42</td>
+                                    <td><span class="rate-good">93.3%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>11A2</td>
+                                    <td>43</td>
+                                    <td>38</td>
+                                    <td><span class="rate-good">88.4%</span></td>
+                                </tr>
+                                <tr>
+                                    <td>6</td>
+                                    <td>12A1</td>
+                                    <td>45</td>
+                                    <td>43</td>
+                                    <td><span class="rate-good">95.6%</span></td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr class="total-row">
+                                    <td colspan="2"><strong>Toàn trường</strong></td>
+                                    <td><strong>253</strong></td>
+                                    <td><strong>229</strong></td>
+                                    <td><strong><span class="rate-good">90.5%</span></strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="report-footer">
+                        <button class="btn btn-outline" id="btnPrintSemesterReport">In báo cáo</button>
+                        <button class="btn btn-primary" id="btnExportSemesterReport">Xuất Excel</button>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- content -->
+    </div><!-- main -->
+
+    <!-- ======================== SCRIPT ======================== -->
+    <script>
+        // ========== LOAD DROPDOWNS ==========
+        async function loadDropdowns() {
+            try {
+                // Load môn học
+                const subjectsRes = await fetch('/api/subjects');
+                const subjects = await subjectsRes.json();
+                const subjectSelect = document.getElementById('subjectSelect');
+                subjects.forEach(s => {
+                    subjectSelect.innerHTML += `<option value="${s.mamonhoc}">${s.tenmonhoc}</option>`;
+                });
+
+                // Load học kỳ
+                const semRes = await fetch('/api/settings/semesters');
+                const semesters = await semRes.json();
+                ['semesterSelect1', 'semesterSelect2'].forEach(id => {
+                    const select = document.getElementById(id);
+                    semesters.forEach(s => {
+                        select.innerHTML += `<option value="${s.mahocky}">${s.tenhocky}</option>`;
+                    });
+                });
+
+                // Load năm học
+                const yearRes = await fetch('/api/settings/school-years');
+                const years = await yearRes.json();
+                ['yearSelect1', 'yearSelect2'].forEach(id => {
+                    const select = document.getElementById(id);
+                    years.forEach(y => {
+                        select.innerHTML += `<option value="${y.manamhoc}">${y.tennamhoc}</option>`;
+                    });
+                });
+            } catch (error) {
+                console.error('Lỗi load dropdowns:', error);
+            }
+        }
+
+        // Tab switching
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const reportSections = document.querySelectorAll('.report-section');
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                tabBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const tabId = btn.dataset.tab;
+                reportSections.forEach(section => {
+                    section.style.display = section.id === tabId ? 'block' : 'none';
+                });
+            });
+        });
+
+        // ========== BÁO CÁO TỔNG KẾT MÔN ==========
+        document.getElementById('btnGenerateSubjectReport').addEventListener('click', async () => {
+            const subject = document.getElementById('subjectSelect');
+            const semester = document.getElementById('semesterSelect1');
+            const year = document.getElementById('yearSelect1');
+
+            if (!subject.value || !semester.value || !year.value) {
+                toastWarning('Vui lòng chọn đầy đủ môn học, học kỳ và năm học!');
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/api/reports/subject?monhoc=${subject.value}&hocky=${semester.value}&namhoc=${year.value}`
+                );
+                const data = await response.json();
+
+                // Update header
+                document.getElementById('reportSubjectName').textContent = 
+                    subject.options[subject.selectedIndex].text.toUpperCase();
+                document.getElementById('reportSemester1').textContent = 
+                    semester.options[semester.selectedIndex].text;
+                document.getElementById('reportYear1').textContent = 
+                    year.options[year.selectedIndex].text;
+
+                // Render table
+                const tbody = document.getElementById('subjectReportBody');
+                let totalSiSo = 0;
+                let totalDat = 0;
+
+                tbody.innerHTML = data.map((row, index) => {
+                    const siso = parseInt(row.siso) || 0;
+                    const dat = parseInt(row.soluongdat) || 0;
+                    const tile = siso > 0 ? ((dat / siso) * 100).toFixed(1) : 0;
+                    
+                    totalSiSo += siso;
+                    totalDat += dat;
+
+                    let rateClass = 'rate-low';
+                    if (tile >= 85) rateClass = 'rate-good';
+                    else if (tile >= 70) rateClass = 'rate-medium';
+
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${row.tenlop}</td>
+                            <td>${siso}</td>
+                            <td>${dat}</td>
+                            <td><span class="${rateClass}">${tile}%</span></td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Footer total
+                const totalTile = totalSiSo > 0 ? ((totalDat / totalSiSo) * 100).toFixed(1) : 0;
+                let totalRateClass = 'rate-low';
+                if (totalTile >= 85) totalRateClass = 'rate-good';
+                else if (totalTile >= 70) totalRateClass = 'rate-medium';
+
+                document.querySelector('#subject-report tfoot').innerHTML = `
+                    <tr class="total-row">
+                        <td colspan="2"><strong>Toàn trường</strong></td>
+                        <td><strong>${totalSiSo}</strong></td>
+                        <td><strong>${totalDat}</strong></td>
+                        <td><strong><span class="${totalRateClass}">${totalTile}%</span></strong></td>
+                    </tr>
+                `;
+
+                document.getElementById('subjectReportResult').style.display = 'block';
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi tải báo cáo!');
+            }
+        });
+
+        // ========== BÁO CÁO TỔNG KẾT HỌC KỲ ==========
+        document.getElementById('btnGenerateSemesterReport').addEventListener('click', async () => {
+            const semester = document.getElementById('semesterSelect2');
+            const year = document.getElementById('yearSelect2');
+
+            if (!semester.value || !year.value) {
+                toastWarning('Vui lòng chọn học kỳ và năm học!');
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/api/reports/semester?hocky=${semester.value}&namhoc=${year.value}`
+                );
+                const data = await response.json();
+
+                // Update header
+                document.getElementById('reportSemester2').textContent = 
+                    semester.options[semester.selectedIndex].text;
+                document.getElementById('reportYear2').textContent = 
+                    year.options[year.selectedIndex].text;
+
+                // Render table
+                const tbody = document.getElementById('semesterReportBody');
+                let totalSiSo = 0;
+                let totalDat = 0;
+
+                tbody.innerHTML = data.map((row, index) => {
+                    const siso = parseInt(row.siso) || 0;
+                    const dat = parseInt(row.soluongdat) || 0;
+                    const tile = siso > 0 ? ((dat / siso) * 100).toFixed(1) : 0;
+                    
+                    totalSiSo += siso;
+                    totalDat += dat;
+
+                    let rateClass = 'rate-low';
+                    if (tile >= 85) rateClass = 'rate-good';
+                    else if (tile >= 70) rateClass = 'rate-medium';
+
+                    return `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${row.tenlop}</td>
+                            <td>${siso}</td>
+                            <td>${dat}</td>
+                            <td><span class="${rateClass}">${tile}%</span></td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Footer total
+                const totalTile = totalSiSo > 0 ? ((totalDat / totalSiSo) * 100).toFixed(1) : 0;
+                let totalRateClass = 'rate-low';
+                if (totalTile >= 85) totalRateClass = 'rate-good';
+                else if (totalTile >= 70) totalRateClass = 'rate-medium';
+
+                document.querySelector('#semester-report tfoot').innerHTML = `
+                    <tr class="total-row">
+                        <td colspan="2"><strong>Toàn trường</strong></td>
+                        <td><strong>${totalSiSo}</strong></td>
+                        <td><strong>${totalDat}</strong></td>
+                        <td><strong><span class="${totalRateClass}">${totalTile}%</span></strong></td>
+                    </tr>
+                `;
+
+                document.getElementById('semesterReportResult').style.display = 'block';
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi tải báo cáo!');
+            }
+        });
+
+        // Print/Export buttons
+        document.getElementById('btnPrintSubjectReport').addEventListener('click', () => {
+            window.print();
+        });
+
+        document.getElementById('btnExportSubjectReport').addEventListener('click', () => {
+            toastInfo('Chức năng xuất Excel đang phát triển!');
+        });
+
+        document.getElementById('btnPrintSemesterReport').addEventListener('click', () => {
+            window.print();
+        });
+
+        document.getElementById('btnExportSemesterReport').addEventListener('click', () => {
+            toastInfo('Chức năng xuất Excel đang phát triển!');
+        });
+
+        // Khởi tạo
+        document.addEventListener('DOMContentLoaded', loadDropdowns);
+    </script>
+
+</body>
+</html>

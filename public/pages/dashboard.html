@@ -5,6 +5,8 @@
     <title>Dashboard – Quản lý học sinh</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
+    <script src="/js/auth.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -19,10 +21,13 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html" class="active">Dashboard</a>
             <a href="/pages/students.html">Quản lý học sinh</a>
-            <a href="/pages/classes.html">Quản lý lớp</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
-            <a href="/pages/grade_select.html">Nhập điểm</a>
-            <a href="/pages/teaching_assignment.html">Phân công</a>
+            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
     </aside>
 
@@ -33,8 +38,9 @@
         <header class="topbar">
             <div></div>
             <div class="user-info">
-                <span>Xin chào, Admin</span>
+                <span id="userGreeting">Xin chào, Admin</span>
                 <img src="/assets/user.png" class="avatar" alt="user">
+                <button class="btn btn-outline btn-sm" onclick="logout()" style="margin-left:10px;">Đăng xuất</button>
             </div>
         </header>
 
@@ -45,22 +51,22 @@
             <div class="stats-grid">
                 <div class="stat-card">
                     <h3>Học sinh</h3>
-                    <p>450</p>
+                    <p id="statStudents">--</p>
                 </div>
 
                 <div class="stat-card">
                     <h3>Giáo viên</h3>
-                    <p>35</p>
+                    <p id="statTeachers">--</p>
                 </div>
 
                 <div class="stat-card">
                     <h3>Lớp học</h3>
-                    <p>18</p>
+                    <p id="statClasses">--</p>
                 </div>
 
                 <div class="stat-card">
                     <h3>Môn học</h3>
-                    <p>12</p>
+                    <p id="statSubjects">--</p>
                 </div>
             </div>
                         <!-- BÁO CÁO TỔNG KẾT (BM7) -->
@@ -164,6 +170,29 @@
         </div>
 
     </div>
+
+    <script>
+        // ========== LOAD THỐNG KÊ DASHBOARD ==========
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/dashboard/stats');
+                const stats = await response.json();
+                
+                document.getElementById('statStudents').textContent = stats.students || 0;
+                document.getElementById('statTeachers').textContent = stats.teachers || 0;
+                document.getElementById('statClasses').textContent = stats.classes || 0;
+                document.getElementById('statSubjects').textContent = stats.subjects || 0;
+            } catch (error) {
+                console.error('Lỗi load thống kê:', error);
+            }
+        }
+
+        // Khởi tạo khi trang load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardStats();
+            updateUIByPermission();
+        });
+    </script>
 
 </body>
 </html>

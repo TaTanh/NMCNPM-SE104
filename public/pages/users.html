@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Quản lý người dùng</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
+    <script src="/js/auth.js"></script>
+</head>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="/assets/uit_logo.png" alt="UIT Logo">
+            <span>QL Học Sinh</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/pages/dashboard.html">Dashboard</a>
+            <a href="/pages/students.html">Quản lý học sinh</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
+            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/users.html" id="menuUsers" class="active">Quản lý người dùng</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- HEADER -->
+        <header class="topbar">
+            <div class="page-title">Quản lý người dùng & Phân quyền</div>
+            <div class="user-info">
+                <span id="userGreeting">Xin chào, Admin</span>
+                <img src="/assets/user.png" class="avatar" alt="user">
+                <button class="btn btn-outline btn-sm" onclick="logout()" style="margin-left:10px;">Đăng xuất</button>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <!-- TAB CHỌN -->
+            <div class="report-tabs">
+                <button class="tab-btn active" data-tab="users-tab">Danh sách người dùng</button>
+                <button class="tab-btn" data-tab="roles-tab">Vai trò & Quyền hạn</button>
+            </div>
+
+            <!-- ========== TAB NGƯỜI DÙNG ========== -->
+            <div class="report-section" id="users-tab">
+                <h3 class="section-title">Danh sách người dùng</h3>
+
+                <!-- TOOLBAR -->
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" id="searchUser" placeholder="Tìm theo tên hoặc tên đăng nhập...">
+                    </div>
+
+                    <div class="toolbar-actions">
+                        <button class="btn btn-print" onclick="window.print()">🖨️ In</button>
+                        <button class="btn btn-primary" id="btnAddUser">Thêm người dùng</button>
+                    </div>
+                </div>
+
+                <!-- BẢNG -->
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Tên đăng nhập</th>
+                                <th>Họ tên</th>
+                                <th>Email</th>
+                                <th>Vai trò</th>
+                                <th>Trạng thái</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <tr><td colspan="7" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ========== TAB VAI TRÒ ========== -->
+            <div class="report-section" id="roles-tab" style="display: none;">
+                <h3 class="section-title">Vai trò & Quyền hạn</h3>
+
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Mã vai trò</th>
+                                <th>Tên vai trò</th>
+                                <th>Mô tả</th>
+                                <th>Quyền hạn</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roleTableBody">
+                            <tr><td colspan="4" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="settings-section" style="margin-top: 20px;">
+                    <h3 class="section-title">
+                        <span class="section-icon">🔐</span>
+                        Mô tả quyền hạn
+                    </h3>
+                    <div class="config-grid">
+                        <div class="config-card">
+                            <div class="config-label">quanlyHocSinh</div>
+                            <div class="config-hint">Quản lý thông tin học sinh (thêm/sửa/xóa)</div>
+                        </div>
+                        <div class="config-card">
+                            <div class="config-label">quanlyLop</div>
+                            <div class="config-hint">Quản lý lớp học (thêm/sửa/xóa)</div>
+                        </div>
+                        <div class="config-card">
+                            <div class="config-label">quanlyMonHoc</div>
+                            <div class="config-hint">Quản lý môn học (thêm/sửa/xóa)</div>
+                        </div>
+                        <div class="config-card">
+                            <div class="config-label">nhapDiem</div>
+                            <div class="config-hint">Nhập và chỉnh sửa điểm học sinh</div>
+                        </div>
+                        <div class="config-card">
+                            <div class="config-label">baoCao</div>
+                            <div class="config-hint">Xem báo cáo tổng kết</div>
+                        </div>
+                        <div class="config-card">
+                            <div class="config-label">caiDat</div>
+                            <div class="config-hint">Thay đổi cài đặt hệ thống</div>
+                        </div>
+                        <div class="config-card">
+                            <div class="config-label">phanQuyen</div>
+                            <div class="config-hint">Quản lý người dùng và phân quyền</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- content -->
+    </div><!-- main -->
+
+    <!-- ========== POPUP THÊM/SỬA NGƯỜI DÙNG ========== -->
+    <div class="modal-overlay" id="userModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="userModalTitle">Thêm người dùng</h2>
+                <button class="modal-close" id="closeUserModal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="userForm" novalidate>
+                    <input type="hidden" id="userId">
+                    <div class="modal-grid">
+                        <div class="form-group">
+                            <label class="required-label">Tên đăng nhập</label>
+                            <input type="text" id="userUsername" required>
+                            <span class="error-message">Vui lòng nhập tên đăng nhập</span>
+                        </div>
+
+                        <div class="form-group" id="passwordGroup">
+                            <label class="required-label">Mật khẩu</label>
+                            <input type="password" id="userPassword" required>
+                            <span class="error-message">Vui lòng nhập mật khẩu</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="required-label">Họ tên</label>
+                            <input type="text" id="userFullName" required>
+                            <span class="error-message">Vui lòng nhập họ tên</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="userEmail">
+                            <span class="error-message">Email không hợp lệ</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="required-label">Vai trò</label>
+                            <select id="userRole" required>
+                                <option value="">-- Chọn vai trò --</option>
+                            </select>
+                            <span class="error-message">Vui lòng chọn vai trò</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Trạng thái</label>
+                            <select id="userStatus">
+                                <option value="true">Hoạt động</option>
+                                <option value="false">Khóa</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline" id="cancelUserBtn">Hủy</button>
+                        <button type="submit" class="btn btn-primary">Lưu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        // ========== KIỂM TRA QUYỀN ==========
+        function checkPermission() {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            if (!userInfo.quyen || !userInfo.quyen.phanQuyen) {
+                toastError('Bạn không có quyền truy cập trang này!');
+                window.location.href = '/pages/dashboard.html';
+                return false;
+            }
+            document.getElementById('userGreeting').textContent = `Xin chào, ${userInfo.hoTen || 'Admin'}`;
+            return true;
+        }
+
+        // ========== LOAD DANH SÁCH NGƯỜI DÙNG ==========
+        async function loadUsers() {
+            try {
+                const response = await fetch('/api/auth/users');
+                const users = await response.json();
+                
+                const tbody = document.getElementById('userTableBody');
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có dữ liệu</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = users.map((u, index) => `
+                    <tr data-id="${u.manguoidung}">
+                        <td>${index + 1}</td>
+                        <td>${u.tendangnhap}</td>
+                        <td>${u.hoten || ''}</td>
+                        <td>${u.email || ''}</td>
+                        <td><span class="badge badge-${u.mavaitro?.toLowerCase()}">${u.tenvaitro}</span></td>
+                        <td>${u.trangthai ? '<span class="rate-good">Hoạt động</span>' : '<span class="rate-low">Đã khóa</span>'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-secondary" onclick="editUser(${u.manguoidung})">Sửa</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.manguoidung}, '${u.tendangnhap}')">Xóa</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Lỗi:', error);
+            }
+        }
+
+        // ========== LOAD DANH SÁCH VAI TRÒ ==========
+        async function loadRoles() {
+            try {
+                const response = await fetch('/api/auth/roles');
+                const roles = await response.json();
+                
+                // Render bảng vai trò
+                const tbody = document.getElementById('roleTableBody');
+                tbody.innerHTML = roles.map(r => {
+                    const quyen = typeof r.quyen === 'string' ? JSON.parse(r.quyen) : r.quyen;
+                    const quyenList = Object.entries(quyen)
+                        .filter(([k, v]) => v === true)
+                        .map(([k]) => `<span class="badge">${k}</span>`)
+                        .join(' ');
+                    return `
+                        <tr>
+                            <td>${r.mavaitro}</td>
+                            <td>${r.tenvaitro}</td>
+                            <td>${r.mota || ''}</td>
+                            <td>${quyenList || 'Không có'}</td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                // Render dropdown vai trò
+                const select = document.getElementById('userRole');
+                select.innerHTML = '<option value="">-- Chọn vai trò --</option>';
+                roles.forEach(r => {
+                    select.innerHTML += `<option value="${r.mavaitro}">${r.tenvaitro}</option>`;
+                });
+            } catch (error) {
+                console.error('Lỗi:', error);
+            }
+        }
+
+        // ========== TAB SWITCHING ==========
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                const tabId = btn.dataset.tab;
+                document.querySelectorAll('.report-section').forEach(sec => sec.style.display = 'none');
+                document.getElementById(tabId).style.display = 'block';
+            });
+        });
+
+        // ========== MODAL NGƯỜI DÙNG ==========
+        const userModal = document.getElementById('userModal');
+        const userForm = document.getElementById('userForm');
+        let isEditMode = false;
+
+        document.getElementById('btnAddUser').addEventListener('click', () => {
+            isEditMode = false;
+            document.getElementById('userModalTitle').textContent = 'Thêm người dùng';
+            document.getElementById('passwordGroup').style.display = 'block';
+            document.getElementById('userUsername').readOnly = false;
+            userForm.reset();
+            userModal.classList.add('show');
+        });
+
+        document.getElementById('closeUserModal').onclick =
+        document.getElementById('cancelUserBtn').onclick = () => {
+            userModal.classList.remove('show');
+            userForm.reset();
+        };
+
+        async function editUser(id) {
+            try {
+                const response = await fetch('/api/auth/users');
+                const users = await response.json();
+                const user = users.find(u => u.manguoidung === id);
+                
+                if (user) {
+                    isEditMode = true;
+                    document.getElementById('userModalTitle').textContent = 'Sửa người dùng';
+                    document.getElementById('passwordGroup').style.display = 'none';
+                    document.getElementById('userId').value = id;
+                    document.getElementById('userUsername').value = user.tendangnhap;
+                    document.getElementById('userUsername').readOnly = true;
+                    document.getElementById('userFullName').value = user.hoten || '';
+                    document.getElementById('userEmail').value = user.email || '';
+                    document.getElementById('userRole').value = user.mavaitro;
+                    document.getElementById('userStatus').value = user.trangthai.toString();
+                    userModal.classList.add('show');
+                }
+            } catch (error) {
+                toastError(error.message);
+            }
+        }
+
+        async function deleteUser(id, username) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa người dùng "${username}"?`)) return;
+            
+            try {
+                const response = await fetch(`/api/auth/users/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                
+                if (!response.ok) throw new Error(result.error);
+                
+                toastSuccess('Đã xóa người dùng!');
+                loadUsers();
+            } catch (error) {
+                toastError(error.message);
+            }
+        }
+
+        userForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const data = {
+                TenDangNhap: document.getElementById('userUsername').value,
+                HoTen: document.getElementById('userFullName').value,
+                Email: document.getElementById('userEmail').value,
+                MaVaiTro: document.getElementById('userRole').value,
+                TrangThai: document.getElementById('userStatus').value === 'true'
+            };
+            
+            if (!isEditMode) {
+                data.MatKhau = document.getElementById('userPassword').value;
+            }
+            
+            try {
+                const url = isEditMode 
+                    ? `/api/auth/users/${document.getElementById('userId').value}`
+                    : '/api/auth/users';
+                    
+                const response = await fetch(url, {
+                    method: isEditMode ? 'PUT' : 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) throw new Error(result.error);
+                
+                toastSuccess(isEditMode ? 'Cập nhật thành công!' : 'Thêm người dùng thành công!');
+                userModal.classList.remove('show');
+                loadUsers();
+            } catch (error) {
+                toastError(error.message);
+            }
+        });
+
+        // ========== TÌM KIẾM ==========
+        document.getElementById('searchUser').addEventListener('input', (e) => {
+            const keyword = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#userTableBody tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(keyword) ? '' : 'none';
+            });
+        });
+
+        // ========== KHỞI TẠO ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            // checkPermission(); // Uncomment khi muốn bật kiểm tra quyền
+            loadUsers();
+            loadRoles();
+        });
+    </script>
+
+    <style>
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .badge-admin { background: #fef3c7; color: #92400e; }
+        .badge-teacher { background: #dbeafe; color: #1e40af; }
+        .badge-student { background: #d1fae5; color: #065f46; }
+    </style>
+
+</body>
+</html>
