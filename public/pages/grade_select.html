@@ -25,6 +25,7 @@
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_entry_select.html">Nhập điểm</a>
             <a href="/pages/grade_select.html" class="active">Bảng điểm</a>
+            <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
             <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
@@ -78,10 +79,6 @@
                         </select>
                     </div>
                 </div>
-
-                <div style="display:flex; align-items:flex-end;">
-                    <button class="btn btn-outline" id="btnSemesterRules">⚙️ Quản lý học kỳ</button>
-                </div>
             </div>
 
             <!-- Bảng danh sách môn để nhập điểm -->
@@ -104,46 +101,6 @@
 
         </div><!-- content -->
     </div><!-- main -->
-
-    <!-- ========== POPUP QUẢN LÝ HỌC KỲ ========== -->
-    <div class="modal-overlay" id="semesterRulesModal">
-        <div class="modal" style="max-width: 500px;">
-            <div class="modal-header">
-                <h2>📅 Quản lý học kỳ</h2>
-                <button class="modal-close" id="closeSemesterRulesBtn">&times;</button>
-            </div>
-
-            <div class="modal-body">
-                <div class="table-wrapper">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Mã học kỳ</th>
-                                <th>Tên học kỳ</th>
-                                <th style="width:60px;">Xóa</th>
-                            </tr>
-                        </thead>
-                        <tbody id="semesterListBody">
-                            <tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="margin-top:16px; padding-top:16px; border-top:1px solid #e5e7eb;">
-                    <h4 style="font-size:14px; margin-bottom:8px;">Thêm học kỳ mới</h4>
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="newSemesterId" placeholder="Mã (VD: HK3)" style="flex:1; padding:8px; border:1px solid #d1d5db; border-radius:6px;">
-                        <input type="text" id="newSemesterName" placeholder="Tên (VD: Học kỳ 3)" style="flex:2; padding:8px; border:1px solid #d1d5db; border-radius:6px;">
-                        <button class="btn btn-primary" id="btnAddSemester">Thêm</button>
-                    </div>
-                </div>
-
-                <div class="modal-footer" style="margin-top: 16px;">
-                    <button type="button" class="btn btn-outline" id="btnCloseSemesterRules">Đóng</button>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- SCRIPT -->
     <script>
@@ -253,91 +210,6 @@
             document.getElementById('classSelect').addEventListener('change', loadSubjectsForGrade);
             document.getElementById('semesterSelect').addEventListener('change', loadSubjectsForGrade);
         });
-
-        // ========== POPUP QUẢN LÝ HỌC KỲ ==========
-        const semesterRulesModal = document.getElementById('semesterRulesModal');
-        
-        async function loadSemesterList() {
-            try {
-                const response = await fetch('/api/settings/semesters');
-                const semesters = await response.json();
-                const tbody = document.getElementById('semesterListBody');
-                
-                if (semesters.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Chưa có học kỳ</td></tr>';
-                } else {
-                    tbody.innerHTML = semesters.map(s => `
-                        <tr>
-                            <td>${s.mahocky}</td>
-                            <td>${s.tenhocky}</td>
-                            <td><button class="btn btn-danger" style="padding:4px 8px;font-size:12px;" onclick="deleteSemester('${s.mahocky}')">Xóa</button></td>
-                        </tr>
-                    `).join('');
-                }
-            } catch (error) {
-                console.error('Lỗi:', error);
-            }
-        }
-
-        async function deleteSemester(id) {
-            if (!confirm('Bạn có chắc muốn xóa học kỳ này?')) return;
-            
-            try {
-                const response = await fetch(`/api/settings/semesters/${id}`, { method: 'DELETE' });
-                if (!response.ok) {
-                    const result = await response.json();
-                    throw new Error(result.error || 'Lỗi xóa');
-                }
-                loadSemesterList();
-                loadDropdowns(); // Refresh dropdown
-            } catch (error) {
-                toastError(error.message);
-            }
-        }
-
-        document.getElementById('btnAddSemester').onclick = async () => {
-            const id = document.getElementById('newSemesterId').value.trim();
-            const name = document.getElementById('newSemesterName').value.trim();
-            
-            if (!id || !name) {
-                toastWarning('Vui lòng nhập đầy đủ mã và tên học kỳ!');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/settings/semesters', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ MaHocKy: id, TenHocKy: name })
-                });
-                
-                if (!response.ok) {
-                    const result = await response.json();
-                    throw new Error(result.error || 'Lỗi thêm');
-                }
-                
-                document.getElementById('newSemesterId').value = '';
-                document.getElementById('newSemesterName').value = '';
-                loadSemesterList();
-                loadDropdowns();
-            } catch (error) {
-                toastError(error.message);
-            }
-        };
-
-        document.getElementById('btnSemesterRules').onclick = () => {
-            loadSemesterList();
-            semesterRulesModal.classList.add('show');
-        };
-        
-        document.getElementById('closeSemesterRulesBtn').onclick = 
-        document.getElementById('btnCloseSemesterRules').onclick = () => {
-            semesterRulesModal.classList.remove('show');
-        };
-        
-        semesterRulesModal.onclick = (e) => {
-            if (e.target === semesterRulesModal) semesterRulesModal.classList.remove('show');
-        };
     </script>
 
 </body>

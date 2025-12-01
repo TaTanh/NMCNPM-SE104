@@ -127,19 +127,20 @@ function applyPermissions() {
     // ===== PHÂN QUYỀN MENU THEO VAI TRÒ =====
     const sidebarLinks = document.querySelectorAll('.sidebar a, .sidebar .nav-link, .sidebar-menu a');
     
-    // GIÁO VIÊN: Chỉ thấy Dashboard, Nhập điểm, Bảng điểm, Báo cáo
+    // GIÁO VIÊN: Chỉ thấy Dashboard, Nhập điểm, Bảng điểm, Tra cứu điểm HS, Báo cáo
     if (user.vaiTro === 'TEACHER') {
         sidebarLinks.forEach(link => {
             const href = link.getAttribute('href') || '';
             if (!href.includes('dashboard') && 
                 !href.includes('grade') && 
+                !href.includes('student_transcript') &&
                 !href.includes('reports')) {
                 link.style.display = 'none';
             }
         });
         
-        // Chặn truy cập trực tiếp các trang quản lý
-        const restrictedPages = ['students', 'classes', 'subject', 'users', 'teaching'];
+        // Chặn truy cập trực tiếp các trang quản lý (không bao gồm student_transcript)
+        const restrictedPages = ['students.html', 'classes', 'subject', 'users', 'teaching'];
         const isRestricted = restrictedPages.some(p => page.includes(p));
         if (isRestricted) {
             window.location.href = '/pages/dashboard.html';
@@ -147,24 +148,24 @@ function applyPermissions() {
         }
     }
     
-    // PHỤ HUYNH VÀ HỌC SINH: Chỉ thấy Dashboard, Bảng điểm (xem), Báo cáo
+    // PHỤ HUYNH VÀ HỌC SINH: Chỉ thấy Dashboard, Bảng điểm (xem), Tra cứu điểm HS, Báo cáo
     // Không thấy trang Nhập điểm
     if (user.vaiTro === 'PARENT' || user.vaiTro === 'STUDENT') {
         sidebarLinks.forEach(link => {
             const href = link.getAttribute('href') || '';
-            // Chỉ hiển thị dashboard, grade_select (xem điểm), reports
             // Ẩn grade_entry (nhập điểm)
             if (href.includes('grade_entry')) {
                 link.style.display = 'none';
             } else if (!href.includes('dashboard') && 
                        !href.includes('grade') && 
+                       !href.includes('student_transcript') &&
                        !href.includes('reports')) {
                 link.style.display = 'none';
             }
         });
         
-        // Chặn truy cập trực tiếp các trang không được phép
-        const restrictedPages = ['students', 'classes', 'subject', 'users', 'teaching', 'grade_entry'];
+        // Chặn truy cập trực tiếp các trang không được phép (không bao gồm student_transcript)
+        const restrictedPages = ['students.html', 'classes', 'subject', 'users', 'teaching', 'grade_entry'];
         const isRestricted = restrictedPages.some(p => page.includes(p));
         if (isRestricted) {
             window.location.href = '/pages/dashboard.html';
@@ -218,11 +219,11 @@ function applyPermissions() {
         }
     }
 
-    // ===== TRANG NHẬP ĐIỂM =====
-    if (page.includes('grade')) {
+    // ===== TRANG NHẬP ĐIỂM (chỉ áp dụng cho grade_entry) =====
+    if (page.includes('grade_entry')) {
         if (!hasPermission('nhapDiem')) {
             // Ẩn nút lưu, nút thay đổi quy định
-            hideElements(['#btnSaveGrades', '#btnSave', '#btn-open-rules', '.btn-primary']);
+            hideElements(['#btnSaveGrades', '#btnSave', '#btn-open-rules', '#btnGradeRules', '#btnSemesterRules', '.btn-primary']);
             showReadOnlyNotice();
             // Disable tất cả ô nhập điểm
             disableAllInputs();

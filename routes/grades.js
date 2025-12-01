@@ -198,60 +198,107 @@ router.get('/student/:maHocSinh', async (req, res) => {
         const { maHocSinh } = req.params;
         const { namhoc, hocky } = req.query;
         
-        let query = `
+        // Lấy thông tin lớp của học sinh
+        let lopQuery = `
+            SELECT l.MaLop, l.MaNamHoc 
+            FROM QUATRINHHOC qth 
+            JOIN LOP l ON qth.MaLop = l.MaLop 
+            WHERE qth.MaHocSinh = $1
+        `;
+        const lopParams = [maHocSinh];
+        if (namhoc) {
+            lopParams.push(namhoc);
+            lopQuery += ` AND l.MaNamHoc = $${lopParams.length}`;
+        }
+        lopQuery += ' LIMIT 1';
+        
+        const lopResult = await pool.query(lopQuery, lopParams);
+        if (lopResult.rows.length === 0) {
+            return res.json([]);
+        }
+        const maLop = lopResult.rows[0].malop;
+        const maNamHoc = lopResult.rows[0].manamhoc;
+        
+        // Lấy tất cả các môn học
+        const monHocResult = await pool.query('SELECT MaMonHoc, TenMonHoc FROM MONHOC ORDER BY TenMonHoc');
+        const allMonHoc = monHocResult.rows;
+        
+        // Lấy tất cả học kỳ
+        let hocKyQuery = 'SELECT MaHocKy, TenHocKy FROM HOCKY';
+        const hocKyParams = [];
+        if (hocky) {
+            hocKyParams.push(hocky);
+            hocKyQuery += ` WHERE MaHocKy = $1`;
+        }
+        hocKyQuery += ' ORDER BY MaHocKy';
+        const hocKyResult = await pool.query(hocKyQuery, hocKyParams);
+        const allHocKy = hocKyResult.rows;
+        
+        // Lấy điểm của học sinh
+        let diemQuery = `
             SELECT 
                 mh.MaMonHoc, mh.TenMonHoc,
                 bdm.MaBangDiem, bdm.MaHocKy,
                 hk.TenHocKy,
                 ct.Diem, lhkt.TenLHKT, lhkt.HeSo
-            FROM QUATRINHHOC qth
-            JOIN LOP l ON qth.MaLop = l.MaLop
-            JOIN BANGDIEMMON bdm ON bdm.MaLop = l.MaLop
+            FROM BANGDIEMMON bdm
             JOIN MONHOC mh ON bdm.MaMonHoc = mh.MaMonHoc
             JOIN HOCKY hk ON bdm.MaHocKy = hk.MaHocKy
-            LEFT JOIN CT_BANGDIEMMON_HOCSINH ct ON ct.MaBangDiem = bdm.MaBangDiem AND ct.MaHocSinh = qth.MaHocSinh
+            LEFT JOIN CT_BANGDIEMMON_HOCSINH ct ON ct.MaBangDiem = bdm.MaBangDiem AND ct.MaHocSinh = $1
             LEFT JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
-            WHERE qth.MaHocSinh = $1
+            WHERE bdm.MaLop = $2
         `;
         
-        const params = [maHocSinh];
-        
-        if (namhoc) {
-            params.push(namhoc);
-            query += ` AND l.MaNamHoc = $${params.length}`;
-        }
+        const diemParams = [maHocSinh, maLop];
         
         if (hocky) {
-            params.push(hocky);
-            query += ` AND bdm.MaHocKy = $${params.length}`;
+            diemParams.push(hocky);
+            diemQuery += ` AND bdm.MaHocKy = $${diemParams.length}`;
         }
         
-        query += ' ORDER BY mh.TenMonHoc, lhkt.HeSo';
+        diemQuery += ' ORDER BY mh.TenMonHoc, lhkt.HeSo';
         
-        const result = await pool.query(query, params);
+        const diemResult = await pool.query(diemQuery, diemParams);
         
-        // Gom điểm theo môn học
-        const monHocMap = new Map();
-        result.rows.forEach(row => {
-            if (!monHocMap.has(row.mamonhoc)) {
-                monHocMap.set(row.mamonhoc, {
-                    MaMonHoc: row.mamonhoc,
-                    TenMonHoc: row.tenmonhoc,
-                    MaHocKy: row.mahocky,
-                    TenHocKy: row.tenhocky,
+        // Gom điểm theo môn học và học kỳ
+        const resultMap = new Map();
+        
+        // Khởi tạo tất cả các môn với tất cả học kỳ
+        allMonHoc.forEach(mh => {
+            allHocKy.forEach(hk => {
+                const key = `${mh.mamonhoc}_${hk.mahocky}`;
+                resultMap.set(key, {
+                    MaMonHoc: mh.mamonhoc,
+                    TenMonHoc: mh.tenmonhoc,
+                    MaHocKy: hk.mahocky,
+                    TenHocKy: hk.tenhocky,
                     Diem: {}
                 });
-            }
-            if (row.tenlhkt && row.diem !== null) {
-                const mon = monHocMap.get(row.mamonhoc);
-                if (!mon.Diem[row.tenlhkt]) {
-                    mon.Diem[row.tenlhkt] = [];
+            });
+        });
+        
+        // Điền điểm vào
+        diemResult.rows.forEach(row => {
+            const key = `${row.mamonhoc}_${row.mahocky}`;
+            if (resultMap.has(key)) {
+                const mon = resultMap.get(key);
+                if (row.tenlhkt && row.diem !== null) {
+                    if (!mon.Diem[row.tenlhkt]) {
+                        mon.Diem[row.tenlhkt] = [];
+                    }
+                    mon.Diem[row.tenlhkt].push({ diem: row.diem, heso: row.heso });
                 }
-                mon.Diem[row.tenlhkt].push({ diem: row.diem, heso: row.heso });
             }
         });
         
-        res.json(Array.from(monHocMap.values()));
+        // Chuyển thành array và sắp xếp
+        const result = Array.from(resultMap.values()).sort((a, b) => {
+            if (a.TenMonHoc < b.TenMonHoc) return -1;
+            if (a.TenMonHoc > b.TenMonHoc) return 1;
+            return a.MaHocKy.localeCompare(b.MaHocKy);
+        });
+        
+        res.json(result);
     } catch (err) {
         console.error('Lỗi lấy bảng điểm học sinh:', err);
         res.status(500).json({ error: 'Lỗi server' });

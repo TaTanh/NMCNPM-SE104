@@ -25,7 +25,7 @@ router.get('/with-class', async (req, res) => {
 // ========== LẤY DANH SÁCH HỌC SINH ==========
 router.get('/', async (req, res) => {
     try {
-        const { namhoc, lop } = req.query;
+        const { namhoc, lop, khoi, search } = req.query;
         
         let query = `
             SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email
@@ -35,13 +35,14 @@ router.get('/', async (req, res) => {
         const params = [];
         const conditions = [];
         
-        // Nếu có filter theo lớp, cần JOIN với QUATRINHHOC
-        if (lop || namhoc) {
+        // Nếu có filter theo lớp/namhoc/khoi, cần JOIN với QUATRINHHOC và LOP
+        if (lop || namhoc || khoi || search) {
             query = `
-                SELECT DISTINCT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email
+                SELECT DISTINCT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email,
+                       l.TenLop, l.MaLop
                 FROM HOCSINH hs
-                JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
-                JOIN LOP l ON qth.MaLop = l.MaLop
+                LEFT JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
+                LEFT JOIN LOP l ON qth.MaLop = l.MaLop
             `;
             
             if (lop) {
@@ -52,6 +53,17 @@ router.get('/', async (req, res) => {
             if (namhoc) {
                 params.push(namhoc);
                 conditions.push(`l.MaNamHoc = $${params.length}`);
+            }
+            
+            if (khoi) {
+                params.push(khoi);
+                conditions.push(`l.MaKhoiLop = $${params.length}`);
+            }
+            
+            // Tìm kiếm theo tên hoặc mã học sinh
+            if (search) {
+                params.push(`%${search}%`);
+                conditions.push(`(LOWER(hs.HoTen) LIKE LOWER($${params.length}) OR LOWER(hs.MaHocSinh) LIKE LOWER($${params.length}))`);
             }
         }
         
