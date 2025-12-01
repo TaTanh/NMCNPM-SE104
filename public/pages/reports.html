@@ -5,6 +5,7 @@
     <title>Báo cáo tổng kết</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -23,7 +24,6 @@
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/reports.html" class="active">Báo cáo tổng kết</a>
-            <a href="/pages/settings.html">Cài đặt hệ thống</a>
         </nav>
     </aside>
 
@@ -325,7 +325,7 @@
             const year = document.getElementById('yearSelect1');
 
             if (!subject.value || !semester.value || !year.value) {
-                alert('Vui lòng chọn đầy đủ môn học, học kỳ và năm học!');
+                toastWarning('Vui lòng chọn đầy đủ môn học, học kỳ và năm học!');
                 return;
             }
 
@@ -389,7 +389,7 @@
                 document.getElementById('subjectReportResult').style.display = 'block';
             } catch (error) {
                 console.error('Lỗi:', error);
-                alert('Lỗi tải báo cáo!');
+                toastError('Lỗi tải báo cáo!');
             }
         });
 
@@ -399,7 +399,7 @@
             const year = document.getElementById('yearSelect2');
 
             if (!semester.value || !year.value) {
-                alert('Vui lòng chọn học kỳ và năm học!');
+                toastWarning('Vui lòng chọn học kỳ và năm học!');
                 return;
             }
 
@@ -461,7 +461,7 @@
                 document.getElementById('semesterReportResult').style.display = 'block';
             } catch (error) {
                 console.error('Lỗi:', error);
-                alert('Lỗi tải báo cáo!');
+                toastError('Lỗi tải báo cáo!');
             }
         });
 
@@ -471,7 +471,7 @@
         });
 
         document.getElementById('btnExportSubjectReport').addEventListener('click', () => {
-            alert('Chức năng xuất Excel đang phát triển!');
+            toastInfo('Chức năng xuất Excel đang phát triển!');
         });
 
         document.getElementById('btnPrintSemesterReport').addEventListener('click', () => {
@@ -479,7 +479,7 @@
         });
 
         document.getElementById('btnExportSemesterReport').addEventListener('click', () => {
-            alert('Chức năng xuất Excel đang phát triển!');
+            toastInfo('Chức năng xuất Excel đang phát triển!');
         });
 
         // Khởi tạo

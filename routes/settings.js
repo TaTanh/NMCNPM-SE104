@@ -59,7 +59,58 @@ router.post('/school-years', async (req, res) => {
         res.status(201).json(result.rows[0]);
     } catch (err) {
         console.error('Lỗi thêm năm học:', err);
+        if (err.code === '23505') {
+            res.status(400).json({ message: 'Mã năm học đã tồn tại' });
+        } else {
+            res.status(500).json({ error: 'Lỗi server' });
+        }
+    }
+});
+
+// ========== CẬP NHẬT NĂM HỌC ==========
+router.put('/school-years/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { TenNamHoc } = req.body;
+        
+        const result = await pool.query(
+            'UPDATE NAMHOC SET TenNamHoc = $1 WHERE MaNamHoc = $2 RETURNING *',
+            [TenNamHoc, id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy năm học' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Lỗi cập nhật năm học:', err);
         res.status(500).json({ error: 'Lỗi server' });
+    }
+});
+
+// ========== XÓA NĂM HỌC ==========
+router.delete('/school-years/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(
+            'DELETE FROM NAMHOC WHERE MaNamHoc = $1 RETURNING *',
+            [id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy năm học' });
+        }
+        
+        res.json({ message: 'Xóa thành công' });
+    } catch (err) {
+        console.error('Lỗi xóa năm học:', err);
+        if (err.code === '23503') {
+            res.status(400).json({ message: 'Không thể xóa năm học đang được sử dụng' });
+        } else {
+            res.status(500).json({ error: 'Lỗi server' });
+        }
     }
 });
 
@@ -71,6 +122,74 @@ router.get('/semesters', async (req, res) => {
     } catch (err) {
         console.error('Lỗi lấy học kỳ:', err);
         res.status(500).json({ error: 'Lỗi server' });
+    }
+});
+
+// ========== THÊM HỌC KỲ ==========
+router.post('/semesters', async (req, res) => {
+    try {
+        const { MaHocKy, TenHocKy } = req.body;
+        
+        const result = await pool.query(
+            'INSERT INTO HOCKY (MaHocKy, TenHocKy) VALUES ($1, $2) RETURNING *',
+            [MaHocKy, TenHocKy]
+        );
+        
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Lỗi thêm học kỳ:', err);
+        if (err.code === '23505') {
+            res.status(400).json({ message: 'Mã học kỳ đã tồn tại' });
+        } else {
+            res.status(500).json({ error: 'Lỗi server' });
+        }
+    }
+});
+
+// ========== CẬP NHẬT HỌC KỲ ==========
+router.put('/semesters/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { TenHocKy } = req.body;
+        
+        const result = await pool.query(
+            'UPDATE HOCKY SET TenHocKy = $1 WHERE MaHocKy = $2 RETURNING *',
+            [TenHocKy, id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy học kỳ' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Lỗi cập nhật học kỳ:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+});
+
+// ========== XÓA HỌC KỲ ==========
+router.delete('/semesters/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(
+            'DELETE FROM HOCKY WHERE MaHocKy = $1 RETURNING *',
+            [id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy học kỳ' });
+        }
+        
+        res.json({ message: 'Xóa thành công' });
+    } catch (err) {
+        console.error('Lỗi xóa học kỳ:', err);
+        if (err.code === '23503') {
+            res.status(400).json({ message: 'Không thể xóa học kỳ đang được sử dụng' });
+        } else {
+            res.status(500).json({ error: 'Lỗi server' });
+        }
     }
 });
 
@@ -115,6 +234,52 @@ router.put('/exam-types/:id', async (req, res) => {
     } catch (err) {
         console.error('Lỗi cập nhật loại hình kiểm tra:', err);
         res.status(500).json({ error: 'Lỗi server' });
+    }
+});
+
+// ========== THÊM LOẠI HÌNH KIỂM TRA ==========
+router.post('/exam-types', async (req, res) => {
+    try {
+        const { MaLHKT, TenLHKT, HeSo } = req.body;
+        
+        const result = await pool.query(
+            'INSERT INTO LOAIHINHKIEMTRA (MaLHKT, TenLHKT, HeSo) VALUES ($1, $2, $3) RETURNING *',
+            [MaLHKT, TenLHKT, HeSo]
+        );
+        
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Lỗi thêm loại hình kiểm tra:', err);
+        if (err.code === '23505') {
+            res.status(400).json({ message: 'Mã loại hình kiểm tra đã tồn tại' });
+        } else {
+            res.status(500).json({ error: 'Lỗi server' });
+        }
+    }
+});
+
+// ========== XÓA LOẠI HÌNH KIỂM TRA ==========
+router.delete('/exam-types/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(
+            'DELETE FROM LOAIHINHKIEMTRA WHERE MaLHKT = $1 RETURNING *',
+            [id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Không tìm thấy loại hình kiểm tra' });
+        }
+        
+        res.json({ message: 'Xóa thành công' });
+    } catch (err) {
+        console.error('Lỗi xóa loại hình kiểm tra:', err);
+        if (err.code === '23503') {
+            res.status(400).json({ message: 'Không thể xóa loại hình kiểm tra đang được sử dụng' });
+        } else {
+            res.status(500).json({ error: 'Lỗi server' });
+        }
     }
 });
 

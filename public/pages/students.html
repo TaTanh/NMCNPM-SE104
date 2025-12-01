@@ -5,6 +5,7 @@
     <title>Danh sách học sinh</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -23,7 +24,6 @@
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
-            <a href="/pages/settings.html">Cài đặt hệ thống</a>
         </nav>
 
     </aside>
@@ -70,6 +70,7 @@
                 </div>
 
                 <div class="toolbar-actions">
+                    <button class="btn btn-outline" id="btnStudentRules">Thay đổi quy định</button>
                     <button class="btn btn-print" id="btnPrint" onclick="window.print()">🖨️ In</button>
                     <button class="btn btn-outline" id="btnExport">Xuất Excel</button>
 
@@ -300,6 +301,37 @@
                         <button type="submit" class="btn btn-primary">Xếp lớp</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== POPUP QUY ĐỊNH TUỔI HỌC SINH ========== -->
+    <div class="modal-overlay" id="studentRulesModal">
+        <div class="modal" style="max-width: 420px;">
+            <div class="modal-header">
+                <h2>⚙️ Quy định về tuổi học sinh</h2>
+                <button class="modal-close" id="closeStudentRulesBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="config-grid">
+                    <div class="config-card">
+                        <div class="config-label">Tuổi tối thiểu</div>
+                        <input type="number" id="ruleTuoiToiThieu" value="15" min="1" max="25">
+                        <div class="config-hint">Tuổi tối thiểu khi nhập học</div>
+                    </div>
+
+                    <div class="config-card">
+                        <div class="config-label">Tuổi tối đa</div>
+                        <input type="number" id="ruleTuoiToiDa" value="20" min="1" max="30">
+                        <div class="config-hint">Tuổi tối đa khi nhập học</div>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="margin-top: 16px;">
+                    <button type="button" class="btn btn-outline" id="btnCancelStudentRules">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveStudentRules">Lưu thay đổi</button>
+                </div>
             </div>
         </div>
     </div>
@@ -625,7 +657,7 @@
                     throw new Error(result.error || 'Lỗi thêm học sinh');
                 }
                 
-                alert('Thêm học sinh thành công!');
+                toastSuccess('Thêm học sinh thành công!');
                 addModal.classList.remove('show');
                 addForm.reset();
                 clearAllErrors('add');
@@ -633,7 +665,7 @@
                 hideError('dobAdd', 'errorDobAgeAdd');
                 loadStudents(); // Reload bảng từ database
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
 
@@ -645,11 +677,11 @@
             e.preventDefault();
 
             if (!selectModeOn) {
-                alert('Hãy bấm "Sửa đổi" và chọn một học sinh trước.');
+                toastWarning('Hãy bấm "Sửa đổi" và chọn một học sinh trước.');
                 return;
             }
             if (!selectedRow) {
-                alert('Vui lòng chọn một học sinh để sửa.');
+                toastWarning('Vui lòng chọn một học sinh để sửa.');
                 return;
             }
 
@@ -727,13 +759,13 @@
                     throw new Error(result.error || 'Lỗi cập nhật học sinh');
                 }
                 
-                alert('Cập nhật học sinh thành công!');
+                toastSuccess('Cập nhật học sinh thành công!');
                 editModal.classList.remove('show');
                 editForm.reset();
                 exitSelectMode();
                 loadStudents(); // Reload bảng từ database
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
 
@@ -745,11 +777,11 @@
             e.preventDefault();
 
             if (!selectModeOn) {
-                alert('Hãy bấm "Sửa đổi" và chọn một học sinh trước.');
+                toastWarning('Hãy bấm "Sửa đổi" và chọn một học sinh trước.');
                 return;
             }
             if (!selectedRow) {
-                alert('Vui lòng chọn một học sinh để xóa.');
+                toastWarning('Vui lòng chọn một học sinh để xóa.');
                 return;
             }
 
@@ -788,12 +820,12 @@
                     throw new Error(result.error || 'Lỗi xóa học sinh');
                 }
                 
-                alert('Đã xóa học sinh!');
+                toastSuccess('Đã xóa học sinh!');
                 deleteModal.classList.remove('show');
                 exitSelectMode();
                 loadStudents(); // Reload bảng từ database
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         };
 
@@ -860,7 +892,7 @@
             const newMaLop = document.getElementById('newClassSelect').value;
             
             if (!newMaLop) {
-                alert('Vui lòng chọn lớp!');
+                toastWarning('Vui lòng chọn lớp!');
                 return;
             }
             
@@ -885,11 +917,11 @@
                     throw new Error(result.error || 'Lỗi xếp lớp');
                 }
                 
-                alert('Xếp lớp thành công!');
+                toastSuccess('Xếp lớp thành công!');
                 closeAssignClassModal();
                 loadStudents();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
 
@@ -898,7 +930,7 @@
             const maHS = document.getElementById('assignStudentId').value;
             
             if (!currentAssignMaLop) {
-                alert('Học sinh chưa được xếp lớp!');
+                toastWarning('Học sinh chưa được xếp lớp!');
                 return;
             }
             
@@ -917,12 +949,79 @@
                     throw new Error(result.error || 'Lỗi xóa khỏi lớp');
                 }
                 
-                alert('Đã xóa học sinh khỏi lớp!');
+                toastSuccess('Đã xóa học sinh khỏi lớp!');
                 closeAssignClassModal();
                 loadStudents();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
+        };
+
+        // ========== POPUP QUY ĐỊNH TUỔI HỌC SINH ==========
+        const studentRulesModal = document.getElementById('studentRulesModal');
+        const btnStudentRules = document.getElementById('btnStudentRules');
+        
+        async function loadStudentRules() {
+            try {
+                const response = await fetch('/api/settings/params');
+                const params = await response.json();
+                
+                params.forEach(p => {
+                    if (p.tenthamso === 'TuoiToiThieu') {
+                        document.getElementById('ruleTuoiToiThieu').value = p.giatri;
+                    }
+                    if (p.tenthamso === 'TuoiToiDa') {
+                        document.getElementById('ruleTuoiToiDa').value = p.giatri;
+                    }
+                });
+            } catch (error) {
+                console.error('Lỗi load quy định:', error);
+            }
+        }
+
+        async function saveStudentRules() {
+            const tuoiMin = document.getElementById('ruleTuoiToiThieu').value;
+            const tuoiMax = document.getElementById('ruleTuoiToiDa').value;
+            
+            if (parseInt(tuoiMin) >= parseInt(tuoiMax)) {
+                toastWarning('Tuổi tối thiểu phải nhỏ hơn tuổi tối đa!');
+                return;
+            }
+
+            try {
+                await fetch('/api/settings/params/TuoiToiThieu', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ GiaTri: tuoiMin })
+                });
+                await fetch('/api/settings/params/TuoiToiDa', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ GiaTri: tuoiMax })
+                });
+                
+                toastSuccess('Đã lưu quy định thành công!');
+                studentRulesModal.classList.remove('show');
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi lưu quy định!');
+            }
+        }
+
+        btnStudentRules.onclick = () => {
+            loadStudentRules();
+            studentRulesModal.classList.add('show');
+        };
+        
+        document.getElementById('closeStudentRulesBtn').onclick = 
+        document.getElementById('btnCancelStudentRules').onclick = () => {
+            studentRulesModal.classList.remove('show');
+        };
+        
+        document.getElementById('btnSaveStudentRules').onclick = saveStudentRules;
+        
+        studentRulesModal.onclick = (e) => {
+            if (e.target === studentRulesModal) studentRulesModal.classList.remove('show');
         };
     </script>
 

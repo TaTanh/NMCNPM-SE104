@@ -5,6 +5,8 @@
     <title>Đăng nhập hệ thống quản lý học sinh</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/login_styles.css">
+    <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
 </head>
 <body class="auth-body">
 
@@ -123,10 +125,12 @@
                 localStorage.setItem('userInfo', JSON.stringify(result.user));
                 localStorage.setItem('isLoggedIn', 'true');
                 
-                alert(`Đăng nhập thành công!\nXin chào, ${result.user.hoTen}\nVai trò: ${result.user.vaiTro}`);
-                window.location.href = '/pages/dashboard.html';
+                toastSuccess(`Đăng nhập thành công! Xin chào, ${result.user.hoTen}`);
+                setTimeout(() => {
+                    window.location.href = '/pages/dashboard.html';
+                }, 1000);
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
     </script>

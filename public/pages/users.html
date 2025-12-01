@@ -5,6 +5,7 @@
     <title>Quản lý người dùng</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -23,8 +24,7 @@
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
-            <a href="/pages/settings.html">Cài đặt hệ thống</a>
-            <a href="/pages/users.html" class="active">Quản lý người dùng</a>
+            <a href="/pages/users.html" id="menuUsers" class="active">Quản lý người dùng</a>
         </nav>
     </aside>
 
@@ -215,7 +215,7 @@
         function checkPermission() {
             const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
             if (!userInfo.quyen || !userInfo.quyen.phanQuyen) {
-                alert('Bạn không có quyền truy cập trang này!');
+                toastError('Bạn không có quyền truy cập trang này!');
                 window.location.href = '/pages/dashboard.html';
                 return false;
             }
@@ -341,7 +341,7 @@
                     userModal.classList.add('show');
                 }
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         }
 
@@ -354,10 +354,10 @@
                 
                 if (!response.ok) throw new Error(result.error);
                 
-                alert('Đã xóa người dùng!');
+                toastSuccess('Đã xóa người dùng!');
                 loadUsers();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         }
 
@@ -391,11 +391,11 @@
                 
                 if (!response.ok) throw new Error(result.error);
                 
-                alert(isEditMode ? 'Cập nhật thành công!' : 'Thêm người dùng thành công!');
+                toastSuccess(isEditMode ? 'Cập nhật thành công!' : 'Thêm người dùng thành công!');
                 userModal.classList.remove('show');
                 loadUsers();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
 

@@ -5,6 +5,7 @@
     <title>Nhập điểm – Chi tiết</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -23,7 +24,6 @@
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_select.html" class="active">Bảng điểm</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
-            <a href="/pages/settings.html">Cài đặt hệ thống</a>
         </nav>
     </aside>
 
@@ -55,6 +55,13 @@
                 </button>
             </div>
 
+            <!-- THANH TÌM KIẾM HỌC SINH -->
+            <div class="toolbar" style="margin-bottom: 16px;">
+                <div class="search-box">
+                    <input type="text" id="searchStudent" placeholder="Tìm theo mã hoặc tên học sinh...">
+                </div>
+            </div>
+
             <!-- BẢNG NHẬP ĐIỂM -->
             <div class="table-wrapper">
                 <table class="data-table">
@@ -80,55 +87,65 @@
         </div><!-- content -->
     </div><!-- main -->
 
-    <!-- POPUP QUY ĐỊNH – DÙNG CHUNG VỚI NHẬP ĐIỂM -->
+    <!-- POPUP QUY ĐỊNH ĐIỂM SỐ -->
     <div id="rules-modal"
          style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); 
                 z-index:50; align-items:center; justify-content:center;">
-        <div style="background:white; border-radius:12px; padding:20px 24px; max-width:720px; width:100%;
-                    box-shadow:0 20px 40px rgba(15,23,42,0.35);">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <h2 style="font-size:18px; margin:0;">Thay đổi quy định hệ thống</h2>
-                <button id="btn-close-rules" class="btn btn-outline" style="padding:4px 10px;">Đóng</button>
+        <div style="background:white; border-radius:12px; padding:20px 24px; max-width:680px; width:100%;
+                    box-shadow:0 20px 40px rgba(15,23,42,0.35); max-height:90vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h2 style="font-size:18px; margin:0;">⚙️ Quy định về điểm số</h2>
+                <button id="btn-close-rules" class="btn btn-outline" style="padding:4px 10px;">✕</button>
             </div>
 
-            <!-- PHẦN GIAO DIỆN COPY TỪ rules.html -->
+            <!-- PHẦN 1: ĐIỂM SỐ -->
+            <h3 style="font-size:14px; color:#374151; margin-bottom:12px;">📊 Giới hạn điểm</h3>
             <div class="config-grid">
                 <div class="config-card">
-                    <div class="config-label">Số lượng tối đa học sinh / lớp</div>
-                    <input type="number" value="45" min="1" max="60">
-                    <div class="config-hint">Ví dụ: 45 học sinh</div>
+                    <div class="config-label">Điểm tối thiểu</div>
+                    <input type="number" id="ruleDiemToiThieu" value="0" min="0" max="10" step="0.5">
+                    <div class="config-hint">Điểm thấp nhất có thể nhập</div>
                 </div>
 
                 <div class="config-card">
-                    <div class="config-label">Số môn học</div>
-                    <input type="number" value="13" min="1">
-                    <div class="config-hint">Áp dụng cho 1 năm học</div>
+                    <div class="config-label">Điểm tối đa</div>
+                    <input type="number" id="ruleDiemToiDa" value="10" min="0" max="10" step="0.5">
+                    <div class="config-hint">Điểm cao nhất có thể nhập</div>
                 </div>
 
                 <div class="config-card">
-                    <div class="config-label">Mức điểm chuẩn (đạt)</div>
-                    <input type="number" value="5.0" min="0" max="10" step="0.5">
-                    <div class="config-hint">Ví dụ: 5.0</div>
+                    <div class="config-label">Điểm đạt môn</div>
+                    <input type="number" id="ruleDiemDatMon" value="5" min="0" max="10" step="0.5">
+                    <div class="config-hint">Điểm tối thiểu để đạt môn học</div>
                 </div>
 
                 <div class="config-card">
-                    <div class="config-label">Hệ số điểm kiểm tra 15 phút</div>
-                    <input type="number" value="1" min="0" max="5" step="0.5">
-                </div>
-
-                <div class="config-card">
-                    <div class="config-label">Hệ số điểm kiểm tra 1 tiết</div>
-                    <input type="number" value="2" min="0" max="5" step="0.5">
-                </div>
-
-                <div class="config-card">
-                    <div class="config-label">Hệ số điểm cuối kỳ</div>
-                    <input type="number" value="3" min="0" max="5" step="0.5">
+                    <div class="config-label">Điểm đạt (xếp loại)</div>
+                    <input type="number" id="ruleDiemDat" value="5" min="0" max="10" step="0.5">
+                    <div class="config-hint">Điểm tối thiểu để xếp loại đạt</div>
                 </div>
             </div>
 
-            <div class="rules-footer" style="margin-top:16px; text-align:right;">
-                <button class="btn btn-primary">Lưu thay đổi</button>
+            <!-- PHẦN 2: LOẠI HÌNH KIỂM TRA -->
+            <h3 style="font-size:14px; color:#374151; margin:20px 0 12px;">📝 Loại hình kiểm tra & Hệ số</h3>
+            <div class="table-wrapper">
+                <table class="data-table" id="examTypeTable">
+                    <thead>
+                        <tr>
+                            <th>Mã</th>
+                            <th>Tên loại kiểm tra</th>
+                            <th>Hệ số</th>
+                        </tr>
+                    </thead>
+                    <tbody id="examTypeBody">
+                        <tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top:16px; text-align:right;">
+                <button class="btn btn-outline" id="btn-cancel-rules" style="margin-right:8px;">Hủy</button>
+                <button class="btn btn-primary" id="btn-save-rules">Lưu thay đổi</button>
             </div>
         </div>
     </div>
@@ -137,21 +154,105 @@
     <script>
         const btnOpenRules  = document.getElementById('btn-open-rules');
         const btnCloseRules = document.getElementById('btn-close-rules');
+        const btnCancelRules = document.getElementById('btn-cancel-rules');
+        const btnSaveRules = document.getElementById('btn-save-rules');
         const rulesModal    = document.getElementById('rules-modal');
 
-        if (btnOpenRules && btnCloseRules && rulesModal) {
+        // Load quy định điểm từ database
+        async function loadGradeRules() {
+            try {
+                // Load tham số điểm
+                const response = await fetch('/api/settings/params');
+                const params = await response.json();
+                
+                params.forEach(p => {
+                    const map = {
+                        'DiemToiThieu': 'ruleDiemToiThieu',
+                        'DiemToiDa': 'ruleDiemToiDa',
+                        'DiemDatMon': 'ruleDiemDatMon',
+                        'DiemDat': 'ruleDiemDat'
+                    };
+                    if (map[p.tenthamso]) {
+                        document.getElementById(map[p.tenthamso]).value = p.giatri;
+                    }
+                });
+
+                // Load loại hình kiểm tra
+                const examRes = await fetch('/api/settings/exam-types');
+                const examTypes = await examRes.json();
+                const examBody = document.getElementById('examTypeBody');
+                
+                if (examTypes.length === 0) {
+                    examBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Chưa có loại hình kiểm tra</td></tr>';
+                } else {
+                    examBody.innerHTML = examTypes.map(et => `
+                        <tr data-id="${et.malhkt}">
+                            <td>${et.malhkt}</td>
+                            <td><input type="text" class="exam-name" value="${et.tenlhkt}" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;"></td>
+                            <td><input type="number" class="exam-heso" value="${et.heso}" min="1" max="5" style="width:60px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;"></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Lỗi load quy định:', error);
+            }
+        }
+
+        // Lưu quy định điểm
+        async function saveGradeRules() {
+            const rules = [
+                { name: 'DiemToiThieu', value: document.getElementById('ruleDiemToiThieu').value },
+                { name: 'DiemToiDa', value: document.getElementById('ruleDiemToiDa').value },
+                { name: 'DiemDatMon', value: document.getElementById('ruleDiemDatMon').value },
+                { name: 'DiemDat', value: document.getElementById('ruleDiemDat').value }
+            ];
+
+            try {
+                // Lưu tham số điểm
+                for (const rule of rules) {
+                    await fetch(`/api/settings/params/${rule.name}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ GiaTri: rule.value })
+                    });
+                }
+
+                // Lưu loại hình kiểm tra
+                const examRows = document.querySelectorAll('#examTypeBody tr');
+                for (const row of examRows) {
+                    const id = row.dataset.id;
+                    const name = row.querySelector('.exam-name')?.value;
+                    const heso = row.querySelector('.exam-heso')?.value;
+                    
+                    if (id && name && heso) {
+                        await fetch(`/api/settings/exam-types/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ TenLHKT: name, HeSo: heso })
+                        });
+                    }
+                }
+
+                toastSuccess('Đã lưu quy định thành công!');
+                rulesModal.style.display = 'none';
+            } catch (error) {
+                console.error('Lỗi lưu quy định:', error);
+                toastError('Lỗi khi lưu quy định!');
+            }
+        }
+
+        if (btnOpenRules && rulesModal) {
             btnOpenRules.addEventListener('click', () => {
+                loadGradeRules();
                 rulesModal.style.display = 'flex';
             });
 
-            btnCloseRules.addEventListener('click', () => {
-                rulesModal.style.display = 'none';
-            });
+            btnCloseRules.addEventListener('click', () => rulesModal.style.display = 'none');
+            btnCancelRules.addEventListener('click', () => rulesModal.style.display = 'none');
+            btnSaveRules.addEventListener('click', saveGradeRules);
 
             rulesModal.addEventListener('click', (e) => {
-                if (e.target === rulesModal) {
-                    rulesModal.style.display = 'none';
-                }
+                if (e.target === rulesModal) rulesModal.style.display = 'none';
             });
         }
 
@@ -163,11 +264,26 @@
 
         let examTypes = [];
         let maBangDiem = null;
+        let allStudents = []; // Lưu toàn bộ dữ liệu để tìm kiếm
+
+        // ========== TÌM KIẾM HỌC SINH ==========
+        document.getElementById('searchStudent').addEventListener('input', function() {
+            const keyword = this.value.toLowerCase().trim();
+            if (!keyword) {
+                renderGradeTable(allStudents);
+                return;
+            }
+            const filtered = allStudents.filter(hs => 
+                hs.MaHocSinh.toLowerCase().includes(keyword) ||
+                hs.HoTen.toLowerCase().includes(keyword)
+            );
+            renderGradeTable(filtered);
+        });
 
         // ========== LOAD DỮ LIỆU ==========
         async function loadGradeData() {
             if (!subjectId || !classId || !semester) {
-                alert('Thiếu tham số. Vui lòng chọn lại từ trang bảng điểm.');
+                toastWarning('Thiếu tham số. Vui lòng chọn lại từ trang bảng điểm.');
                 window.location.href = '/pages/grade_select.html';
                 return;
             }
@@ -216,7 +332,8 @@
                 // Lấy học sinh và điểm
                 const gradesRes = await fetch(`/api/grades/class/${classId}/subject/${subjectId}?hocky=${semester}`);
                 const grades = await gradesRes.json();
-
+                
+                allStudents = grades; // Lưu lại để tìm kiếm
                 renderGradeTable(grades);
             } catch (error) {
                 console.error('Lỗi:', error);
@@ -350,10 +467,10 @@
                         body: JSON.stringify(update)
                     });
                 }
-                alert('Đã lưu điểm thành công!');
+                toastSuccess('Đã lưu điểm thành công!');
             } catch (error) {
                 console.error('Lỗi:', error);
-                alert('Lỗi khi lưu điểm!');
+                toastError('Lỗi khi lưu điểm!');
             }
         });
 

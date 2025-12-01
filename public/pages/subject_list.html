@@ -5,6 +5,7 @@
     <title>Quản lý môn học</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -23,7 +24,6 @@
             <a href="/pages/subject_list.html" class="active">Quản lý môn học</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
-            <a href="/pages/settings.html">Cài đặt hệ thống</a>
         </nav>
     </aside>
 
@@ -357,12 +357,12 @@
                     throw new Error(result.error || 'Lỗi thêm môn học');
                 }
                 
-                alert('Thêm môn học thành công!');
+                toastSuccess('Thêm môn học thành công!');
                 addSubjectModal.classList.remove('show');
                 addSubjectForm.reset();
                 loadSubjects();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
 
@@ -374,11 +374,11 @@
             e.preventDefault();
 
             if (!selectModeOn) {
-                alert('Hãy bấm "Sửa đổi" và chọn một môn học trước.');
+                toastWarning('Hãy bấm "Sửa đổi" và chọn một môn học trước.');
                 return;
             }
             if (!selectedRow) {
-                alert('Vui lòng chọn một môn học để sửa.');
+                toastWarning('Vui lòng chọn một môn học để sửa.');
                 return;
             }
 
@@ -425,13 +425,13 @@
                     throw new Error(result.error || 'Lỗi cập nhật môn học');
                 }
                 
-                alert('Cập nhật môn học thành công!');
+                toastSuccess('Cập nhật môn học thành công!');
                 editSubjectModal.classList.remove('show');
                 editSubjectForm.reset();
                 exitSelectMode();
                 loadSubjects();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
 
@@ -443,11 +443,11 @@
             e.preventDefault();
 
             if (!selectModeOn) {
-                alert('Hãy bấm "Sửa đổi" và chọn một môn học trước.');
+                toastWarning('Hãy bấm "Sửa đổi" và chọn một môn học trước.');
                 return;
             }
             if (!selectedRow) {
-                alert('Vui lòng chọn một môn học để xóa.');
+                toastWarning('Vui lòng chọn một môn học để xóa.');
                 return;
             }
 
@@ -486,12 +486,12 @@
                     throw new Error(result.error || 'Lỗi xóa môn học');
                 }
                 
-                alert('Đã xóa môn học!');
+                toastSuccess('Đã xóa môn học!');
                 deleteSubjectModal.classList.remove('show');
                 exitSelectMode();
                 loadSubjects();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         };
 

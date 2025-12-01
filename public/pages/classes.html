@@ -5,6 +5,7 @@
     <title>Quản lý lớp học</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -23,7 +24,6 @@
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
-            <a href="/pages/settings.html">Cài đặt hệ thống</a>
         </nav>
     </aside>
 
@@ -49,6 +49,7 @@
                 </div>
 
                 <div class="toolbar-actions">
+                    <button class="btn btn-outline" id="btnClassRules">Thay đổi quy định</button>
                     <button class="btn btn-print" onclick="window.print()">🖨️ In</button>
                     <button class="btn btn-outline" id="btnExportClass">Xuất Excel</button>
 
@@ -260,6 +261,73 @@
                 <div class="modal-footer" style="margin-top: 16px;">
                     <span id="studentCountInfo" style="margin-right: auto; color: #666;"></span>
                     <button type="button" class="btn btn-outline" id="closeViewStudentsBtn">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== POPUP QUY ĐỊNH LỚP HỌC ========== -->
+    <div class="modal-overlay" id="classRulesModal">
+        <div class="modal" style="max-width: 480px;">
+            <div class="modal-header">
+                <h2>⚙️ Quy định về lớp học</h2>
+                <button class="modal-close" id="closeClassRulesBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="config-grid">
+                    <div class="config-card">
+                        <div class="config-label">Sĩ số tối đa</div>
+                        <input type="number" id="ruleSiSoToiDa" value="40" min="1" max="60">
+                        <div class="config-hint">Số học sinh tối đa trong một lớp</div>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 20px; margin-bottom: 12px; font-size: 15px;">Danh sách khối lớp</h3>
+                <div class="table-wrapper">
+                    <table class="data-table" id="khoiLopTable">
+                        <thead>
+                            <tr>
+                                <th>Mã khối</th>
+                                <th>Tên khối</th>
+                            </tr>
+                        </thead>
+                        <tbody id="khoiLopBody">
+                            <tr><td colspan="2" style="text-align:center;">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Quản lý năm học -->
+                <h3 style="margin-top: 24px; margin-bottom: 12px; font-size: 15px;">📅 Quản lý năm học</h3>
+                <div class="table-wrapper">
+                    <table class="data-table" id="namHocTable">
+                        <thead>
+                            <tr>
+                                <th>Mã năm học</th>
+                                <th>Tên năm học</th>
+                                <th style="width: 100px;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="namHocBody">
+                            <tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Form thêm năm học mới -->
+                <div style="margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                    <div style="font-weight: 500; margin-bottom: 8px;">➕ Thêm năm học mới</div>
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <input type="text" id="newMaNamHoc" placeholder="Mã năm học (VD: 2024-2025)" style="flex: 1; min-width: 150px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <input type="text" id="newTenNamHoc" placeholder="Tên năm học (VD: Năm học 2024-2025)" style="flex: 1; min-width: 180px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <button type="button" class="btn btn-primary" onclick="addSchoolYear()" style="white-space: nowrap;">Thêm</button>
+                    </div>
+                </div>
+
+                <div class="modal-footer" style="margin-top: 16px;">
+                    <button type="button" class="btn btn-outline" id="btnCancelClassRules">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveClassRules">Lưu thay đổi</button>
                 </div>
             </div>
         </div>
@@ -507,11 +575,11 @@
                     throw new Error(result.error || 'Lỗi thêm lớp');
                 }
                 
-                alert('Thêm lớp thành công!');
+                toastSuccess('Thêm lớp thành công!');
                 closeAddClassModal();
                 loadClasses();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
 
@@ -522,11 +590,11 @@
             e.preventDefault();
 
             if (!classSelectModeOn) {
-                alert('Hãy bấm "Sửa đổi" và chọn một lớp trước.');
+                toastWarning('Hãy bấm "Sửa đổi" và chọn một lớp trước.');
                 return;
             }
             if (!classSelectedRow) {
-                alert('Vui lòng chọn một lớp để sửa.');
+                toastWarning('Vui lòng chọn một lớp để sửa.');
                 return;
             }
 
@@ -586,12 +654,12 @@
                     throw new Error(result.error || 'Lỗi cập nhật lớp');
                 }
                 
-                alert('Cập nhật lớp thành công!');
+                toastSuccess('Cập nhật lớp thành công!');
                 closeEditClassModal();
                 exitClassSelectMode();
                 loadClasses();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
 
@@ -600,11 +668,11 @@
             e.preventDefault();
 
             if (!classSelectModeOn) {
-                alert('Hãy bấm "Sửa đổi" và chọn một lớp trước.');
+                toastWarning('Hãy bấm "Sửa đổi" và chọn một lớp trước.');
                 return;
             }
             if (!classSelectedRow) {
-                alert('Vui lòng chọn một lớp để xóa.');
+                toastWarning('Vui lòng chọn một lớp để xóa.');
                 return;
             }
 
@@ -645,12 +713,12 @@
                     throw new Error(result.error || 'Lỗi xóa lớp');
                 }
                 
-                alert('Đã xóa lớp!');
+                toastSuccess('Đã xóa lớp!');
                 closeDeleteClassModal();
                 exitClassSelectMode();
                 loadClasses();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                toastError(error.message);
             }
         });
 
@@ -721,6 +789,190 @@
                 closeViewStudentsModal();
             }
         });
+
+        // ========== POPUP QUY ĐỊNH LỚP HỌC ==========
+        const classRulesModal = document.getElementById('classRulesModal');
+        const btnClassRules = document.getElementById('btnClassRules');
+        
+        async function loadClassRules() {
+            try {
+                // Load sĩ số tối đa
+                const paramsRes = await fetch('/api/settings/params');
+                const params = await paramsRes.json();
+                
+                params.forEach(p => {
+                    if (p.tenthamso === 'SiSoToiDa') {
+                        document.getElementById('ruleSiSoToiDa').value = p.giatri;
+                    }
+                });
+
+                // Load danh sách khối lớp
+                const khoiRes = await fetch('/api/settings/grade-levels');
+                const khoiList = await khoiRes.json();
+                
+                const khoiBody = document.getElementById('khoiLopBody');
+                if (khoiList.length === 0) {
+                    khoiBody.innerHTML = '<tr><td colspan="2" style="text-align:center;">Chưa có khối lớp</td></tr>';
+                } else {
+                    khoiBody.innerHTML = khoiList.map(k => `
+                        <tr>
+                            <td>${k.makhoilop}</td>
+                            <td>${k.tenkhoilop}</td>
+                        </tr>
+                    `).join('');
+                }
+
+                // Load danh sách năm học
+                await loadSchoolYears();
+            } catch (error) {
+                console.error('Lỗi load quy định:', error);
+            }
+        }
+
+        // ====== QUẢN LÝ NĂM HỌC ======
+        async function loadSchoolYears() {
+            try {
+                const res = await fetch('/api/settings/school-years');
+                const years = await res.json();
+                
+                const tbody = document.getElementById('namHocBody');
+                if (years.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Chưa có năm học</td></tr>';
+                } else {
+                    tbody.innerHTML = years.map(y => `
+                        <tr data-id="${y.manamhoc}">
+                            <td>
+                                <input type="text" class="edit-manamhoc" value="${y.manamhoc}" 
+                                    style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;" readonly>
+                            </td>
+                            <td>
+                                <input type="text" class="edit-tennamhoc" value="${y.tennamhoc || ''}" 
+                                    style="width: 100%; padding: 4px; border: 1px solid #ddd; border-radius: 4px;">
+                            </td>
+                            <td style="text-align: center;">
+                                <button class="btn btn-primary" onclick="saveSchoolYear('${y.manamhoc}')" style="padding: 4px 8px; font-size: 12px; margin-right: 4px;">Lưu</button>
+                                <button class="btn btn-danger" onclick="deleteSchoolYear('${y.manamhoc}')" style="padding: 4px 8px; font-size: 12px;">Xóa</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Lỗi load năm học:', error);
+            }
+        }
+
+        async function addSchoolYear() {
+            const maNamHoc = document.getElementById('newMaNamHoc').value.trim();
+            const tenNamHoc = document.getElementById('newTenNamHoc').value.trim();
+            
+            if (!maNamHoc) {
+                toastWarning('Vui lòng nhập mã năm học!');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/settings/school-years', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ MaNamHoc: maNamHoc, TenNamHoc: tenNamHoc })
+                });
+                
+                if (res.ok) {
+                    document.getElementById('newMaNamHoc').value = '';
+                    document.getElementById('newTenNamHoc').value = '';
+                    await loadSchoolYears();
+                    toastSuccess('Thêm năm học thành công!');
+                } else {
+                    const err = await res.json();
+                    toastError(err.message || 'Không thể thêm năm học');
+                }
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi thêm năm học!');
+            }
+        }
+
+        async function saveSchoolYear(id) {
+            const row = document.querySelector(`#namHocBody tr[data-id="${id}"]`);
+            const tenNamHoc = row.querySelector('.edit-tennamhoc').value.trim();
+
+            try {
+                const res = await fetch(`/api/settings/school-years/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ TenNamHoc: tenNamHoc })
+                });
+                
+                if (res.ok) {
+                    toastSuccess('Cập nhật năm học thành công!');
+                } else {
+                    toastError('Lỗi khi cập nhật năm học!');
+                }
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi cập nhật năm học!');
+            }
+        }
+
+        async function deleteSchoolYear(id) {
+            if (!confirm(`Bạn có chắc muốn xóa năm học "${id}"?`)) return;
+
+            try {
+                const res = await fetch(`/api/settings/school-years/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                if (res.ok) {
+                    await loadSchoolYears();
+                    toastSuccess('Xóa năm học thành công!');
+                } else {
+                    const err = await res.json();
+                    toastError(err.message || 'Không thể xóa năm học');
+                }
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi xóa năm học!');
+            }
+        }
+
+        async function saveClassRules() {
+            const siSoToiDa = document.getElementById('ruleSiSoToiDa').value;
+            
+            if (parseInt(siSoToiDa) < 1) {
+                toastWarning('Sĩ số tối đa phải lớn hơn 0!');
+                return;
+            }
+
+            try {
+                await fetch('/api/settings/params/SiSoToiDa', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ GiaTri: siSoToiDa })
+                });
+                
+                toastSuccess('Đã lưu quy định thành công!');
+                classRulesModal.classList.remove('show');
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi lưu quy định!');
+            }
+        }
+
+        btnClassRules.onclick = () => {
+            loadClassRules();
+            classRulesModal.classList.add('show');
+        };
+        
+        document.getElementById('closeClassRulesBtn').onclick = 
+        document.getElementById('btnCancelClassRules').onclick = () => {
+            classRulesModal.classList.remove('show');
+        };
+        
+        document.getElementById('btnSaveClassRules').onclick = saveClassRules;
+        
+        classRulesModal.onclick = (e) => {
+            if (e.target === classRulesModal) classRulesModal.classList.remove('show');
+        };
     </script>
 
 </body>
