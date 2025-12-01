@@ -126,6 +126,8 @@
                 localStorage.setItem('isLoggedIn', 'true');
                 
                 toastSuccess(`Đăng nhập thành công! Xin chào, ${result.user.hoTen}`);
+                
+                // Tất cả vai trò đều vào dashboard
                 setTimeout(() => {
                     window.location.href = '/pages/dashboard.html';
                 }, 1000);

@@ -25,6 +25,16 @@ router.post('/login', async (req, res) => {
         
         const user = result.rows[0];
         
+        // Parse quyền từ JSONB
+        let quyen = user.quyen;
+        if (typeof quyen === 'string') {
+            try {
+                quyen = JSON.parse(quyen);
+            } catch {
+                quyen = {};
+            }
+        }
+        
         // Trả về thông tin user (không bao gồm mật khẩu)
         res.json({
             success: true,
@@ -33,8 +43,9 @@ router.post('/login', async (req, res) => {
                 tenDangNhap: user.tendangnhap,
                 hoTen: user.hoten,
                 email: user.email,
-                vaiTro: user.tenvaitro,
-                quyen: user.quyen
+                vaiTro: user.mavaitro,  // Trả về mã vai trò (ADMIN, TEACHER, etc.)
+                tenVaiTro: user.tenvaitro,
+                quyen: quyen
             }
         });
     } catch (err) {

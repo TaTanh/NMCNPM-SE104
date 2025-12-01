@@ -23,12 +23,11 @@
             <a href="/pages/students.html">Quản lý học sinh</a>
             <a href="/pages/classes.html">Quản lý lớp học</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
-            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
-            <a href="/pages/grade_select.html" class="active">Bảng điểm</a>
+            <a href="/pages/grade_entry_select.html" class="active">Nhập điểm</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
             <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
-
     </aside>
 
     <!-- MAIN -->
@@ -36,7 +35,7 @@
 
         <!-- HEADER -->
         <header class="topbar">
-            <div class="page-title">Bảng điểm</div>
+            <div class="page-title">Nhập điểm</div>
             <div class="user-info">
                 <span id="userGreeting">Xin chào, Admin</span>
                 <img src="/assets/user.png" class="avatar" alt="user">
@@ -79,8 +78,9 @@
                     </div>
                 </div>
 
-                <div style="display:flex; align-items:flex-end;">
-                    <button class="btn btn-outline" id="btnSemesterRules">⚙️ Quản lý học kỳ</button>
+                <div style="display:flex; align-items:flex-end; gap: 8px;">
+                    <button class="btn btn-outline" id="btnGradeRules">⚙️ Quy định điểm</button>
+                    <button class="btn btn-outline" id="btnSemesterRules">📅 Quản lý học kỳ</button>
                 </div>
             </div>
 
@@ -104,6 +104,68 @@
 
         </div><!-- content -->
     </div><!-- main -->
+
+    <!-- ========== POPUP QUY ĐỊNH ĐIỂM ========== -->
+    <div class="modal-overlay" id="gradeRulesModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>⚙️ Quy định về điểm số</h2>
+                <button class="modal-close" id="closeGradeRulesBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- PHẦN 1: ĐIỂM SỐ -->
+                <h3 style="font-size:14px; color:#374151; margin-bottom:12px;">📊 Giới hạn điểm</h3>
+                <div class="config-grid">
+                    <div class="config-card">
+                        <div class="config-label">Điểm tối thiểu</div>
+                        <input type="number" id="ruleDiemToiThieu" value="0" min="0" max="10" step="0.5">
+                        <div class="config-hint">Điểm thấp nhất có thể nhập</div>
+                    </div>
+
+                    <div class="config-card">
+                        <div class="config-label">Điểm tối đa</div>
+                        <input type="number" id="ruleDiemToiDa" value="10" min="0" max="10" step="0.5">
+                        <div class="config-hint">Điểm cao nhất có thể nhập</div>
+                    </div>
+
+                    <div class="config-card">
+                        <div class="config-label">Điểm đạt môn</div>
+                        <input type="number" id="ruleDiemDatMon" value="5" min="0" max="10" step="0.5">
+                        <div class="config-hint">Điểm tối thiểu để đạt môn học</div>
+                    </div>
+
+                    <div class="config-card">
+                        <div class="config-label">Điểm đạt (xếp loại)</div>
+                        <input type="number" id="ruleDiemDat" value="5" min="0" max="10" step="0.5">
+                        <div class="config-hint">Điểm tối thiểu để xếp loại đạt</div>
+                    </div>
+                </div>
+
+                <!-- PHẦN 2: LOẠI HÌNH KIỂM TRA -->
+                <h3 style="font-size:14px; color:#374151; margin:20px 0 12px;">📝 Loại hình kiểm tra & Hệ số</h3>
+                <div class="table-wrapper">
+                    <table class="data-table" id="examTypeTable">
+                        <thead>
+                            <tr>
+                                <th>Mã</th>
+                                <th>Tên loại kiểm tra</th>
+                                <th>Hệ số</th>
+                            </tr>
+                        </thead>
+                        <tbody id="examTypeBody">
+                            <tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="modal-footer" style="margin-top: 16px;">
+                    <button type="button" class="btn btn-outline" id="btnCancelGradeRules">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveGradeRules">Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ========== POPUP QUẢN LÝ HỌC KỲ ========== -->
     <div class="modal-overlay" id="semesterRulesModal">
@@ -233,8 +295,8 @@
                         <td>${mh.heso}</td>
                         <td>${semester}</td>
                         <td style="text-align: right;">
-                            <a href="/pages/grade_details.html?subject=${mh.mamonhoc}&class=${classId}&semester=${semester}" 
-                               class="btn btn-primary" style="padding:6px 14px; font-size:14px;">Xem điểm</a>
+                            <a href="/pages/grade_entry.html?subject=${mh.mamonhoc}&class=${classId}&semester=${semester}" 
+                               class="btn btn-primary" style="padding:6px 14px; font-size:14px;">Nhập điểm</a>
                         </td>
                     </tr>
                 `).join('');
@@ -253,6 +315,105 @@
             document.getElementById('classSelect').addEventListener('change', loadSubjectsForGrade);
             document.getElementById('semesterSelect').addEventListener('change', loadSubjectsForGrade);
         });
+
+        // ========== POPUP QUY ĐỊNH ĐIỂM ==========
+        const gradeRulesModal = document.getElementById('gradeRulesModal');
+
+        async function loadGradeRules() {
+            try {
+                // Load tham số điểm
+                const response = await fetch('/api/settings/params');
+                const params = await response.json();
+                
+                params.forEach(p => {
+                    const map = {
+                        'DiemToiThieu': 'ruleDiemToiThieu',
+                        'DiemToiDa': 'ruleDiemToiDa',
+                        'DiemDatMon': 'ruleDiemDatMon',
+                        'DiemDat': 'ruleDiemDat'
+                    };
+                    if (map[p.tenthamso]) {
+                        document.getElementById(map[p.tenthamso]).value = p.giatri;
+                    }
+                });
+
+                // Load loại hình kiểm tra
+                const examRes = await fetch('/api/settings/exam-types');
+                const examTypes = await examRes.json();
+                const examBody = document.getElementById('examTypeBody');
+                
+                if (examTypes.length === 0) {
+                    examBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Chưa có loại hình kiểm tra</td></tr>';
+                } else {
+                    examBody.innerHTML = examTypes.map(et => `
+                        <tr data-id="${et.malhkt}">
+                            <td>${et.malhkt}</td>
+                            <td><input type="text" class="exam-name" value="${et.tenlhkt}" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;"></td>
+                            <td><input type="number" class="exam-heso" value="${et.heso}" min="1" max="5" style="width:60px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;"></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Lỗi load quy định:', error);
+            }
+        }
+
+        async function saveGradeRules() {
+            const rules = [
+                { name: 'DiemToiThieu', value: document.getElementById('ruleDiemToiThieu').value },
+                { name: 'DiemToiDa', value: document.getElementById('ruleDiemToiDa').value },
+                { name: 'DiemDatMon', value: document.getElementById('ruleDiemDatMon').value },
+                { name: 'DiemDat', value: document.getElementById('ruleDiemDat').value }
+            ];
+
+            try {
+                for (const rule of rules) {
+                    await fetch(`/api/settings/params/${rule.name}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ GiaTri: rule.value })
+                    });
+                }
+
+                // Lưu loại hình kiểm tra
+                const examRows = document.querySelectorAll('#examTypeBody tr');
+                for (const row of examRows) {
+                    const id = row.dataset.id;
+                    const name = row.querySelector('.exam-name')?.value;
+                    const heso = row.querySelector('.exam-heso')?.value;
+                    
+                    if (id && name && heso) {
+                        await fetch(`/api/settings/exam-types/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ TenLHKT: name, HeSo: heso })
+                        });
+                    }
+                }
+
+                toastSuccess('Đã lưu quy định thành công!');
+                gradeRulesModal.classList.remove('show');
+            } catch (error) {
+                console.error('Lỗi lưu quy định:', error);
+                toastError('Lỗi khi lưu quy định!');
+            }
+        }
+
+        document.getElementById('btnGradeRules').onclick = () => {
+            loadGradeRules();
+            gradeRulesModal.classList.add('show');
+        };
+        
+        document.getElementById('closeGradeRulesBtn').onclick = 
+        document.getElementById('btnCancelGradeRules').onclick = () => {
+            gradeRulesModal.classList.remove('show');
+        };
+
+        document.getElementById('btnSaveGradeRules').onclick = saveGradeRules;
+
+        gradeRulesModal.onclick = (e) => {
+            if (e.target === gradeRulesModal) gradeRulesModal.classList.remove('show');
+        };
 
         // ========== POPUP QUẢN LÝ HỌC KỲ ==========
         const semesterRulesModal = document.getElementById('semesterRulesModal');
@@ -289,7 +450,7 @@
                     throw new Error(result.error || 'Lỗi xóa');
                 }
                 loadSemesterList();
-                loadDropdowns(); // Refresh dropdown
+                loadDropdowns();
             } catch (error) {
                 toastError(error.message);
             }
