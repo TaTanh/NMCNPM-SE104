@@ -52,6 +52,7 @@
                 <div class="left-panel">
                     <div class="panel-header">
                         <h3>📋 Danh sách học sinh</h3>
+                        <button class="btn-refresh" onclick="resetFilters()" title="Làm mới bộ lọc">🔄</button>
                     </div>
                     
                     <!-- Bộ lọc -->
@@ -436,6 +437,32 @@
             }
         }
 
+        // ========== RESET FILTERS ==========
+        function resetFilters() {
+            // Reset dropdowns
+            document.getElementById('yearSelect').value = '';
+            document.getElementById('gradeSelect').value = '';
+            document.getElementById('classSelect').innerHTML = '<option value="">-- Lớp --</option>';
+            
+            // Reset search
+            document.getElementById('searchStudent').value = '';
+            
+            // Reset danh sách học sinh
+            document.getElementById('studentList').innerHTML = `
+                <div class="empty-state">
+                    <p>Chọn lớp hoặc tìm kiếm để xem danh sách học sinh</p>
+                </div>
+            `;
+            
+            // Reset panel phải
+            document.getElementById('placeholder').style.display = 'flex';
+            document.getElementById('studentDetail').style.display = 'none';
+            
+            // Reset biến
+            selectedStudent = null;
+            allStudents = [];
+        }
+
         // ========== EVENT LISTENERS ==========
         document.addEventListener('DOMContentLoaded', () => {
             loadDropdowns();
@@ -490,12 +517,29 @@
             padding: 16px;
             border-bottom: 1px solid #e5e7eb;
             background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
         .panel-header h3 {
             margin: 0;
             font-size: 16px;
             color: #1f2937;
+        }
+        
+        .btn-refresh {
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        .btn-refresh:hover {
+            background: #e0e0e0;
         }
         
         .filter-compact {
