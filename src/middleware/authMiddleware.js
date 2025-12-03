@@ -1,6 +1,6 @@
 // ========== MIDDLEWARE PHÂN QUYỀN ==========
 
-const pool = require('../db');
+const userModel = require('../models/userModel');
 
 // Middleware kiểm tra đăng nhập (dựa vào header x-user-id)
 // Lưu ý: Đây là cách đơn giản cho đồ án, production nên dùng JWT
@@ -12,20 +12,13 @@ const checkAuth = async (req, res, next) => {
             return res.status(401).json({ error: 'Chưa đăng nhập' });
         }
         
-        const result = await pool.query(
-            `SELECT u.*, r.TenVaiTro, r.Quyen
-             FROM NGUOIDUNG u
-             JOIN VAITRO r ON u.MaVaiTro = r.MaVaiTro
-             WHERE u.MaNguoiDung = $1 AND u.TrangThai = true`,
-            [userId]
-        );
+        const user = await userModel.findById(userId);
         
-        if (result.rows.length === 0) {
+        if (!user) {
             return res.status(401).json({ error: 'Phiên đăng nhập không hợp lệ' });
         }
         
         // Gắn thông tin user vào request
-        const user = result.rows[0];
         req.user = {
             maNguoiDung: user.manguoidung,
             tenDangNhap: user.tendangnhap,
@@ -73,16 +66,9 @@ const optionalAuth = async (req, res, next) => {
         const userId = req.headers['x-user-id'];
         
         if (userId) {
-            const result = await pool.query(
-                `SELECT u.*, r.TenVaiTro, r.Quyen
-                 FROM NGUOIDUNG u
-                 JOIN VAITRO r ON u.MaVaiTro = r.MaVaiTro
-                 WHERE u.MaNguoiDung = $1 AND u.TrangThai = true`,
-                [userId]
-            );
+            const user = await userModel.findById(userId);
             
-            if (result.rows.length > 0) {
-                const user = result.rows[0];
+            if (user) {
                 req.user = {
                     maNguoiDung: user.manguoidung,
                     tenDangNhap: user.tendangnhap,

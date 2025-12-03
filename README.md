@@ -3,36 +3,56 @@
 Dự án phục vụ môn học Nhập môn Công nghệ Phần mềm (SE104).  
 Ứng dụng web quản lý học sinh được xây dựng bằng **Node.js**, **Express** và **PostgreSQL**, với giao diện sử dụng HTML, CSS và JavaScript.
 
-## 📁 1. Cấu trúc thư mục
+## 📁 1. Cấu trúc thư mục (Kiến trúc 3 tầng: Route - Controller - Model)
 
 ```
 Web/
-├── server.js              # Entry point của ứng dụng
-├── db.js                  # Kết nối PostgreSQL
 ├── package.json           # Quản lý dependencies
 ├── README.md
 ├── DATABASE_GUIDE.md      # Hướng dẫn cài đặt database
 │
-├── database/
-│   └── init.sql           # Script khởi tạo database
+├── database/              # Tất cả SQL scripts
+│   ├── init.sql           # Script khởi tạo database
+│   ├── regulations.sql    # Script quy định
+│   └── users_roles.sql    # Script người dùng và vai trò
 │
-├── middleware/
-│   └── auth.js            # Middleware xác thực
+├── src/                   # Source code Backend (3 tầng)
+│   ├── app.js             # Entry point của ứng dụng
+│   │
+│   ├── config/            # Cấu hình
+│   │   └── db.js          # Kết nối PostgreSQL
+│   │
+│   ├── models/            # Tầng Model - Tương tác Database
+│   │   ├── userModel.js       # Model người dùng & vai trò
+│   │   ├── studentModel.js    # Model học sinh
+│   │   ├── classModel.js      # Model lớp học
+│   │   ├── subjectModel.js    # Model môn học
+│   │   ├── gradeModel.js      # Model điểm
+│   │   ├── settingModel.js    # Model cài đặt/tham số
+│   │   └── reportModel.js     # Model báo cáo
+│   │
+│   ├── controllers/       # Tầng Controller - Xử lý logic nghiệp vụ
+│   │   ├── authController.js      # Xử lý đăng nhập/đăng ký
+│   │   ├── studentController.js   # Xử lý học sinh
+│   │   ├── classController.js     # Xử lý lớp học
+│   │   ├── subjectController.js   # Xử lý môn học
+│   │   ├── gradeController.js     # Xử lý điểm
+│   │   ├── settingController.js   # Xử lý cài đặt
+│   │   └── reportController.js    # Xử lý báo cáo
+│   │
+│   ├── routes/            # Tầng Route - Định tuyến URL
+│   │   ├── authRoutes.js      # Routes xác thực
+│   │   ├── studentRoutes.js   # Routes học sinh
+│   │   ├── classRoutes.js     # Routes lớp học
+│   │   ├── subjectRoutes.js   # Routes môn học
+│   │   ├── gradeRoutes.js     # Routes điểm
+│   │   ├── settingRoutes.js   # Routes cài đặt
+│   │   └── reportRoutes.js    # Routes báo cáo
+│   │
+│   └── middleware/        # Middleware
+│       └── authMiddleware.js  # Middleware xác thực & phân quyền
 │
-├── routes/                # API routes
-│   ├── auth.js            # API xác thực (đăng nhập/đăng ký)
-│   ├── students.js        # API quản lý học sinh
-│   ├── classes.js         # API quản lý lớp học
-│   ├── subjects.js        # API quản lý môn học
-│   ├── grades.js          # API quản lý điểm
-│   ├── reports.js         # API báo cáo
-│   └── settings.js        # API cài đặt quy định
-│
-├── sql/                   # SQL scripts bổ sung
-│   ├── regulations.sql
-│   └── users_roles.sql
-│
-└── public/                # Tài nguyên tĩnh (web root)
+└── public/                # Tài nguyên tĩnh (Frontend)
     ├── pages/             # Các trang HTML
     │   ├── login.html
     │   ├── register.html
@@ -52,6 +72,23 @@ Web/
     ├── assets/            # Logo, ảnh, icons
     └── js/                # JavaScript phía client
 ```
+
+## 🏗️ Kiến trúc 3 tầng
+
+### 1. **Route** (Tầng định tuyến)
+- Chỉ chứa định nghĩa đường dẫn (URL)
+- Liên kết URL với Controller tương ứng
+
+### 2. **Controller** (Tầng điều khiển)
+- Nhận request từ Route
+- Xử lý logic nghiệp vụ
+- Gọi Model để thao tác dữ liệu
+- Trả response về client
+
+### 3. **Model** (Tầng dữ liệu)
+- Chỉ chứa các hàm thực thi câu lệnh SQL
+- Tương tác trực tiếp với Database
+- Không xử lý logic nghiệp vụ
 
 ## 🔧 2. Yêu cầu môi trường
 
@@ -192,6 +229,3 @@ Trang mặc định là trang đăng nhập (`login.html`).
 | 4 | Trần Đào Văn Tiên | 23521585 |
 
 ---
-*Cập nhật lần cuối: Tháng 12/2025*-Vũ Thanh Sơn / 23521365
-
--Trần Đào Văn Tiên / 23521585

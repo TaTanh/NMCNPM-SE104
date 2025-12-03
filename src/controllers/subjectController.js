@@ -1,53 +1,40 @@
-const express = require('express');
-const router = express.Router();
-const pool = require('../db');
+const subjectModel = require('../models/subjectModel');
 
 // ========== LẤY DANH SÁCH MÔN HỌC ==========
-router.get('/', async (req, res) => {
+const getSubjects = async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT MaMonHoc, TenMonHoc, HeSo FROM MONHOC ORDER BY MaMonHoc ASC'
-        );
-        res.json(result.rows);
+        const subjects = await subjectModel.findAll();
+        res.json(subjects);
     } catch (err) {
         console.error('Lỗi lấy danh sách môn học:', err);
         res.status(500).json({ error: 'Lỗi server' });
     }
-});
+};
 
 // ========== LẤY 1 MÔN HỌC THEO MÃ ==========
-router.get('/:id', async (req, res) => {
+const getSubjectById = async (req, res) => {
     try {
         const { id } = req.params;
-        const result = await pool.query(
-            'SELECT * FROM MONHOC WHERE MaMonHoc = $1',
-            [id]
-        );
+        const subject = await subjectModel.findById(id);
         
-        if (result.rows.length === 0) {
+        if (!subject) {
             return res.status(404).json({ error: 'Không tìm thấy môn học' });
         }
         
-        res.json(result.rows[0]);
+        res.json(subject);
     } catch (err) {
         console.error('Lỗi lấy môn học:', err);
         res.status(500).json({ error: 'Lỗi server' });
     }
-});
+};
 
 // ========== THÊM MÔN HỌC ==========
-router.post('/', async (req, res) => {
+const createSubject = async (req, res) => {
     try {
         const { MaMonHoc, TenMonHoc, HeSo } = req.body;
         
-        const result = await pool.query(
-            `INSERT INTO MONHOC (MaMonHoc, TenMonHoc, HeSo)
-             VALUES ($1, $2, $3)
-             RETURNING *`,
-            [MaMonHoc, TenMonHoc, HeSo]
-        );
-        
-        res.status(201).json(result.rows[0]);
+        const subject = await subjectModel.create({ MaMonHoc, TenMonHoc, HeSo });
+        res.status(201).json(subject);
     } catch (err) {
         console.error('Lỗi thêm môn học:', err);
         if (err.code === '23505') {
@@ -56,60 +43,47 @@ router.post('/', async (req, res) => {
             res.status(500).json({ error: 'Lỗi server' });
         }
     }
-});
+};
 
 // ========== CẬP NHẬT MÔN HỌC ==========
-router.put('/:id', async (req, res) => {
+const updateSubject = async (req, res) => {
     try {
         const { id } = req.params;
         const { TenMonHoc, HeSo } = req.body;
         
-        const result = await pool.query(
-            `UPDATE MONHOC 
-             SET TenMonHoc = $1, HeSo = $2
-             WHERE MaMonHoc = $3
-             RETURNING *`,
-            [TenMonHoc, HeSo, id]
-        );
+        const subject = await subjectModel.update(id, { TenMonHoc, HeSo });
         
-        if (result.rows.length === 0) {
+        if (!subject) {
             return res.status(404).json({ error: 'Không tìm thấy môn học' });
         }
         
-        res.json(result.rows[0]);
+        res.json(subject);
     } catch (err) {
         console.error('Lỗi cập nhật môn học:', err);
         res.status(500).json({ error: 'Lỗi server' });
     }
-});
+};
 
 // ========== XÓA MÔN HỌC ==========
-router.delete('/:id', async (req, res) => {
+const deleteSubject = async (req, res) => {
     try {
         const { id } = req.params;
         
         // Kiểm tra xem môn học có điểm không
-        const checkDiem = await pool.query(
-            'SELECT 1 FROM BANGDIEMMON WHERE MaMonHoc = $1 LIMIT 1',
-            [id]
-        );
-        
-        if (checkDiem.rows.length > 0) {
+        const hasGrades = await subjectModel.hasGrades(id);
+        if (hasGrades) {
             return res.status(400).json({ 
                 error: 'Không thể xóa môn học này vì đã có dữ liệu điểm. Vui lòng xóa điểm của môn học trước.' 
             });
         }
         
-        const result = await pool.query(
-            'DELETE FROM MONHOC WHERE MaMonHoc = $1 RETURNING *',
-            [id]
-        );
+        const subject = await subjectModel.remove(id);
         
-        if (result.rows.length === 0) {
+        if (!subject) {
             return res.status(404).json({ error: 'Không tìm thấy môn học' });
         }
         
-        res.json({ message: 'Đã xóa môn học', deleted: result.rows[0] });
+        res.json({ message: 'Đã xóa môn học', deleted: subject });
     } catch (err) {
         console.error('Lỗi xóa môn học:', err);
         if (err.code === '23503') {
@@ -118,6 +92,12 @@ router.delete('/:id', async (req, res) => {
             res.status(500).json({ error: 'Lỗi server' });
         }
     }
-});
+};
 
-module.exports = router;
+module.exports = {
+    getSubjects,
+    getSubjectById,
+    createSubject,
+    updateSubject,
+    deleteSubject
+};

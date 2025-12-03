@@ -100,23 +100,69 @@ Server sẽ chạy tại: http://localhost:3000
 
 ```
 Web/
-├── server.js          # Express server
-├── db.js              # Kết nối PostgreSQL
-├── package.json       # Dependencies
-├── routes/            # API routes
-│   ├── students.js
-│   ├── classes.js
-│   ├── subjects.js
-│   ├── grades.js
-│   ├── settings.js
-│   └── reports.js
-├── database/
-│   └── init.sql       # Script tạo database
-└── public/
-    ├── pages/         # HTML pages
-    ├── js/            # Frontend JavaScript
-    ├── layout/        # CSS styles
-    └── assets/        # Images
+├── package.json              # Dependencies
+├── DATABASE_GUIDE.md         # Hướng dẫn database
+├── README.md                 # Readme
+├── database/                 # Scripts database
+│   ├── init.sql              # Script tạo bảng
+│   ├── regulations.sql       # Script quy định
+│   └── users_roles.sql       # Script users & roles
+├── src/                      # Backend source code
+│   ├── app.js                # Express server
+│   ├── config/
+│   │   └── db.js             # Kết nối PostgreSQL
+│   ├── controllers/          # Controllers
+│   │   ├── authController.js
+│   │   ├── classController.js
+│   │   ├── gradeController.js
+│   │   ├── reportController.js
+│   │   ├── settingController.js
+│   │   ├── studentController.js
+│   │   └── subjectController.js
+│   ├── middleware/
+│   │   └── authMiddleware.js
+│   ├── models/               # Database models
+│   │   ├── classModel.js
+│   │   ├── gradeModel.js
+│   │   ├── reportModel.js
+│   │   ├── settingModel.js
+│   │   ├── studentModel.js
+│   │   ├── subjectModel.js
+│   │   └── userModel.js
+│   └── routes/               # API routes
+│       ├── authRoutes.js
+│       ├── classRoutes.js
+│       ├── gradeRoutes.js
+│       ├── reportRoutes.js
+│       ├── settingRoutes.js
+│       ├── studentRoutes.js
+│       └── subjectRoutes.js
+└── public/                   # Frontend
+    ├── assets/               # Images
+    ├── js/                   # Frontend JavaScript
+    │   ├── auth.js
+    │   ├── classes.js
+    │   ├── students.js
+    │   ├── subjects.js
+    │   └── toast.js
+    ├── layout/               # CSS styles
+    │   ├── login_styles.css
+    │   └── styles.css
+    └── pages/                # HTML pages
+        ├── classes.html
+        ├── dashboard.html
+        ├── grade_details.html
+        ├── grade_entry.html
+        ├── grade_entry_select.html
+        ├── grade_select.html
+        ├── login.html
+        ├── register.html
+        ├── reports.html
+        ├── students.html
+        ├── student_transcript.html
+        ├── subject_list.html
+        ├── teaching_assignment.html
+        └── users.html
 ```
 
 ## 8. Troubleshooting

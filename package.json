@@ -2,10 +2,11 @@
   "name": "web",
   "version": "1.0.0",
   "description": "Project: [Quản lý học sinh] – SE104\r Board: [https://trello.com/b/MinwPrnp/se102]\r Members:\r -Tạ Ngọc Thành / 23521462\r -Nguyễn Bá Thông /23521523\r -Vũ Thanh Sơn / 23521365\r -Trần Đào Văn Tiên / 23521585",
-  "main": "db.js",
+  "main": "src/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node src/app.js",
+    "dev": "node src/app.js"
   },
   "repository": {
     "type": "git",
