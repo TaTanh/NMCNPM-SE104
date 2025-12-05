@@ -16,7 +16,7 @@ INSERT INTO THAMSO (TenThamSo, GiaTri, MoTa) VALUES
     ('DiemDat', '5', 'Điểm tổng kết tối thiểu để đạt'),
     ('MaxHocSinhMotKhoa', '999', 'Tối đa 999 học sinh trong 1 khóa học'),
     ('MaxHocSinhHeThong', '1600', 'Tối đa 1600 học sinh trong toàn hệ thống'),
-    ('MaxCot15Phut', '4', 'Tối đa 4 cột kiểm tra 15 phút')
+    ('MaxCotThuongXuyen', '4', 'Tối đa 4 cột điểm thường xuyên')
 ON CONFLICT (TenThamSo) DO NOTHING;
 
 -- Cập nhật mô tả cho các tham số đã có

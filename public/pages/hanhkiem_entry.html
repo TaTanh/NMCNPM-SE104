@@ -27,6 +27,7 @@
             <a href="/pages/hanhkiem_entry.html" class="active">Nhập hạnh kiểm</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/class_summary.html">Tổng kết lớp</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
             <a href="/pages/teaching_assignment.html" id="menuTeaching" style="display:none;">Phân công giảng dạy</a>
             <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
@@ -100,6 +101,7 @@
                             <th style="width:120px;">Mã HS</th>
                             <th style="width:200px;">Họ tên</th>
                             <th style="width:80px;">Giới tính</th>
+                            <th style="width:120px;">Điểm hạnh kiểm</th>
                             <th style="width:150px;">Xếp loại hạnh kiểm</th>
                             <th>Ghi chú</th>
                         </tr>
@@ -229,6 +231,7 @@
                 if (hanhkiemData.success && hanhkiemData.data) {
                     hanhkiemData.data.forEach(hk => {
                         hanhkiemMap[hk.mahocsinh] = {
+                            diemhanhkiem: hk.diemhanhkiem || '',
                             xeploai: hk.xeploai,
                             ghichu: hk.ghichu || ''
                         };
@@ -237,6 +240,7 @@
 
                 currentStudents = students.map(hs => ({
                     ...hs,
+                    diemhanhkiem: hanhkiemMap[hs.mahocsinh]?.diemhanhkiem || '',
                     xeploai: hanhkiemMap[hs.mahocsinh]?.xeploai || '',
                     ghichu: hanhkiemMap[hs.mahocsinh]?.ghichu || ''
                 }));
@@ -254,12 +258,24 @@
             }
         }
 
+        // ========== HÀM TÍNH XẾP LOẠI TỪ ĐIỂM ==========
+        function tinhXepLoaiTuDiem(diem) {
+            if (!diem || diem === '') return '';
+            const diemNum = parseFloat(diem);
+            if (isNaN(diemNum)) return '';
+            
+            if (diemNum >= 80) return 'Tốt';
+            if (diemNum >= 65) return 'Khá';
+            if (diemNum >= 50) return 'Trung bình';
+            return 'Yếu';
+        }
+
         // ========== RENDER BẢNG ==========
         function renderHanhKiemTable() {
             const tbody = document.getElementById('hanhkiemTableBody');
 
             if (currentStudents.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Không có học sinh trong lớp</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có học sinh trong lớp</td></tr>';
                 return;
             }
 
@@ -270,13 +286,20 @@
                     <td>${hs.hoten}</td>
                     <td>${hs.gioitinh || ''}</td>
                     <td>
-                        <select class="form-control hanhkiem-select" data-mahocsinh="${hs.mahocsinh}">
-                            <option value="">-- Chọn --</option>
-                            <option value="Tốt" ${hs.xeploai === 'Tốt' ? 'selected' : ''}>Tốt</option>
-                            <option value="Khá" ${hs.xeploai === 'Khá' ? 'selected' : ''}>Khá</option>
-                            <option value="Trung bình" ${hs.xeploai === 'Trung bình' ? 'selected' : ''}>Trung bình</option>
-                            <option value="Yếu" ${hs.xeploai === 'Yếu' ? 'selected' : ''}>Yếu</option>
-                        </select>
+                        <input type="number" 
+                               class="form-control hanhkiem-diem" 
+                               data-mahocsinh="${hs.mahocsinh}"
+                               value="${hs.diemhanhkiem || ''}"
+                               min="0" 
+                               max="100" 
+                               step="1"
+                               placeholder="0-100"
+                               style="width:100px;">
+                    </td>
+                    <td>
+                        <span class="hanhkiem-xeploai" data-mahocsinh="${hs.mahocsinh}" style="font-weight:500;">
+                            ${hs.xeploai || ''}
+                        </span>
                     </td>
                     <td>
                         <input type="text" class="form-control hanhkiem-note" 
@@ -287,13 +310,22 @@
                 </tr>
             `).join('');
 
-            // Gắn event cho select và input
-            tbody.querySelectorAll('.hanhkiem-select').forEach(select => {
-                select.addEventListener('change', (e) => {
+            // Gắn event cho input điểm - tự động tính xếp loại
+            tbody.querySelectorAll('.hanhkiem-diem').forEach(input => {
+                input.addEventListener('input', (e) => {
                     const maHocSinh = e.target.dataset.mahocsinh;
+                    const diem = e.target.value;
                     const student = currentStudents.find(s => s.mahocsinh == maHocSinh);
+                    
                     if (student) {
-                        student.xeploai = e.target.value;
+                        student.diemhanhkiem = diem;
+                        student.xeploai = tinhXepLoaiTuDiem(diem);
+                        
+                        // Cập nhật span xếp loại
+                        const spanElement = e.target.closest('tr').querySelector('.hanhkiem-xeploai');
+                        if (spanElement) {
+                            spanElement.textContent = student.xeploai;
+                        }
                     }
                 });
             });
@@ -320,19 +352,20 @@
                 return;
             }
 
-            // Lọc chỉ học sinh đã chọn xếp loại
+            // Lọc chỉ học sinh đã nhập điểm hạnh kiểm
             const hanhKiemList = currentStudents
-                .filter(hs => hs.xeploai)
+                .filter(hs => hs.diemhanhkiem && hs.diemhanhkiem !== '')
                 .map(hs => ({
                     maHocSinh: hs.mahocsinh,
                     maNamHoc: parseInt(maNamHoc),
                     maHocKy: parseInt(maHocKy),
+                    diemHanhKiem: parseFloat(hs.diemhanhkiem),
                     xepLoai: hs.xeploai,
                     ghiChu: hs.ghichu || null
                 }));
 
             if (hanhKiemList.length === 0) {
-                toastWarning('Chưa có học sinh nào được chọn xếp loại');
+                toastWarning('Chưa có học sinh nào được nhập điểm hạnh kiểm');
                 return;
             }
 

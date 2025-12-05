@@ -2,52 +2,98 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tổng kết lớp</title>
-    <link rel="stylesheet" href="../layout/styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
+    <script src="/js/auth.js"></script>
 </head>
-<body>
-    <div class="main-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo-section">
-                <h2>📚 Quản lý HS</h2>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="/assets/uit_logo.png" alt="UIT Logo">
+            <span>QL Học Sinh</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/pages/dashboard.html">Dashboard</a>
+            <a href="/pages/students.html">Quản lý học sinh</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
+            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/hanhkiem_entry.html">Nhập hạnh kiểm</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/class_summary.html" class="active">Tổng kết lớp</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/teaching_assignment.html">Phân công giảng dạy</a>
+            <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- HEADER -->
+        <header class="topbar">
+            <div class="page-title">Tổng kết lớp</div>
+            <div class="user-info">
+                <span id="userGreeting">Xin chào, Admin</span>
+                <img src="/assets/user.png" class="avatar" alt="user">
+                <button class="btn btn-outline btn-sm" onclick="logout()" style="margin-left:10px;">Đăng xuất</button>
             </div>
-            <nav class="sidebar-nav">
-                <a href="dashboard.html" class="nav-item">
-                    <span class="icon">🏠</span>
-                    <span>Trang chủ</span>
-                </a>
-                <a href="students.html" class="nav-item">
-                    <span class="icon">👥</span>
-                    <span>Học sinh</span>
-                </a>
-                <a href="classes.html" class="nav-item">
-                    <span class="icon">🏫</span>
-                    <span>Lớp học</span>
-                </a>
-                <a href="subject_list.html" class="nav-item">
-                    <span class="icon">📖</span>
-                    <span>Môn học</span>
-                </a>
-                <a href="grade_entry_select.html" class="nav-item">
-                    <span class="icon">✍️</span>
-                    <span>Nhập điểm</span>
-                </a>
-                <a href="hanhkiem_entry.html" class="nav-item">
-                    <span class="icon">⭐</span>
-                    <span>Nhập hạnh kiểm</span>
-                </a>
-                <a href="student_transcript.html" class="nav-item">
-                    <span class="icon">📊</span>
-                    <span>Tra cứu điểm</span>
-                </a>
-                <a href="class_summary.html" class="nav-item active">
-                    <span class="icon">📈</span>
-                    <span>Tổng kết lớp</span>
-                </a>
-                <a href="reports.html" class="nav-item">
-                    <span class="icon">📑</span>
+        </header>
+
+        <!-- CONTENT -->
+        <div class="content">
+
+            <!-- Filters: Năm học + Lớp -->
+            <div class="filters-row">
+                <div class="filter-item">
+                    <label class="filter-label" for="yearFilter">Năm học</label>
+                    <select id="yearFilter">
+                        <option>2024–2025</option>
+                        <option>2023–2024</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label class="filter-label" for="classFilter">Lớp</label>
+                    <select id="classFilter">
+                        <option value="">Chọn lớp</option>
+                    </select>
+                </div>
+
+                <button class="btn btn-primary" id="btnLoadSummary">Xem tổng kết</button>
+            </div>
+
+            <!-- Info card -->
+            <div class="info-card" id="classInfo" style="display:none;">
+                <h3>Thông tin lớp</h3>
+                <p><strong>Lớp:</strong> <span id="infoClass">-</span></p>
+                <p><strong>GVCN:</strong> <span id="infoGVCN">-</span></p>
+                <p><strong>Sĩ số:</strong> <span id="infoSiSo">-</span></p>
+            </div>
+
+            <!-- Tabs for HK1, HK2, Cả năm -->
+            <div class="tab-container" id="tabContainer" style="display:none;">
+                <button class="tab-btn active" data-tab="hk1">Học kỳ 1</button>
+                <button class="tab-btn" data-tab="hk2">Học kỳ 2</button>
+                <button class="tab-btn" data-tab="canam">Cả năm</button>
+            </div>
+
+            <!-- Table wrapper -->
+            <div class="table-wrapper" id="tableWrapper" style="display:none;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Mã HS</th>
+                            <th>Họ và tên</th>
+                            <th>Giới tính</th>
                     <span>Báo cáo</span>
                 </a>
                 <a href="teaching_assignment.html" class="nav-item">
@@ -511,12 +557,14 @@
                 return { avgScore: null, ranking: '-', passedCount: 0 };
             }
 
-            // Get exam types with weights
+            // Get exam types with weights: 4 TX + 1 GK + 1 CK
             const examTypes = [
-                { tenlhkt: '15 phút', heso: 1 },
-                { tenlhkt: '1 tiết', heso: 2 },
-                { tenlhkt: 'Giữa kỳ', heso: 3 },
-                { tenlhkt: 'Cuối kỳ', heso: 3 }
+                { tenlhkt: 'Thường xuyên 1', heso: 1 },
+                { tenlhkt: 'Thường xuyên 2', heso: 1 },
+                { tenlhkt: 'Thường xuyên 3', heso: 1 },
+                { tenlhkt: 'Thường xuyên 4', heso: 1 },
+                { tenlhkt: 'Thi giữa kỳ', heso: 2 },
+                { tenlhkt: 'Thi cuối kỳ', heso: 3 }
             ];
 
             let totalSubjectAvg = 0;
@@ -673,10 +721,12 @@
 
         function calculateSubjectAverage(gradeData) {
             const examTypes = [
-                { tenlhkt: '15 phút', heso: 1 },
-                { tenlhkt: '1 tiết', heso: 2 },
-                { tenlhkt: 'Giữa kỳ', heso: 3 },
-                { tenlhkt: 'Cuối kỳ', heso: 3 }
+                { tenlhkt: 'Thường xuyên 1', heso: 1 },
+                { tenlhkt: 'Thường xuyên 2', heso: 1 },
+                { tenlhkt: 'Thường xuyên 3', heso: 1 },
+                { tenlhkt: 'Thường xuyên 4', heso: 1 },
+                { tenlhkt: 'Thi giữa kỳ', heso: 2 },
+                { tenlhkt: 'Thi cuối kỳ', heso: 3 }
             ];
 
             let totalScore = 0;

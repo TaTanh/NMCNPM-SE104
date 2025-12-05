@@ -62,7 +62,7 @@ const getByLop = async (req, res) => {
 // ========== NHẬP/CẬP NHẬT HẠNH KIỂM ==========
 const upsert = async (req, res) => {
     try {
-        const { maHocSinh, maNamHoc, maHocKy, xepLoai, ghiChu } = req.body;
+        const { maHocSinh, maNamHoc, maHocKy, diemHanhKiem, xepLoai, ghiChu } = req.body;
 
         if (!maHocSinh || !maNamHoc || !maHocKy || !xepLoai) {
             return res.status(400).json({
@@ -75,6 +75,7 @@ const upsert = async (req, res) => {
             maHocSinh,
             maNamHoc,
             maHocKy,
+            diemHanhKiem || null,
             xepLoai,
             ghiChu || null
         );

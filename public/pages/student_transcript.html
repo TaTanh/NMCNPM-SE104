@@ -24,9 +24,12 @@
             <a href="/pages/classes.html">Quản lý lớp học</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/hanhkiem_entry.html">Nhập hạnh kiểm</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/student_transcript.html" class="active">Tra cứu điểm HS</a>
+            <a href="/pages/class_summary.html">Tổng kết lớp</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/teaching_assignment.html">Phân công giảng dạy</a>
             <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
     </aside>
@@ -110,7 +113,9 @@
                         <div class="semester-filter">
                             <label>Học kỳ:</label>
                             <select id="semesterFilter">
-                                <option value="">-- Tất cả --</option>
+                                <option value="HK1">Học kỳ 1</option>
+                                <option value="HK2">Học kỳ 2</option>
+                                <option value="CANAM">Cả năm</option>
                             </select>
                         </div>
                         
@@ -181,13 +186,7 @@
                     gradeSelect.innerHTML += `<option value="${g.makhoilop}">${g.tenkhoilop}</option>`;
                 });
 
-                // Load học kỳ
-                const semRes = await fetch('/api/settings/semesters');
-                const semesters = await semRes.json();
-                const semesterFilter = document.getElementById('semesterFilter');
-                semesters.forEach(s => {
-                    semesterFilter.innerHTML += `<option value="${s.mahocky}">${s.tenhocky}</option>`;
-                });
+                // Học kỳ dropdown đã được set cố định trong HTML (HK1, HK2, Cả năm)
 
                 // Load loại hình kiểm tra
                 const examRes = await fetch('/api/grades/exam-types');
@@ -333,16 +332,17 @@
             const semester = document.getElementById('semesterFilter').value;
             
             try {
+                // Luôn load tất cả điểm (HK1 và HK2) để tính cả năm
                 let url = `/api/grades/student/${maHocSinh}`;
-                if (semester) url += `?hocky=${semester}`;
                 
                 const response = await fetch(url);
-                const grades = await response.json();
+                const allGrades = await response.json();
                 
-                // Load hạnh kiểm (behavior grade)
+                // Load hạnh kiểm
                 await loadHanhKiem(maHocSinh, semester);
                 
-                renderTranscript(grades);
+                // Render theo học kỳ được chọn
+                renderTranscript(allGrades, semester);
             } catch (error) {
                 console.error('Lỗi load điểm:', error);
                 document.getElementById('transcriptBody').innerHTML = 
@@ -375,19 +375,11 @@
             }
         }
 
-        function renderTranscript(grades) {
+        function renderTranscript(allGrades, semesterFilter) {
             const thead = document.getElementById('transcriptHead');
             const tbody = document.getElementById('transcriptBody');
             
-            // Header
-            thead.innerHTML = `
-                <th>Môn học</th>
-                <th>Học kỳ</th>
-                ${examTypes.map(et => `<th>${et.tenlhkt}<br><small>(x${et.heso})</small></th>`).join('')}
-                <th class="col-avg">ĐTB Môn</th>
-            `;
-            
-            if (grades.length === 0) {
+            if (allGrades.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="' + (examTypes.length + 3) + '" style="text-align:center;">Chưa có dữ liệu điểm</td></tr>';
                 document.getElementById('avgScore').textContent = '-';
                 document.getElementById('ranking').textContent = '-';
@@ -395,22 +387,19 @@
                 return;
             }
             
-            let totalAvg = 0;
-            let countAvg = 0;
-            let passedCount = 0;
-            
-            tbody.innerHTML = grades.map(mon => {
-                const gradeDisplay = examTypes.map(et => {
-                    const diemArr = mon.Diem[et.tenlhkt];
-                    if (diemArr && diemArr.length > 0) {
-                        return `<td>${diemArr.map(d => d.diem).join(', ')}</td>`;
-                    }
-                    return '<td class="no-grade">–</td>';
-                }).join('');
+            // Nhóm điểm theo môn học
+            const groupedBySubject = {};
+            allGrades.forEach(mon => {
+                const key = mon.MaMonHoc || mon.TenMonHoc;
+                if (!groupedBySubject[key]) {
+                    groupedBySubject[key] = {
+                        tenMonHoc: mon.TenMonHoc,
+                        hk1: null,
+                        hk2: null
+                    };
+                }
                 
-                // Tính ĐTB
-                let avg = '–';
-                let avgNum = null;
+                // Tính điểm TB cho học kỳ này
                 let totalWeight = 0;
                 let totalScore = 0;
                 
@@ -424,31 +413,75 @@
                     }
                 });
                 
-                if (totalWeight > 0) {
-                    avgNum = totalScore / totalWeight;
-                    avg = avgNum.toFixed(1);
-                    totalAvg += avgNum;
-                    countAvg++;
-                    if (avgNum >= 5) passedCount++;
-                }
+                const avgNum = totalWeight > 0 ? totalScore / totalWeight : null;
                 
-                let avgClass = '';
-                if (avgNum !== null) {
-                    if (avgNum >= 8) avgClass = 'rate-excellent';
-                    else if (avgNum >= 6.5) avgClass = 'rate-good';
-                    else if (avgNum >= 5) avgClass = 'rate-average';
-                    else avgClass = 'rate-low';
+                // Phân loại theo học kỳ
+                const hocKy = mon.MaHocKy || '';
+                if (hocKy.includes('1')) {
+                    groupedBySubject[key].hk1 = { data: mon, avg: avgNum };
+                } else if (hocKy.includes('2')) {
+                    groupedBySubject[key].hk2 = { data: mon, avg: avgNum };
                 }
+            });
+            
+            // Render theo filter
+            if (semesterFilter === 'HK1') {
+                renderSemester(groupedBySubject, 'hk1', 'Học kỳ 1', thead, tbody);
+            } else if (semesterFilter === 'HK2') {
+                renderSemester(groupedBySubject, 'hk2', 'Học kỳ 2', thead, tbody);
+            } else if (semesterFilter === 'CANAM') {
+                renderYearSummary(groupedBySubject, thead, tbody);
+            }
+        }
+        
+        function renderSemester(groupedBySubject, hkKey, hkLabel, thead, tbody) {
+            // Header
+            thead.innerHTML = `
+                <th>Môn học</th>
+                ${examTypes.map(et => `<th>${et.tenlhkt}<br><small>(x${et.heso})</small></th>`).join('')}
+                <th class="col-avg">ĐTB Môn</th>
+            `;
+            
+            let totalAvg = 0;
+            let countAvg = 0;
+            let passedCount = 0;
+            
+            const rows = [];
+            
+            Object.keys(groupedBySubject).forEach(key => {
+                const subject = groupedBySubject[key];
                 
-                return `
-                    <tr>
-                        <td><strong>${mon.TenMonHoc}</strong></td>
-                        <td>${mon.TenHocKy || mon.MaHocKy}</td>
-                        ${gradeDisplay}
-                        <td class="col-avg"><span class="${avgClass}">${avg}</span></td>
-                    </tr>
-                `;
-            }).join('');
+                if (subject[hkKey]) {
+                    const mon = subject[hkKey].data;
+                    const avgNum = subject[hkKey].avg;
+                    const avg = avgNum ? avgNum.toFixed(1) : '–';
+                    const avgClass = avgNum ? getAvgClass(avgNum) : '';
+                    
+                    if (avgNum) {
+                        totalAvg += avgNum;
+                        countAvg++;
+                        if (avgNum >= 5) passedCount++;
+                    }
+                    
+                    const gradeDisplay = examTypes.map(et => {
+                        const diemArr = mon.Diem[et.tenlhkt];
+                        if (diemArr && diemArr.length > 0) {
+                            return `<td>${diemArr.map(d => d.diem).join(', ')}</td>`;
+                        }
+                        return '<td class="no-grade">–</td>';
+                    }).join('');
+                    
+                    rows.push(`
+                        <tr>
+                            <td><strong>${subject.tenMonHoc}</strong></td>
+                            ${gradeDisplay}
+                            <td class="col-avg"><span class="${avgClass}">${avg}</span></td>
+                        </tr>
+                    `);
+                }
+            });
+            
+            tbody.innerHTML = rows.join('');
             
             // Tổng kết
             if (countAvg > 0) {
@@ -460,6 +493,7 @@
                 else if (finalAvg >= 6.5) ranking = 'Khá';
                 else if (finalAvg >= 5) ranking = 'TB';
                 else ranking = 'Yếu';
+                
                 document.getElementById('ranking').textContent = ranking;
                 document.getElementById('passedSubjects').textContent = `${passedCount}/${countAvg}`;
             } else {
@@ -467,6 +501,83 @@
                 document.getElementById('ranking').textContent = '-';
                 document.getElementById('passedSubjects').textContent = '-';
             }
+        }
+        
+        function renderYearSummary(groupedBySubject, thead, tbody) {
+            // Header cho cả năm
+            thead.innerHTML = `
+                <th>Môn học</th>
+                <th>ĐTB HK1</th>
+                <th>ĐTB HK2</th>
+                <th class="col-avg">ĐTB Cả năm<br><small>(HK1 + HK2×2)/3</small></th>
+            `;
+            
+            let totalYearAvg = 0;
+            let countYearAvg = 0;
+            let passedCount = 0;
+            let isHocSinhGioi = true;
+            
+            const rows = [];
+            
+            Object.keys(groupedBySubject).forEach(key => {
+                const subject = groupedBySubject[key];
+                
+                if (subject.hk1 && subject.hk2 && subject.hk1.avg !== null && subject.hk2.avg !== null) {
+                    const hk1Avg = subject.hk1.avg;
+                    const hk2Avg = subject.hk2.avg;
+                    // Công thức: (HK1 + HK2 * 2) / 3
+                    const yearAvg = (hk1Avg + hk2Avg * 2) / 3;
+                    const avgClass = getAvgClass(yearAvg);
+                    
+                    totalYearAvg += yearAvg;
+                    countYearAvg++;
+                    if (yearAvg >= 5) passedCount++;
+                    if (yearAvg < 8) isHocSinhGioi = false;
+                    
+                    rows.push(`
+                        <tr>
+                            <td><strong>${subject.tenMonHoc}</strong></td>
+                            <td>${hk1Avg.toFixed(1)}</td>
+                            <td>${hk2Avg.toFixed(1)}</td>
+                            <td class="col-avg"><strong><span class="${avgClass}">${yearAvg.toFixed(1)}</span></strong></td>
+                        </tr>
+                    `);
+                }
+            });
+            
+            tbody.innerHTML = rows.join('');
+            
+            // Tổng kết cả năm
+            if (countYearAvg > 0) {
+                const finalAvg = totalYearAvg / countYearAvg;
+                document.getElementById('avgScore').textContent = finalAvg.toFixed(2);
+                
+                let ranking = '';
+                if (finalAvg >= 8 && isHocSinhGioi) {
+                    ranking = 'Giỏi ⭐';
+                } else if (finalAvg >= 8) {
+                    ranking = 'Giỏi (không đạt HS Giỏi)';
+                } else if (finalAvg >= 6.5) {
+                    ranking = 'Khá';
+                } else if (finalAvg >= 5) {
+                    ranking = 'TB';
+                } else {
+                    ranking = 'Yếu';
+                }
+                document.getElementById('ranking').textContent = ranking;
+                document.getElementById('passedSubjects').textContent = `${passedCount}/${countYearAvg}`;
+            } else {
+                document.getElementById('avgScore').textContent = '-';
+                document.getElementById('ranking').textContent = '-';
+                document.getElementById('passedSubjects').textContent = '-';
+            }
+        }
+        
+        function getAvgClass(avgNum) {
+            if (avgNum >= 8) return 'rate-excellent';
+            if (avgNum >= 6.5) return 'rate-good';
+            if (avgNum >= 5) return 'rate-average';
+            return 'rate-low';
         }
 
         // ========== RESET FILTERS ==========
