@@ -1,188 +1,65 @@
 -- =====================================================
 -- FILE: regulations.sql
 -- MỤC ĐÍCH: Thiết lập các quy định cho hệ thống QLHS
+-- CHÚ Ý: Chạy file này SAU khi đã chạy init.sql
 -- =====================================================
 
--- ========== BẢNG THAM SỐ (PARAMETERS) ==========
--- Tạo bảng nếu chưa tồn tại
-CREATE TABLE IF NOT EXISTS THAMSO (
-    TenThamSo VARCHAR(50) PRIMARY KEY,
-    GiaTri DECIMAL(10,2) NOT NULL,
-    MoTa VARCHAR(255)
-);
+-- ========== CẬP NHẬT THÊM THAM SỐ ==========
+-- Thêm mô tả cho các tham số đã có
+ALTER TABLE THAMSO ADD COLUMN IF NOT EXISTS MoTa VARCHAR(255);
 
--- ========== QĐ1: Tuổi học sinh từ 15 đến 20 ==========
+-- Cập nhật mô tả cho các tham số hiện có
+UPDATE THAMSO SET MoTa = 'Tuổi tối thiểu của học sinh khi nhập học' WHERE TenThamSo = 'TuoiToiThieu';
+UPDATE THAMSO SET MoTa = 'Tuổi tối đa của học sinh khi nhập học' WHERE TenThamSo = 'TuoiToiDa';
+UPDATE THAMSO SET MoTa = 'Sĩ số tối đa của mỗi lớp học' WHERE TenThamSo = 'SiSoToiDa';
+UPDATE THAMSO SET MoTa = 'Điểm trung bình tối thiểu để đạt môn' WHERE TenThamSo = 'DiemDatMon';
+
+-- Thêm các tham số mới nếu chưa có
 INSERT INTO THAMSO (TenThamSo, GiaTri, MoTa) VALUES 
-    ('TuoiToiThieu', 15, 'Tuổi tối thiểu của học sinh khi nhập học'),
-    ('TuoiToiDa', 20, 'Tuổi tối đa của học sinh khi nhập học')
-ON CONFLICT (TenThamSo) DO UPDATE SET GiaTri = EXCLUDED.GiaTri;
+    ('DiemToiThieu', '0', 'Điểm tối thiểu'),
+    ('DiemToiDa', '10', 'Điểm tối đa'),
+    ('DiemDat', '5', 'Điểm tổng kết tối thiểu để đạt')
+ON CONFLICT (TenThamSo) DO NOTHING;
 
--- ========== QĐ3: Sĩ số tối đa mỗi lớp là 40 ==========
-INSERT INTO THAMSO (TenThamSo, GiaTri, MoTa) VALUES 
-    ('SiSoToiDa', 40, 'Sĩ số tối đa của mỗi lớp học')
-ON CONFLICT (TenThamSo) DO UPDATE SET GiaTri = EXCLUDED.GiaTri;
-
--- ========== QĐ6: Điểm từ 0 đến 10 ==========
-INSERT INTO THAMSO (TenThamSo, GiaTri, MoTa) VALUES 
-    ('DiemToiThieu', 0, 'Điểm tối thiểu'),
-    ('DiemToiDa', 10, 'Điểm tối đa')
-ON CONFLICT (TenThamSo) DO UPDATE SET GiaTri = EXCLUDED.GiaTri;
-
--- ========== QĐ7: Điểm đạt môn >= 5 ==========
-INSERT INTO THAMSO (TenThamSo, GiaTri, MoTa) VALUES 
-    ('DiemDatMon', 5, 'Điểm trung bình tối thiểu để đạt môn'),
-    ('DiemDat', 5, 'Điểm tổng kết tối thiểu để đạt')
-ON CONFLICT (TenThamSo) DO UPDATE SET GiaTri = EXCLUDED.GiaTri;
-
--- ========== QĐ2: Mỗi năm có 2 học kỳ ==========
-CREATE TABLE IF NOT EXISTS HOCKY (
-    MaHocKy VARCHAR(10) PRIMARY KEY,
-    TenHocKy VARCHAR(50) NOT NULL
-);
-
-INSERT INTO HOCKY (MaHocKy, TenHocKy) VALUES 
-    ('HK1', 'Học kỳ I'),
-    ('HK2', 'Học kỳ II')
-ON CONFLICT (MaHocKy) DO NOTHING;
-
--- ========== QĐ3: Khối lớp (10, 11, 12) ==========
-CREATE TABLE IF NOT EXISTS KHOILOP (
-    MaKhoiLop VARCHAR(10) PRIMARY KEY,
-    TenKhoiLop VARCHAR(50) NOT NULL
-);
-
-INSERT INTO KHOILOP (MaKhoiLop, TenKhoiLop) VALUES 
-    ('K10', 'Khối 10'),
-    ('K11', 'Khối 11'),
-    ('K12', 'Khối 12')
-ON CONFLICT (MaKhoiLop) DO NOTHING;
-
--- ========== NĂM HỌC ==========
-CREATE TABLE IF NOT EXISTS NAMHOC (
-    MaNamHoc VARCHAR(10) PRIMARY KEY,
-    TenNamHoc VARCHAR(20) NOT NULL
-);
-
-INSERT INTO NAMHOC (MaNamHoc, TenNamHoc) VALUES 
-    ('2024-2025', '2024–2025'),
-    ('2025-2026', '2025–2026')
-ON CONFLICT (MaNamHoc) DO NOTHING;
-
--- ========== QĐ5: 9 môn học mặc định ==========
-CREATE TABLE IF NOT EXISTS MONHOC (
-    MaMonHoc VARCHAR(10) PRIMARY KEY,
-    TenMonHoc VARCHAR(50) NOT NULL
-);
-
-INSERT INTO MONHOC (MaMonHoc, TenMonHoc) VALUES 
-    ('TOAN', 'Toán'),
-    ('LY', 'Vật Lý'),
-    ('HOA', 'Hóa Học'),
-    ('SINH', 'Sinh Học'),
-    ('SU', 'Lịch Sử'),
-    ('DIA', 'Địa Lý'),
-    ('VAN', 'Ngữ Văn'),
-    ('GDCD', 'Đạo Đức'),
-    ('TD', 'Thể Dục')
-ON CONFLICT (MaMonHoc) DO NOTHING;
-
--- ========== QĐ6: Loại hình kiểm tra & Hệ số ==========
-CREATE TABLE IF NOT EXISTS LOAIHINHKIEMTRA (
-    MaLHKT VARCHAR(10) PRIMARY KEY,
-    TenLHKT VARCHAR(50) NOT NULL,
-    HeSo INT NOT NULL DEFAULT 1
-);
-
+-- ========== CẬP NHẬT LOẠI HÌNH KIỂM TRA ==========
+-- Thêm loại kiểm tra giữa kỳ nếu chưa có
 INSERT INTO LOAIHINHKIEMTRA (MaLHKT, TenLHKT, HeSo) VALUES 
-    ('15P', 'Kiểm tra 15 phút', 1),
-    ('GK', 'Thi giữa kỳ', 2),
-    ('HK', 'Thi học kỳ', 3)
+    ('GK', 'Thi giữa kỳ', 2)
 ON CONFLICT (MaLHKT) DO UPDATE SET HeSo = EXCLUDED.HeSo;
 
--- ========== BẢNG LỚP (với constraint sĩ số) ==========
-CREATE TABLE IF NOT EXISTS LOP (
-    MaLop VARCHAR(10) PRIMARY KEY,
-    TenLop VARCHAR(50) NOT NULL,
-    MaKhoiLop VARCHAR(10) REFERENCES KHOILOP(MaKhoiLop),
-    SiSo INT DEFAULT 0,
-    MaNamHoc VARCHAR(10) REFERENCES NAMHOC(MaNamHoc)
-);
-
--- ========== LỚP MẪU THEO CẤU TRÚC QĐ3 ==========
--- Khối 10: 10A1–10A4
+-- ========== THÊM LỚP MẪU ==========
+-- Thêm các lớp mẫu nếu chưa có
 INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc) VALUES 
-    ('10A1-2425', '10A1', 'K10', 0, '2024-2025'),
-    ('10A2-2425', '10A2', 'K10', 0, '2024-2025'),
-    ('10A3-2425', '10A3', 'K10', 0, '2024-2025'),
-    ('10A4-2425', '10A4', 'K10', 0, '2024-2025')
+    ('10A4', 'Lớp 10A4', 'K10', 0, '2024-2025')
 ON CONFLICT (MaLop) DO NOTHING;
 
--- Khối 11: 11A1–11A3
 INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc) VALUES 
-    ('11A1-2425', '11A1', 'K11', 0, '2024-2025'),
-    ('11A2-2425', '11A2', 'K11', 0, '2024-2025'),
-    ('11A3-2425', '11A3', 'K11', 0, '2024-2025')
+    ('11A2', 'Lớp 11A2', 'K11', 0, '2024-2025'),
+    ('11A3', 'Lớp 11A3', 'K11', 0, '2024-2025')
 ON CONFLICT (MaLop) DO NOTHING;
 
--- Khối 12: 12A1–12A2
 INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc) VALUES 
-    ('12A1-2425', '12A1', 'K12', 0, '2024-2025'),
-    ('12A2-2425', '12A2', 'K12', 0, '2024-2025')
+    ('12A2', 'Lớp 12A2', 'K12', 0, '2024-2025')
 ON CONFLICT (MaLop) DO NOTHING;
-
--- ========== BẢNG HỌC SINH ==========
-CREATE TABLE IF NOT EXISTS HOCSINH (
-    MaHocSinh VARCHAR(20) PRIMARY KEY,
-    HoTen VARCHAR(100) NOT NULL,
-    GioiTinh VARCHAR(10),
-    NgaySinh DATE,
-    DiaChi VARCHAR(255),
-    Email VARCHAR(100)
-);
-
--- ========== BẢNG QUÁ TRÌNH HỌC (gán HS vào lớp) ==========
-CREATE TABLE IF NOT EXISTS QUATRINHHOC (
-    MaHocSinh VARCHAR(20) REFERENCES HOCSINH(MaHocSinh),
-    MaLop VARCHAR(10) REFERENCES LOP(MaLop),
-    PRIMARY KEY (MaHocSinh, MaLop)
-);
-
--- ========== BẢNG ĐIỂM MÔN ==========
-CREATE TABLE IF NOT EXISTS BANGDIEMMON (
-    MaBangDiem VARCHAR(50) PRIMARY KEY,
-    MaLop VARCHAR(10) REFERENCES LOP(MaLop),
-    MaMonHoc VARCHAR(10) REFERENCES MONHOC(MaMonHoc),
-    MaHocKy VARCHAR(10) REFERENCES HOCKY(MaHocKy)
-);
-
--- ========== CHI TIẾT ĐIỂM HỌC SINH ==========
-CREATE TABLE IF NOT EXISTS CT_BANGDIEMMON_HOCSINH (
-    MaBangDiem VARCHAR(50) REFERENCES BANGDIEMMON(MaBangDiem),
-    MaHocSinh VARCHAR(20) REFERENCES HOCSINH(MaHocSinh),
-    MaLHKT VARCHAR(10) REFERENCES LOAIHINHKIEMTRA(MaLHKT),
-    Diem DECIMAL(4,2),
-    PRIMARY KEY (MaBangDiem, MaHocSinh, MaLHKT),
-    CONSTRAINT chk_diem CHECK (Diem >= 0 AND Diem <= 10)
-);
 
 -- ========== VIEW: Hiển thị tóm tắt quy định ==========
 CREATE OR REPLACE VIEW V_QUIDINH AS
 SELECT 
     'QĐ1' as MaQD,
     'Tuổi học sinh' as TenQD,
-    CONCAT('Từ ', (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'TuoiToiThieu'), 
-           ' đến ', (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'TuoiToiDa'), ' tuổi') as GiaTri
+    'Từ ' || (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'TuoiToiThieu') || 
+           ' đến ' || (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'TuoiToiDa') || ' tuổi' as GiaTri
 UNION ALL
-SELECT 'QĐ2', 'Số học kỳ', CONCAT((SELECT COUNT(*) FROM HOCKY), ' học kỳ/năm')
+SELECT 'QĐ2', 'Số học kỳ', (SELECT COUNT(*) FROM HOCKY)::text || ' học kỳ/năm'
 UNION ALL
-SELECT 'QĐ3', 'Sĩ số tối đa', CONCAT((SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'SiSoToiDa'), ' HS/lớp')
+SELECT 'QĐ3', 'Sĩ số tối đa', (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'SiSoToiDa') || ' HS/lớp'
 UNION ALL
-SELECT 'QĐ5', 'Số môn học', CONCAT((SELECT COUNT(*) FROM MONHOC), ' môn')
+SELECT 'QĐ5', 'Số môn học', (SELECT COUNT(*) FROM MONHOC)::text || ' môn'
 UNION ALL
-SELECT 'QĐ6', 'Thang điểm', CONCAT('Từ ', (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'DiemToiThieu'),
-           ' đến ', (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'DiemToiDa'))
+SELECT 'QĐ6', 'Thang điểm', 'Từ ' || (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'DiemToiThieu') ||
+           ' đến ' || (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'DiemToiDa')
 UNION ALL
-SELECT 'QĐ7', 'Điểm đạt môn', CONCAT('TB >= ', (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'DiemDatMon'));
+SELECT 'QĐ7', 'Điểm đạt môn', 'TB >= ' || (SELECT GiaTri FROM THAMSO WHERE TenThamSo = 'DiemDatMon');
 
 -- ========== FUNCTION: Tính tuổi học sinh ==========
 CREATE OR REPLACE FUNCTION fn_TinhTuoi(ngay_sinh DATE) 

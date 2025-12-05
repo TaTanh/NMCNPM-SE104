@@ -26,50 +26,13 @@ CREATE TABLE IF NOT EXISTS NGUOIDUNG (
 -- THÊM 4 VAI TRÒ: ADMIN, GIÁO VIÊN, PHỤ HUYNH, HỌC SINH
 -- =============================================
 INSERT INTO VAITRO (MaVaiTro, TenVaiTro, Quyen, MoTa) VALUES 
-('ADMIN', 'Quản trị viên', '{
-    "all": true,
-    "quanlyHocSinh": true,
-    "quanlyLop": true,
-    "quanlyMonHoc": true,
-    "nhapDiem": true,
-    "xemDiem": true,
-    "baoCao": true,
-    "caiDat": true,
-    "phanQuyen": true
-}', 'Có tất cả quyền: quản lý hệ thống, phân quyền, nhập điểm, thay đổi mọi thứ'),
+('ADMIN', 'Quản trị viên', '{"all": true, "quanlyHocSinh": true, "quanlyLop": true, "quanlyMonHoc": true, "nhapDiem": true, "xemDiem": true, "baoCao": true, "caiDat": true, "phanQuyen": true}', 'Có tất cả quyền: quản lý hệ thống, phân quyền, nhập điểm, thay đổi mọi thứ'),
 
-('TEACHER', 'Giáo viên', '{
-    "quanlyHocSinh": false,
-    "quanlyLop": false,
-    "quanlyMonHoc": false,
-    "nhapDiem": true,
-    "xemDiem": true,
-    "baoCao": true,
-    "caiDat": false,
-    "phanQuyen": false
-}', 'Có thể nhập điểm cho học sinh và xem báo cáo'),
+('TEACHER', 'Giáo viên', '{"quanlyHocSinh": false, "quanlyLop": false, "quanlyMonHoc": false, "nhapDiem": true, "xemDiem": true, "baoCao": true, "caiDat": false, "phanQuyen": false}', 'Có thể nhập điểm cho học sinh và xem báo cáo'),
 
-('PARENT', 'Phụ huynh', '{
-    "quanlyHocSinh": false,
-    "quanlyLop": false,
-    "quanlyMonHoc": false,
-    "nhapDiem": false,
-    "xemDiem": true,
-    "baoCao": false,
-    "caiDat": false,
-    "phanQuyen": false
-}', 'Chỉ xem điểm của con em mình'),
+('PARENT', 'Phụ huynh', '{"quanlyHocSinh": false, "quanlyLop": false, "quanlyMonHoc": false, "nhapDiem": false, "xemDiem": true, "baoCao": false, "caiDat": false, "phanQuyen": false}', 'Chỉ xem điểm của con em mình'),
 
-('STUDENT', 'Học sinh', '{
-    "quanlyHocSinh": false,
-    "quanlyLop": false,
-    "quanlyMonHoc": false,
-    "nhapDiem": false,
-    "xemDiem": true,
-    "baoCao": false,
-    "caiDat": false,
-    "phanQuyen": false
-}', 'Chỉ xem điểm của mình')
+('STUDENT', 'Học sinh', '{"quanlyHocSinh": false, "quanlyLop": false, "quanlyMonHoc": false, "nhapDiem": false, "xemDiem": true, "baoCao": false, "caiDat": false, "phanQuyen": false}', 'Chỉ xem điểm của mình')
 
 ON CONFLICT (MaVaiTro) DO UPDATE SET
     TenVaiTro = EXCLUDED.TenVaiTro,
