@@ -106,7 +106,7 @@ erDiagram
         varchar(50) MaBangDiem PK,FK
         varchar(20) MaHocSinh PK,FK
         varchar(20) MaLHKT PK,FK
-        decimal(4,2) Diem
+        decimal Diem
     }
     
     %% ========== BÁO CÁO ==========
@@ -120,7 +120,7 @@ erDiagram
         varchar(50) MaBaoCao PK,FK
         varchar(20) MaLop PK,FK
         int SoLuongDat
-        decimal(5,2) TiLe
+        decimal TiLe
     }
     
     BAOCAOTONGKETHOCKY {
@@ -128,7 +128,7 @@ erDiagram
         varchar(20) MaLop FK
         varchar(10) MaHocKy FK
         int SoLuongDat
-        decimal(5,2) TiLe
+        decimal TiLe
     }
     
     %% ========== HỆ THỐNG ==========
