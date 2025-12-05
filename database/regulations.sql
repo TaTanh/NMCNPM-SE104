@@ -18,7 +18,10 @@ UPDATE THAMSO SET MoTa = 'Điểm trung bình tối thiểu để đạt môn' W
 INSERT INTO THAMSO (TenThamSo, GiaTri, MoTa) VALUES 
     ('DiemToiThieu', '0', 'Điểm tối thiểu'),
     ('DiemToiDa', '10', 'Điểm tối đa'),
-    ('DiemDat', '5', 'Điểm tổng kết tối thiểu để đạt')
+    ('DiemDat', '5', 'Điểm tổng kết tối thiểu để đạt'),
+    ('MaxHocSinhMotKhoa', '999', 'Tối đa 999 học sinh trong 1 khóa học'),
+    ('MaxHocSinhHeThong', '1600', 'Tối đa 1600 học sinh trong toàn hệ thống'),
+    ('MaxCot15Phut', '4', 'Tối đa 4 cột kiểm tra 15 phút')
 ON CONFLICT (TenThamSo) DO NOTHING;
 
 -- ========== CẬP NHẬT LOẠI HÌNH KIỂM TRA ==========
@@ -85,7 +88,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ========== FUNCTION: Tính điểm trung bình môn ==========
+-- ========== FUNCTION: Tính điểm trung bình môn học kỳ ==========
 CREATE OR REPLACE FUNCTION fn_TinhDiemTB(ma_bang_diem VARCHAR, ma_hoc_sinh VARCHAR) 
 RETURNS DECIMAL(4,1) AS $$
 DECLARE
@@ -109,6 +112,42 @@ BEGIN
     
     -- Làm tròn 0.1
     RETURN ROUND(tong_diem / tong_he_so, 1);
+END;
+$$ LANGUAGE plpgsql;
+
+-- ========== FUNCTION: Tính điểm trung bình môn cả năm ==========
+-- Công thức: TB Năm = (TB HK1 + TB HK2 * 2) / 3
+CREATE OR REPLACE FUNCTION fn_TinhDiemTBNam(ma_lop VARCHAR, ma_mon_hoc VARCHAR, ma_hoc_sinh VARCHAR, ma_nam_hoc VARCHAR) 
+RETURNS DECIMAL(4,1) AS $$
+DECLARE
+    diem_hk1 DECIMAL(4,1);
+    diem_hk2 DECIMAL(4,1);
+    ma_bang_diem_hk1 VARCHAR(50);
+    ma_bang_diem_hk2 VARCHAR(50);
+BEGIN
+    -- Lấy mã bảng điểm HK1
+    SELECT MaBangDiem INTO ma_bang_diem_hk1
+    FROM BANGDIEMMON
+    WHERE MaLop = ma_lop AND MaMonHoc = ma_mon_hoc AND MaHocKy = 'HK1';
+    
+    -- Lấy mã bảng điểm HK2
+    SELECT MaBangDiem INTO ma_bang_diem_hk2
+    FROM BANGDIEMMON
+    WHERE MaLop = ma_lop AND MaMonHoc = ma_mon_hoc AND MaHocKy = 'HK2';
+    
+    -- Tính điểm HK1
+    diem_hk1 := fn_TinhDiemTB(ma_bang_diem_hk1, ma_hoc_sinh);
+    
+    -- Tính điểm HK2
+    diem_hk2 := fn_TinhDiemTB(ma_bang_diem_hk2, ma_hoc_sinh);
+    
+    -- Nếu thiếu điểm HK nào thì trả về NULL
+    IF diem_hk1 IS NULL OR diem_hk2 IS NULL THEN
+        RETURN NULL;
+    END IF;
+    
+    -- Tính TB cả năm: (HK1 + HK2*2) / 3
+    RETURN ROUND((diem_hk1 + diem_hk2 * 2) / 3, 1);
 END;
 $$ LANGUAGE plpgsql;
 

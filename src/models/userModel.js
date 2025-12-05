@@ -130,6 +130,61 @@ const updateRole = async (id, roleData) => {
     return result.rows[0] || null;
 };
 
+// ========== LẤY GIÁO VIÊN THEO VAI TRÒ ==========
+const findTeachersByRole = async (roleCode) => {
+    const result = await pool.query(
+        `SELECT u.MaNguoiDung, u.HoTen, u.Email, r.TenVaiTro
+         FROM NGUOIDUNG u
+         JOIN VAITRO r ON u.MaVaiTro = r.MaVaiTro
+         WHERE r.MaVaiTro = $1 AND u.TrangThai = true
+         ORDER BY u.HoTen`,
+        [roleCode]
+    );
+    return result.rows;
+};
+
+// ========== LẤY TẤT CẢ GVCN (GIÁO VIÊN CHỦ NHIỆM) ==========
+const findAllGVCN = async () => {
+    return await findTeachersByRole('GVCN');
+};
+
+// ========== LẤY TẤT CẢ GVBM (GIÁO VIÊN BỘ MÔN) ==========
+const findAllGVBM = async () => {
+    return await findTeachersByRole('GVBM');
+};
+
+// ========== KIỂM TRA USER CÓ QUYỀN GVCN KHÔNG ==========
+const isGVCN = async (userId) => {
+    const result = await pool.query(
+        `SELECT 1 FROM NGUOIDUNG u
+         JOIN VAITRO r ON u.MaVaiTro = r.MaVaiTro
+         WHERE u.MaNguoiDung = $1 AND (r.MaVaiTro = 'GVCN' OR r.MaVaiTro = 'ADMIN')`,
+        [userId]
+    );
+    return result.rows.length > 0;
+};
+
+// ========== KIỂM TRA USER CÓ QUYỀN GVBM KHÔNG ==========
+const isGVBM = async (userId) => {
+    const result = await pool.query(
+        `SELECT 1 FROM NGUOIDUNG u
+         JOIN VAITRO r ON u.MaVaiTro = r.MaVaiTro
+         WHERE u.MaNguoiDung = $1 AND (r.MaVaiTro = 'GVBM' OR r.MaVaiTro = 'GVCN' OR r.MaVaiTro = 'ADMIN')`,
+        [userId]
+    );
+    return result.rows.length > 0;
+};
+
+// ========== KIỂM TRA USER CÓ QUYỀN ADMIN KHÔNG ==========
+const isAdmin = async (userId) => {
+    const result = await pool.query(
+        `SELECT 1 FROM NGUOIDUNG u
+         WHERE u.MaNguoiDung = $1 AND u.MaVaiTro = 'ADMIN'`,
+        [userId]
+    );
+    return result.rows.length > 0;
+};
+
 module.exports = {
     findByCredentials,
     findById,
@@ -142,5 +197,11 @@ module.exports = {
     remove,
     findAllRoles,
     createRole,
-    updateRole
+    updateRole,
+    findTeachersByRole,
+    findAllGVCN,
+    findAllGVBM,
+    isGVCN,
+    isGVBM,
+    isAdmin
 };

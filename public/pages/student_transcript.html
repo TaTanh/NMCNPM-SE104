@@ -144,6 +144,10 @@
                                 <div class="summary-label">Môn đạt</div>
                                 <div class="summary-value" id="passedSubjects">-</div>
                             </div>
+                            <div class="summary-card purple">
+                                <div class="summary-label">Hạnh kiểm</div>
+                                <div class="summary-value" id="hanhkiem">-</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -335,11 +339,39 @@
                 const response = await fetch(url);
                 const grades = await response.json();
                 
+                // Load hạnh kiểm (behavior grade)
+                await loadHanhKiem(maHocSinh, semester);
+                
                 renderTranscript(grades);
             } catch (error) {
                 console.error('Lỗi load điểm:', error);
                 document.getElementById('transcriptBody').innerHTML = 
                     '<tr><td colspan="10" style="text-align:center;color:red;">Lỗi tải dữ liệu điểm</td></tr>';
+            }
+        }
+
+        async function loadHanhKiem(maHocSinh, semester) {
+            try {
+                // Get current year from selectedStudent if available
+                const currentYear = selectedStudent?.manamhoc || new Date().getFullYear();
+                
+                let url = `/api/hanhkiem/hocsinh/${maHocSinh}?maNamHoc=${currentYear}`;
+                if (semester) url += `&maHocKy=${semester}`;
+                
+                const response = await fetch(url);
+                const result = await response.json();
+                
+                if (result.success && result.data && result.data.length > 0) {
+                    // If specific semester, show that grade
+                    // If no semester filter, show the most recent or aggregate
+                    const hanhKiemData = result.data[0];
+                    document.getElementById('hanhkiem').textContent = hanhKiemData.xeploai || '-';
+                } else {
+                    document.getElementById('hanhkiem').textContent = '-';
+                }
+            } catch (error) {
+                console.error('Lỗi load hạnh kiểm:', error);
+                document.getElementById('hanhkiem').textContent = '-';
             }
         }
 

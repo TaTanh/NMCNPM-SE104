@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Nhập hạnh kiểm</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
+    <script src="/js/auth.js"></script>
+</head>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="/assets/uit_logo.png" alt="UIT Logo">
+            <span>QL Học Sinh</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/pages/dashboard.html">Dashboard</a>
+            <a href="/pages/students.html">Quản lý học sinh</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
+            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/hanhkiem_entry.html" class="active">Nhập hạnh kiểm</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/teaching_assignment.html" id="menuTeaching" style="display:none;">Phân công giảng dạy</a>
+            <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
+        </nav>
+
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- HEADER -->
+        <header class="topbar">
+            <div class="page-title">Nhập hạnh kiểm</div>
+            <div class="user-info">
+                <span id="userGreeting">Xin chào, GVCN</span>
+                <img src="/assets/user.png" class="avatar" alt="user">
+                <button class="btn btn-outline btn-sm" onclick="logout()" style="margin-left:10px;">Đăng xuất</button>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <!-- FILTER: LỚP + HỌC KỲ + NĂM HỌC -->
+            <div class="filters-row">
+                <div class="filter-item">
+                    <label class="filter-label" for="classFilter">Lớp <span style="color:red">*</span></label>
+                    <select id="classFilter" required>
+                        <option value="">-- Chọn lớp --</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label class="filter-label" for="yearFilter">Năm học <span style="color:red">*</span></label>
+                    <select id="yearFilter" required>
+                        <option value="">-- Chọn năm học --</option>
+                    </select>
+                </div>
+
+                <div class="filter-item">
+                    <label class="filter-label" for="semesterFilter">Học kỳ <span style="color:red">*</span></label>
+                    <select id="semesterFilter" required>
+                        <option value="">-- Chọn học kỳ --</option>
+                        <option value="1">Học kỳ 1</option>
+                        <option value="2">Học kỳ 2</option>
+                    </select>
+                </div>
+
+                <div class="filter-item" style="display:flex; align-items:flex-end;">
+                    <button class="btn btn-primary" id="btnLoadHanhKiem">Tải danh sách</button>
+                </div>
+            </div>
+
+            <!-- TOOLBAR -->
+            <div class="toolbar">
+                <div class="toolbar-info">
+                    <span id="classInfo">Chọn lớp để nhập hạnh kiểm</span>
+                </div>
+
+                <div class="toolbar-actions">
+                    <button class="btn btn-success" id="btnSaveAll">💾 Lưu tất cả</button>
+                    <button class="btn btn-outline" id="btnStats">📊 Thống kê</button>
+                </div>
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:50px;">STT</th>
+                            <th style="width:120px;">Mã HS</th>
+                            <th style="width:200px;">Họ tên</th>
+                            <th style="width:80px;">Giới tính</th>
+                            <th style="width:150px;">Xếp loại hạnh kiểm</th>
+                            <th>Ghi chú</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="hanhkiemTableBody">
+                        <tr>
+                            <td colspan="6" style="text-align:center;">Vui lòng chọn lớp, năm học và học kỳ</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div><!-- content -->
+    </div><!-- main -->
+
+    <!-- ========== MODAL THỐNG KÊ ========== -->
+    <div class="modal-overlay" id="statsModal">
+        <div class="modal" style="max-width:600px;">
+            <div class="modal-header">
+                <h2>Thống kê hạnh kiểm lớp</h2>
+                <button class="modal-close" id="closeStatsBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div id="statsContent" style="padding:20px;">
+                    <p style="text-align:center;">Đang tải thống kê...</p>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="btnCloseStats">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== KIỂM TRA QUYỀN TRUY CẬP ==========
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = getCurrentUser();
+            if (!user) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            // Chỉ GVCN và ADMIN mới được nhập hạnh kiểm
+            if (user.vaiTro !== 'GVCN' && user.vaiTro !== 'ADMIN') {
+                toastError('Bạn không có quyền nhập hạnh kiểm');
+                setTimeout(() => {
+                    window.location.href = '/pages/dashboard.html';
+                }, 2000);
+                return;
+            }
+
+            document.getElementById('userGreeting').textContent = `Xin chào, ${user.hoTen}`;
+            
+            // Show menu phân công giảng dạy cho Admin
+            if (user.vaiTro === 'ADMIN') {
+                document.getElementById('menuTeaching').style.display = 'block';
+                document.getElementById('menuUsers').style.display = 'block';
+            }
+
+            loadFilters();
+        });
+
+        // ========== LOAD FILTERS ==========
+        async function loadFilters() {
+            try {
+                // Load lớp
+                const classesRes = await fetch('/api/classes');
+                const classes = await classesRes.json();
+                const classSelect = document.getElementById('classFilter');
+                classes.forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c.malop;
+                    option.textContent = c.tenlop;
+                    classSelect.appendChild(option);
+                });
+
+                // Load năm học
+                const yearsRes = await fetch('/api/settings/school-years');
+                const years = await yearsRes.json();
+                const yearSelect = document.getElementById('yearFilter');
+                years.forEach(y => {
+                    const option = document.createElement('option');
+                    option.value = y.manamhoc;
+                    option.textContent = y.tennamhoc;
+                    yearSelect.appendChild(option);
+                });
+
+                // Set năm học hiện tại
+                if (years.length > 0) {
+                    yearSelect.value = years[0].manamhoc;
+                }
+            } catch (error) {
+                console.error('Lỗi load filters:', error);
+                toastError('Không thể tải danh sách lớp và năm học');
+            }
+        }
+
+        // ========== LOAD DANH SÁCH HẠNH KIỂM ==========
+        let currentStudents = [];
+
+        document.getElementById('btnLoadHanhKiem').addEventListener('click', loadHanhKiem);
+
+        async function loadHanhKiem() {
+            const maLop = document.getElementById('classFilter').value;
+            const maNamHoc = document.getElementById('yearFilter').value;
+            const maHocKy = document.getElementById('semesterFilter').value;
+
+            if (!maLop || !maNamHoc || !maHocKy) {
+                toastWarning('Vui lòng chọn đầy đủ lớp, năm học và học kỳ');
+                return;
+            }
+
+            try {
+                // Lấy danh sách học sinh trong lớp
+                const studentsRes = await fetch(`/api/classes/${maLop}/students`);
+                if (!studentsRes.ok) throw new Error('Không thể tải danh sách học sinh');
+                const students = await studentsRes.json();
+
+                // Lấy hạnh kiểm đã nhập
+                const hanhkiemRes = await fetch(`/api/hanhkiem/lop/${maLop}?maNamHoc=${maNamHoc}&maHocKy=${maHocKy}`);
+                const hanhkiemData = await hanhkiemRes.json();
+
+                const hanhkiemMap = {};
+                if (hanhkiemData.success && hanhkiemData.data) {
+                    hanhkiemData.data.forEach(hk => {
+                        hanhkiemMap[hk.mahocsinh] = {
+                            xeploai: hk.xeploai,
+                            ghichu: hk.ghichu || ''
+                        };
+                    });
+                }
+
+                currentStudents = students.map(hs => ({
+                    ...hs,
+                    xeploai: hanhkiemMap[hs.mahocsinh]?.xeploai || '',
+                    ghichu: hanhkiemMap[hs.mahocsinh]?.ghichu || ''
+                }));
+
+                renderHanhKiemTable();
+
+                const className = document.getElementById('classFilter').selectedOptions[0].text;
+                const yearName = document.getElementById('yearFilter').selectedOptions[0].text;
+                const semester = maHocKy == 1 ? 'Học kỳ 1' : 'Học kỳ 2';
+                document.getElementById('classInfo').textContent = `${className} - ${yearName} - ${semester} (${currentStudents.length} học sinh)`;
+
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi tải danh sách: ' + error.message);
+            }
+        }
+
+        // ========== RENDER BẢNG ==========
+        function renderHanhKiemTable() {
+            const tbody = document.getElementById('hanhkiemTableBody');
+
+            if (currentStudents.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Không có học sinh trong lớp</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = currentStudents.map((hs, index) => `
+                <tr>
+                    <td style="text-align:center;">${index + 1}</td>
+                    <td>${hs.mahocsinh}</td>
+                    <td>${hs.hoten}</td>
+                    <td>${hs.gioitinh || ''}</td>
+                    <td>
+                        <select class="form-control hanhkiem-select" data-mahocsinh="${hs.mahocsinh}">
+                            <option value="">-- Chọn --</option>
+                            <option value="Tốt" ${hs.xeploai === 'Tốt' ? 'selected' : ''}>Tốt</option>
+                            <option value="Khá" ${hs.xeploai === 'Khá' ? 'selected' : ''}>Khá</option>
+                            <option value="Trung bình" ${hs.xeploai === 'Trung bình' ? 'selected' : ''}>Trung bình</option>
+                            <option value="Yếu" ${hs.xeploai === 'Yếu' ? 'selected' : ''}>Yếu</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control hanhkiem-note" 
+                               data-mahocsinh="${hs.mahocsinh}" 
+                               value="${hs.ghichu || ''}" 
+                               placeholder="Ghi chú (nếu có)">
+                    </td>
+                </tr>
+            `).join('');
+
+            // Gắn event cho select và input
+            tbody.querySelectorAll('.hanhkiem-select').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    const maHocSinh = e.target.dataset.mahocsinh;
+                    const student = currentStudents.find(s => s.mahocsinh == maHocSinh);
+                    if (student) {
+                        student.xeploai = e.target.value;
+                    }
+                });
+            });
+
+            tbody.querySelectorAll('.hanhkiem-note').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const maHocSinh = e.target.dataset.mahocsinh;
+                    const student = currentStudents.find(s => s.mahocsinh == maHocSinh);
+                    if (student) {
+                        student.ghichu = e.target.value;
+                    }
+                });
+            });
+        }
+
+        // ========== LƯU TẤT CẢ ==========
+        document.getElementById('btnSaveAll').addEventListener('click', async () => {
+            const maLop = document.getElementById('classFilter').value;
+            const maNamHoc = document.getElementById('yearFilter').value;
+            const maHocKy = document.getElementById('semesterFilter').value;
+
+            if (!maLop || !maNamHoc || !maHocKy) {
+                toastWarning('Vui lòng chọn lớp, năm học và học kỳ trước');
+                return;
+            }
+
+            // Lọc chỉ học sinh đã chọn xếp loại
+            const hanhKiemList = currentStudents
+                .filter(hs => hs.xeploai)
+                .map(hs => ({
+                    maHocSinh: hs.mahocsinh,
+                    maNamHoc: parseInt(maNamHoc),
+                    maHocKy: parseInt(maHocKy),
+                    xepLoai: hs.xeploai,
+                    ghiChu: hs.ghichu || null
+                }));
+
+            if (hanhKiemList.length === 0) {
+                toastWarning('Chưa có học sinh nào được chọn xếp loại');
+                return;
+            }
+
+            try {
+                const user = getCurrentUser();
+                const response = await fetch('/api/hanhkiem/bulk-upsert', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'x-user-id': user.maNguoiDung
+                    },
+                    body: JSON.stringify({ hanhKiemList })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Lỗi khi lưu hạnh kiểm');
+                }
+
+                toastSuccess(`Đã lưu hạnh kiểm cho ${hanhKiemList.length} học sinh`);
+                loadHanhKiem(); // Reload để cập nhật
+
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi: ' + error.message);
+            }
+        });
+
+        // ========== THỐNG KÊ ==========
+        document.getElementById('btnStats').addEventListener('click', async () => {
+            const maLop = document.getElementById('classFilter').value;
+            const maNamHoc = document.getElementById('yearFilter').value;
+            const maHocKy = document.getElementById('semesterFilter').value;
+
+            if (!maLop || !maNamHoc || !maHocKy) {
+                toastWarning('Vui lòng chọn lớp, năm học và học kỳ trước');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/hanhkiem/thongke/lop/${maLop}?maNamHoc=${maNamHoc}&maHocKy=${maHocKy}`);
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Lỗi khi lấy thống kê');
+                }
+
+                const stats = result.data;
+                const total = stats.reduce((sum, item) => sum + parseInt(item.soluong), 0);
+
+                let html = `
+                    <table class="data-table" style="margin-top:0;">
+                        <thead>
+                            <tr>
+                                <th>Xếp loại</th>
+                                <th>Số lượng</th>
+                                <th>Tỷ lệ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                stats.forEach(item => {
+                    html += `
+                        <tr>
+                            <td><strong>${item.xeploai}</strong></td>
+                            <td style="text-align:center;">${item.soluong}</td>
+                            <td style="text-align:center;">${item.tile}%</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                        <tr style="background-color:#f0f0f0; font-weight:bold;">
+                            <td>Tổng</td>
+                            <td style="text-align:center;">${total}</td>
+                            <td style="text-align:center;">100%</td>
+                        </tr>
+                    </tbody>
+                    </table>
+                `;
+
+                document.getElementById('statsContent').innerHTML = html;
+                document.getElementById('statsModal').classList.add('show');
+
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi: ' + error.message);
+            }
+        });
+
+        document.getElementById('closeStatsBtn').onclick = 
+        document.getElementById('btnCloseStats').onclick = () => {
+            document.getElementById('statsModal').classList.remove('show');
+        };
+
+        document.getElementById('statsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'statsModal') {
+                document.getElementById('statsModal').classList.remove('show');
+            }
+        });
+    </script>
+
+</body>
+</html>
