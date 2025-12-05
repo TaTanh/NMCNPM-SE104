@@ -174,6 +174,65 @@ const getStudentAllGrades = async (maHocSinh, maLop, hocky = null) => {
     return result.rows;
 };
 
+// ========== TÍNH ĐIỂM TRUNG BÌNH HỌC KỲ ==========
+const calculateSemesterAverage = async (maHocSinh, maLop, maMonHoc, maHocKy) => {
+    const result = await pool.query(
+        'SELECT fn_TinhDiemTB($1, $2, $3, $4) as diem_tb',
+        [maLop, maMonHoc, maHocSinh, maHocKy]
+    );
+    return result.rows[0]?.diem_tb || null;
+};
+
+// ========== TÍNH ĐIỂM TRUNG BÌNH NĂM ==========
+const calculateYearAverage = async (maHocSinh, maLop, maMonHoc, maNamHoc) => {
+    const result = await pool.query(
+        'SELECT fn_TinhDiemTBNam($1, $2, $3, $4) as diem_tb_nam',
+        [maLop, maMonHoc, maHocSinh, maNamHoc]
+    );
+    return result.rows[0]?.diem_tb_nam || null;
+};
+
+// ========== LẤY TỔNG KẾT HỌC KỲ CỦA HỌC SINH ==========
+const getStudentSemesterSummary = async (maHocSinh, maLop, maNamHoc, maHocKy) => {
+    const query = `
+        SELECT 
+            mh.MaMonHoc,
+            mh.TenMonHoc,
+            fn_TinhDiemTB($2, mh.MaMonHoc, $1, $4) as DiemTBHocKy
+        FROM MONHOC mh
+        WHERE EXISTS (
+            SELECT 1 FROM BANGDIEMMON bdm
+            WHERE bdm.MaLop = $2 AND bdm.MaMonHoc = mh.MaMonHoc AND bdm.MaHocKy = $4
+        )
+        ORDER BY mh.TenMonHoc
+    `;
+    
+    const result = await pool.query(query, [maHocSinh, maLop, maNamHoc, maHocKy]);
+    return result.rows;
+};
+
+// ========== LẤY TỔNG KẾT NĂM CỦA HỌC SINH ==========
+const getStudentYearSummary = async (maHocSinh, maLop, maNamHoc) => {
+    const query = `
+        SELECT 
+            mh.MaMonHoc,
+            mh.TenMonHoc,
+            fn_TinhDiemTB($2, mh.MaMonHoc, $1, 1) as DiemTBHK1,
+            fn_TinhDiemTB($2, mh.MaMonHoc, $1, 2) as DiemTBHK2,
+            fn_TinhDiemTBNam($2, mh.MaMonHoc, $1, $3) as DiemTBNam
+        FROM MONHOC mh
+        WHERE EXISTS (
+            SELECT 1 FROM BANGDIEMMON bdm
+            JOIN LOP l ON bdm.MaLop = l.MaLop
+            WHERE bdm.MaLop = $2 AND bdm.MaMonHoc = mh.MaMonHoc AND l.MaNamHoc = $3
+        )
+        ORDER BY mh.TenMonHoc
+    `;
+    
+    const result = await pool.query(query, [maHocSinh, maLop, maNamHoc]);
+    return result.rows;
+};
+
 module.exports = {
     getClassSubjectGrades,
     getExamTypes,
@@ -186,5 +245,9 @@ module.exports = {
     getStudentClass,
     getAllSubjects,
     getAllSemesters,
-    getStudentAllGrades
+    getStudentAllGrades,
+    calculateSemesterAverage,
+    calculateYearAverage,
+    getStudentSemesterSummary,
+    getStudentYearSummary
 };

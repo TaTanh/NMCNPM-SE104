@@ -35,8 +35,11 @@ function renderClassTable(classes) {
             <td>${lop.tenlop}</td>
             <td>${lop.khoi || ''}</td>
             <td>${lop.siso || 0}</td>
-            <td>${lop.gvcn || ''}</td>
+            <td>${lop.tengvcn || 'Chưa phân công'}</td>
             <td>${lop.namhoc || ''}</td>
+            <td>
+                <button class="btn btn-sm btn-outline" onclick="viewStudentList('${lop.malop}', '${lop.tenlop}')">Xem DS</button>
+            </td>
         </tr>
     `).join('');
     

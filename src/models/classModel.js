@@ -7,9 +7,11 @@ const findAll = async (filters = {}) => {
     let query = `
         SELECT l.MaLop, l.TenLop, kl.TenKhoiLop as Khoi,
                COALESCE(hs_count.siso, 0) as SiSo, 
-               l.MaNamHoc as NamHoc, l.MaKhoiLop
+               l.MaNamHoc as NamHoc, l.MaKhoiLop, l.MaGVCN,
+               nd.HoTen as TenGVCN
         FROM LOP l
         JOIN KHOILOP kl ON l.MaKhoiLop = kl.MaKhoiLop
+        LEFT JOIN NGUOIDUNG nd ON l.MaGVCN = nd.MaNguoiDung
         LEFT JOIN (
             SELECT MaLop, COUNT(*) as siso 
             FROM QUATRINHHOC 
@@ -43,9 +45,10 @@ const findAll = async (filters = {}) => {
 // ========== LẤY 1 LỚP THEO MÃ ==========
 const findById = async (id) => {
     const result = await pool.query(
-        `SELECT l.*, kl.TenKhoiLop as Khoi
+        `SELECT l.*, kl.TenKhoiLop as Khoi, nd.HoTen as TenGVCN
          FROM LOP l
          JOIN KHOILOP kl ON l.MaKhoiLop = kl.MaKhoiLop
+         LEFT JOIN NGUOIDUNG nd ON l.MaGVCN = nd.MaNguoiDung
          WHERE l.MaLop = $1`,
         [id]
     );
@@ -54,25 +57,25 @@ const findById = async (id) => {
 
 // ========== TẠO LỚP MỚI ==========
 const create = async (classData) => {
-    const { MaLop, TenLop, MaKhoiLop, MaNamHoc, SiSo } = classData;
+    const { MaLop, TenLop, MaKhoiLop, MaNamHoc, SiSo, MaGVCN } = classData;
     const result = await pool.query(
-        `INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc)
-         VALUES ($1, $2, $3, $4, $5)
+        `INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc, MaGVCN)
+         VALUES ($1, $2, $3, $4, $5, $6)
          RETURNING *`,
-        [MaLop, TenLop, MaKhoiLop, SiSo || 0, MaNamHoc]
+        [MaLop, TenLop, MaKhoiLop, SiSo || 0, MaNamHoc, MaGVCN]
     );
     return result.rows[0];
 };
 
 // ========== CẬP NHẬT LỚP ==========
 const update = async (id, classData) => {
-    const { TenLop, MaKhoiLop, MaNamHoc, SiSo } = classData;
+    const { TenLop, MaKhoiLop, MaNamHoc, SiSo, MaGVCN } = classData;
     const result = await pool.query(
         `UPDATE LOP 
-         SET TenLop = $1, MaKhoiLop = $2, MaNamHoc = $3, SiSo = $4
-         WHERE MaLop = $5
+         SET TenLop = $1, MaKhoiLop = $2, MaNamHoc = $3, SiSo = $4, MaGVCN = $5
+         WHERE MaLop = $6
          RETURNING *`,
-        [TenLop, MaKhoiLop, MaNamHoc, SiSo || 0, id]
+        [TenLop, MaKhoiLop, MaNamHoc, SiSo || 0, MaGVCN, id]
     );
     return result.rows[0] || null;
 };
@@ -98,7 +101,8 @@ const hasStudents = async (id) => {
 // ========== LẤY DANH SÁCH HỌC SINH TRONG LỚP ==========
 const getStudents = async (id) => {
     const result = await pool.query(
-        `SELECT hs.*
+        `SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email,
+                hs.HoTenPhuHuynh, hs.SdtPhuHuynh
          FROM HOCSINH hs
          JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
          WHERE qth.MaLop = $1

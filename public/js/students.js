@@ -43,8 +43,11 @@ function renderStudentTable(students) {
             <td>${hs.hoten}</td>
             <td>${hs.gioitinh}</td>
             <td>${formatDate(hs.ngaysinh)}</td>
+            <td>${hs.tenlop || ''}</td>
             <td>${hs.diachi || ''}</td>
             <td>${hs.email || ''}</td>
+            <td>${hs.hotenphuhuuynh || ''}</td>
+            <td>${hs.sdtphuhuuynh || ''}</td>
         </tr>
     `).join('');
     
@@ -74,7 +77,9 @@ async function addStudent(formData) {
                 GioiTinh: formData.get('gender') || document.getElementById('genderAdd').value,
                 NgaySinh: formData.get('dob') || document.getElementById('dobAdd').value,
                 DiaChi: formData.get('address') || document.getElementById('addressAdd').value,
-                Email: formData.get('email') || document.getElementById('emailAdd').value
+                Email: formData.get('email') || document.getElementById('emailAdd').value,
+                HoTenPhuHuynh: document.getElementById('parentNameAdd').value || null,
+                SdtPhuHuynh: document.getElementById('parentPhoneAdd').value || null
             })
         });
         

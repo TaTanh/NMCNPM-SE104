@@ -24,9 +24,12 @@
             <a href="/pages/classes.html">Quản lý lớp học</a>
             <a href="/pages/subject_list.html">Quản lý môn học</a>
             <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/hanhkiem_entry.html">Nhập hạnh kiểm</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/class_summary.html">Tổng kết lớp</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/teaching_assignment.html">Phân công giảng dạy</a>
             <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
 
@@ -106,6 +109,8 @@
                             <th>Lớp</th>
                             <th>Địa chỉ</th>
                             <th>Email</th>
+                            <th>Phụ huynh</th>
+                            <th>SĐT PH</th>
                         </tr>
                     </thead>
 
@@ -181,6 +186,17 @@
                             <label>Địa chỉ</label>
                             <input type="text" id="addressAdd">
                         </div>
+
+                        <div class="form-group">
+                            <label>Họ tên phụ huynh</label>
+                            <input type="text" id="parentNameAdd" placeholder="Họ tên phụ huynh">
+                        </div>
+
+                        <div class="form-group">
+                            <label>SĐT phụ huynh</label>
+                            <input type="tel" id="parentPhoneAdd" placeholder="0123456789">
+                            <span class="error-message" id="errorParentPhoneAdd">Số điện thoại không hợp lệ</span>
+                        </div>
                     </div>
 
                     <div class="modal-footer">
@@ -240,6 +256,17 @@
                         <div class="form-group">
                             <label>Địa chỉ</label>
                             <input type="text" id="addressEdit">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Họ tên phụ huynh</label>
+                            <input type="text" id="parentNameEdit" placeholder="Họ tên phụ huynh">
+                        </div>
+
+                        <div class="form-group">
+                            <label>SĐT phụ huynh</label>
+                            <input type="tel" id="parentPhoneEdit" placeholder="0123456789">
+                            <span class="error-message" id="errorParentPhoneEdit">Số điện thoại không hợp lệ</span>
                         </div>
                     </div>
 
@@ -392,6 +419,8 @@
                     </td>
                     <td>${hs.diachi || ''}</td>
                     <td>${hs.email || ''}</td>
+                    <td>${hs.hotenphuhuuynh || ''}</td>
+                    <td>${hs.sdtphuhuuynh || ''}</td>
                 </tr>
             `).join('');
             
@@ -633,7 +662,9 @@
                 GioiTinh: document.getElementById('genderAdd').value,
                 NgaySinh: document.getElementById('dobAdd').value,
                 DiaChi: document.getElementById('addressAdd').value,
-                Email: document.getElementById('emailAdd').value
+                Email: document.getElementById('emailAdd').value,
+                HoTenPhuHuynh: document.getElementById('parentNameAdd').value || null,
+                SdtPhuHuynh: document.getElementById('parentPhoneAdd').value || null
             };
             
             try {
@@ -690,14 +721,16 @@
                 return;
             }
 
-            // Cột: 0=checkbox, 1=Mã HS, 2=Họ tên, 3=Giới tính, 4=Ngày sinh, 5=Địa chỉ, 6=Email
+            // Cột: 0=checkbox, 1=Mã, 2=Tên, 3=GT, 4=NS, 5=Lớp, 6=ĐC, 7=Email, 8=PH, 9=SDT
             const cells = selectedRow.querySelectorAll('td');
             document.getElementById('studentIdEdit').value = cells[1].textContent.trim();
             document.getElementById('fullNameEdit').value  = cells[2].textContent.trim();
             document.getElementById('genderEdit').value    = cells[3].textContent.trim();
             document.getElementById('dobEdit').value       = formatDateForInput(cells[4].textContent.trim());
-            document.getElementById('addressEdit').value   = cells[5].textContent.trim();
-            document.getElementById('emailEdit').value     = cells[6].textContent.trim();
+            document.getElementById('addressEdit').value   = cells[6].textContent.trim();
+            document.getElementById('emailEdit').value     = cells[7].textContent.trim();
+            document.getElementById('parentNameEdit').value = cells[8].textContent.trim();
+            document.getElementById('parentPhoneEdit').value = cells[9].textContent.trim();
 
             editModal.classList.add('show');
         });
@@ -741,7 +774,9 @@
                 GioiTinh: document.getElementById('genderEdit').value,
                 NgaySinh: document.getElementById('dobEdit').value,
                 DiaChi: document.getElementById('addressEdit').value,
-                Email: document.getElementById('emailEdit').value
+                Email: document.getElementById('emailEdit').value,
+                HoTenPhuHuynh: document.getElementById('parentNameEdit').value || null,
+                SdtPhuHuynh: document.getElementById('parentPhoneEdit').value || null
             };
             
             try {

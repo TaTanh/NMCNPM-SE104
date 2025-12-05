@@ -4,6 +4,7 @@ const pool = require('../config/db');
 const findAllWithClass = async () => {
     const result = await pool.query(`
         SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email,
+               hs.HoTenPhuHuynh, hs.SdtPhuHuynh,
                l.MaLop, l.TenLop, l.MaNamHoc
         FROM HOCSINH hs
         LEFT JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
@@ -18,7 +19,8 @@ const findAll = async (filters = {}) => {
     const { namhoc, lop, khoi, search } = filters;
     
     let query = `
-        SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email
+        SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email,
+               hs.HoTenPhuHuynh, hs.SdtPhuHuynh
         FROM HOCSINH hs
     `;
     
@@ -29,6 +31,7 @@ const findAll = async (filters = {}) => {
     if (lop || namhoc || khoi || search) {
         query = `
             SELECT DISTINCT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email,
+                   hs.HoTenPhuHuynh, hs.SdtPhuHuynh,
                    l.TenLop, l.MaLop
             FROM HOCSINH hs
             LEFT JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
@@ -79,25 +82,26 @@ const findById = async (id) => {
 
 // ========== TẠO HỌC SINH MỚI ==========
 const create = async (studentData) => {
-    const { MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email } = studentData;
+    const { MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh } = studentData;
     const result = await pool.query(
-        `INSERT INTO HOCSINH (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email)
-         VALUES ($1, $2, $3, $4, $5, $6)
+        `INSERT INTO HOCSINH (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING *`,
-        [MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email]
+        [MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh]
     );
     return result.rows[0];
 };
 
 // ========== CẬP NHẬT HỌC SINH ==========
 const update = async (id, studentData) => {
-    const { HoTen, GioiTinh, NgaySinh, DiaChi, Email } = studentData;
+    const { HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh } = studentData;
     const result = await pool.query(
         `UPDATE HOCSINH 
-         SET HoTen = $1, GioiTinh = $2, NgaySinh = $3, DiaChi = $4, Email = $5
-         WHERE MaHocSinh = $6
+         SET HoTen = $1, GioiTinh = $2, NgaySinh = $3, DiaChi = $4, Email = $5,
+             HoTenPhuHuynh = $6, SdtPhuHuynh = $7
+         WHERE MaHocSinh = $8
          RETURNING *`,
-        [HoTen, GioiTinh, NgaySinh, DiaChi, Email, id]
+        [HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh, id]
     );
     return result.rows[0] || null;
 };

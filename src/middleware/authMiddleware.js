@@ -86,8 +86,90 @@ const optionalAuth = async (req, res, next) => {
     }
 };
 
+// ========== KIỂM TRA VAI TRÒ ADMIN ==========
+const isAdmin = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Chưa đăng nhập' });
+    }
+    
+    if (req.user.vaiTro !== 'ADMIN') {
+        return res.status(403).json({ error: 'Chỉ Admin mới có quyền thực hiện thao tác này' });
+    }
+    
+    next();
+};
+
+// ========== KIỂM TRA VAI TRÒ GVCN (hoặc Admin) ==========
+const isGVCN = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Chưa đăng nhập' });
+    }
+    
+    if (req.user.vaiTro !== 'GVCN' && req.user.vaiTro !== 'ADMIN') {
+        return res.status(403).json({ 
+            error: 'Chỉ Giáo viên chủ nhiệm hoặc Admin mới có quyền thực hiện thao tác này' 
+        });
+    }
+    
+    next();
+};
+
+// ========== KIỂM TRA VAI TRÒ GVBM, GVCN (hoặc Admin) ==========
+const isTeacher = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Chưa đăng nhập' });
+    }
+    
+    const allowedRoles = ['GVBM', 'GVCN', 'ADMIN'];
+    if (!allowedRoles.includes(req.user.vaiTro)) {
+        return res.status(403).json({ 
+            error: 'Chỉ Giáo viên mới có quyền thực hiện thao tác này' 
+        });
+    }
+    
+    next();
+};
+
+// ========== KIỂM TRA QUYỀN NHẬP HẠNH KIỂM ==========
+const canInputHanhKiem = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Chưa đăng nhập' });
+    }
+    
+    // Admin và GVCN có quyền nhập hạnh kiểm
+    if (req.user.vaiTro === 'ADMIN' || req.user.vaiTro === 'GVCN') {
+        return next();
+    }
+    
+    // GVBM không có quyền nhập hạnh kiểm
+    return res.status(403).json({ 
+        error: 'Bạn không có quyền nhập hạnh kiểm. Chỉ GVCN và Admin mới được phép.' 
+    });
+};
+
+// ========== KIỂM TRA QUYỀN XEM TỔNG KẾT LỚP ==========
+const canViewClassSummary = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Chưa đăng nhập' });
+    }
+    
+    // Admin và GVCN có quyền xem tổng kết lớp
+    if (req.user.vaiTro === 'ADMIN' || req.user.vaiTro === 'GVCN') {
+        return next();
+    }
+    
+    return res.status(403).json({ 
+        error: 'Bạn không có quyền xem tổng kết lớp. Chỉ GVCN và Admin mới được phép.' 
+    });
+};
+
 module.exports = {
     checkAuth,
     checkPermission,
-    optionalAuth
+    optionalAuth,
+    isAdmin,
+    isGVCN,
+    isTeacher,
+    canInputHanhKiem,
+    canViewClassSummary
 };

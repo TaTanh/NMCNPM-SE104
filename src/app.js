@@ -18,6 +18,8 @@ const gradeRoutes = require('./routes/gradeRoutes');
 const settingRoutes = require('./routes/settingRoutes');
 const reportRoutes = require('./routes/reportRoutes');
 const authRoutes = require('./routes/authRoutes');
+const hanhkiemRoutes = require('./routes/hanhkiemRoutes');
+const giangdayRoutes = require('./routes/giangdayRoutes');
 
 app.use('/api/students', studentRoutes);
 app.use('/api/classes', classRoutes);
@@ -26,6 +28,8 @@ app.use('/api/grades', gradeRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/hanhkiem', hanhkiemRoutes);
+app.use('/api/giangday', giangdayRoutes);
 
 // ========== DASHBOARD STATS API ==========
 const reportController = require('./controllers/reportController');
