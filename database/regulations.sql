@@ -1,18 +1,13 @@
 -- =====================================================
 -- FILE: regulations.sql
 -- MỤC ĐÍCH: Thiết lập các quy định cho hệ thống QLHS
--- CHÚ Ý: Chạy file này SAU khi đã chạy init.sql
+-- THỨ TỰ CHẠY: init.sql → regulations.sql → users_roles.sql → generate.sql
 -- =====================================================
 
 -- ========== CẬP NHẬT THÊM THAM SỐ ==========
--- Thêm mô tả cho các tham số đã có
-ALTER TABLE THAMSO ADD COLUMN IF NOT EXISTS MoTa VARCHAR(255);
 
--- Cập nhật mô tả cho các tham số hiện có
-UPDATE THAMSO SET MoTa = 'Tuổi tối thiểu của học sinh khi nhập học' WHERE TenThamSo = 'TuoiToiThieu';
-UPDATE THAMSO SET MoTa = 'Tuổi tối đa của học sinh khi nhập học' WHERE TenThamSo = 'TuoiToiDa';
-UPDATE THAMSO SET MoTa = 'Sĩ số tối đa của mỗi lớp học' WHERE TenThamSo = 'SiSoToiDa';
-UPDATE THAMSO SET MoTa = 'Điểm trung bình tối thiểu để đạt môn' WHERE TenThamSo = 'DiemDatMon';
+-- Thêm cột MoTa nếu chưa có
+ALTER TABLE THAMSO ADD COLUMN IF NOT EXISTS MoTa VARCHAR(255);
 
 -- Thêm các tham số mới nếu chưa có
 INSERT INTO THAMSO (TenThamSo, GiaTri, MoTa) VALUES 
@@ -23,6 +18,12 @@ INSERT INTO THAMSO (TenThamSo, GiaTri, MoTa) VALUES
     ('MaxHocSinhHeThong', '1600', 'Tối đa 1600 học sinh trong toàn hệ thống'),
     ('MaxCot15Phut', '4', 'Tối đa 4 cột kiểm tra 15 phút')
 ON CONFLICT (TenThamSo) DO NOTHING;
+
+-- Cập nhật mô tả cho các tham số đã có
+UPDATE THAMSO SET MoTa = 'Tuổi tối thiểu của học sinh khi nhập học' WHERE TenThamSo = 'TuoiToiThieu';
+UPDATE THAMSO SET MoTa = 'Tuổi tối đa của học sinh khi nhập học' WHERE TenThamSo = 'TuoiToiDa';
+UPDATE THAMSO SET MoTa = 'Sĩ số tối đa của mỗi lớp học' WHERE TenThamSo = 'SiSoToiDa';
+UPDATE THAMSO SET MoTa = 'Điểm trung bình tối thiểu để đạt môn' WHERE TenThamSo = 'DiemDatMon';
 
 -- ========== CẬP NHẬT LOẠI HÌNH KIỂM TRA ==========
 -- Thêm loại kiểm tra giữa kỳ nếu chưa có

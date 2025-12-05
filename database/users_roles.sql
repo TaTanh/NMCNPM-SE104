@@ -1,26 +1,8 @@
 -- =============================================
 -- BẢNG VAI TRÒ VÀ NGƯỜI DÙNG
+-- Lưu ý: Các bảng VAITRO và NGUOIDUNG đã được tạo trong init.sql
+-- File này chỉ INSERT dữ liệu vai trò và tài khoản mẫu
 -- =============================================
-
--- Bảng vai trò
-CREATE TABLE IF NOT EXISTS VAITRO (
-    MaVaiTro VARCHAR(20) PRIMARY KEY,
-    TenVaiTro VARCHAR(50) NOT NULL,
-    Quyen JSONB DEFAULT '{}',
-    MoTa TEXT
-);
-
--- Bảng người dùng
-CREATE TABLE IF NOT EXISTS NGUOIDUNG (
-    MaNguoiDung SERIAL PRIMARY KEY,
-    TenDangNhap VARCHAR(50) UNIQUE NOT NULL,
-    MatKhau VARCHAR(255) NOT NULL,
-    HoTen VARCHAR(100),
-    Email VARCHAR(100),
-    MaVaiTro VARCHAR(20) REFERENCES VAITRO(MaVaiTro),
-    TrangThai BOOLEAN DEFAULT true,
-    NgayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
 -- =============================================
 -- THÊM 4 VAI TRÒ: ADMIN, GVCN, GVBM, HỌC SINH

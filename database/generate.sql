@@ -123,8 +123,19 @@ BEGIN
     RAISE NOTICE 'Hoàn thành! Đã tạo 1600 học sinh từ HS010000 đến HS011599';
 END $$;
 
+-- ========== TẠO THÊM CÁC LỚP CÒN THIẾU ==========
+INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc) VALUES 
+    ('10A4', 'Lớp 10A4', 'K10', 0, '2024-2025'),
+    ('11A2', 'Lớp 11A2', 'K11', 0, '2024-2025'),
+    ('11A3', 'Lớp 11A3', 'K11', 0, '2024-2025'),
+    ('11A4', 'Lớp 11A4', 'K11', 0, '2024-2025'),
+    ('12A2', 'Lớp 12A2', 'K12', 0, '2024-2025'),
+    ('12A3', 'Lớp 12A3', 'K12', 0, '2024-2025'),
+    ('12A4', 'Lớp 12A4', 'K12', 0, '2024-2025')
+ON CONFLICT (MaLop) DO NOTHING;
+
 -- ========== PHÂN BỔ HỌC SINH VÀO CÁC LỚP ==========
--- Giả sử có 40 lớp (10A1-10A4, 11A1-11A4, 12A1-12A4 x 3 khối) = 12 lớp
+-- Có 12 lớp (10A1-10A4, 11A1-11A4, 12A1-12A4)
 -- Mỗi lớp khoảng 40 học sinh
 
 DO $$

@@ -6,6 +6,26 @@
 -- Tạo database (chạy riêng nếu cần)
 -- CREATE DATABASE student_management;
 
+-- ========== BẢNG VAI TRÒ (TẠO TRƯỚC) ==========
+CREATE TABLE IF NOT EXISTS VAITRO (
+    MaVaiTro VARCHAR(20) PRIMARY KEY,
+    TenVaiTro VARCHAR(50) NOT NULL,
+    Quyen JSONB DEFAULT '{}',
+    MoTa TEXT
+);
+
+-- ========== BẢNG NGƯỜI DÙNG (TẠO TRƯỚC) ==========
+CREATE TABLE IF NOT EXISTS NGUOIDUNG (
+    MaNguoiDung SERIAL PRIMARY KEY,
+    TenDangNhap VARCHAR(50) UNIQUE NOT NULL,
+    MatKhau VARCHAR(255) NOT NULL,
+    HoTen VARCHAR(100),
+    Email VARCHAR(100),
+    MaVaiTro VARCHAR(20) REFERENCES VAITRO(MaVaiTro),
+    TrangThai BOOLEAN DEFAULT true,
+    NgayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ========== BẢNG NĂM HỌC ==========
 CREATE TABLE IF NOT EXISTS NAMHOC (
     MaNamHoc VARCHAR(20) PRIMARY KEY,
@@ -53,6 +73,13 @@ CREATE TABLE IF NOT EXISTS QUATRINHHOC (
     PRIMARY KEY (MaHocSinh, MaLop)
 );
 
+-- ========== BẢNG MÔN HỌC ==========
+CREATE TABLE IF NOT EXISTS MONHOC (
+    MaMonHoc VARCHAR(20) PRIMARY KEY,
+    TenMonHoc VARCHAR(100) NOT NULL,
+    HeSo INT DEFAULT 1
+);
+
 -- ========== BẢNG HẠNH KIỂM ==========
 CREATE TABLE IF NOT EXISTS HANHKIEM (
     MaHocSinh VARCHAR(20) REFERENCES HOCSINH(MaHocSinh) ON DELETE CASCADE,
@@ -73,13 +100,6 @@ CREATE TABLE IF NOT EXISTS GIANGDAY (
     TuNgay DATE,
     DenNgay DATE,
     PRIMARY KEY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
-);
-
--- ========== BẢNG MÔN HỌC ==========
-CREATE TABLE IF NOT EXISTS MONHOC (
-    MaMonHoc VARCHAR(20) PRIMARY KEY,
-    TenMonHoc VARCHAR(100) NOT NULL,
-    HeSo INT DEFAULT 1
 );
 
 -- ========== BẢNG LOẠI HÌNH KIỂM TRA ==========
