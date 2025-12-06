@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS HOCSINH (
     DiaChi VARCHAR(200),
     Email VARCHAR(100),
     HoTenPhuHuynh VARCHAR(100),
-    SdtPhuHuynh VARCHAR(20)
+    SdtPhuHuynh VARCHAR(20),
+    KhoiHienTai VARCHAR(10) -- Khối học sinh hiện đang học (K10, K11, K12, hoặc NULL nếu chưa vào trường)
 );
 
 -- ========== BẢNG QUÁ TRÌNH HỌC ==========
@@ -233,7 +234,30 @@ INSERT INTO THAMSO VALUES ('MaxHocSinhMotKhoa', '999') ON CONFLICT DO NOTHING;
 INSERT INTO THAMSO VALUES ('MaxHocSinhHeThong', '1600') ON CONFLICT DO NOTHING;
 INSERT INTO THAMSO VALUES ('MaxCotThuongXuyen', '4') ON CONFLICT DO NOTHING;
 
+-- =============================================
+-- VAI TRÒ VÀ NGƯỜI DÙNG
+-- =============================================
+
+-- Thêm vai trò
+INSERT INTO VAITRO (MaVaiTro, TenVaiTro, Quyen, MoTa) VALUES 
+('ADMIN', 'Quản trị viên', '{"all": true, "quanlyHocSinh": true, "quanlyLop": true, "quanlyMonHoc": true, "nhapDiem": true, "xemDiem": true, "nhapHanhKiem": true, "xemTongKetLop": true, "xemThongTinHS": true, "baoCao": true, "caiDat": true, "phanQuyen": true}', 'Có tất cả quyền'),
+('GVCN', 'Giáo viên chủ nhiệm', '{"nhapDiem": true, "xemDiem": true, "nhapHanhKiem": true, "xemTongKetLop": true, "xemThongTinHS": true}', 'Nhập điểm, hạnh kiểm lớp chủ nhiệm'),
+('GVBM', 'Giáo viên bộ môn', '{"nhapDiem": true, "xemDiem": true}', 'Chỉ nhập điểm môn dạy'),
+('STUDENT', 'Học sinh', '{"xemDiem": true}', 'Chỉ xem điểm của mình')
+ON CONFLICT (MaVaiTro) DO UPDATE SET TenVaiTro = EXCLUDED.TenVaiTro, Quyen = EXCLUDED.Quyen, MoTa = EXCLUDED.MoTa;
+
+-- Tài khoản admin mặc định
+INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro) VALUES 
+('admin', 'admin123', 'Quản trị viên', 'admin@school.edu.vn', 'ADMIN')
+ON CONFLICT (TenDangNhap) DO NOTHING;
+
+-- Giáo viên mẫu
+INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro) VALUES 
+('gvcn1', '123456', 'Nguyễn Văn Thành', 'gvcn01@school.edu.vn', 'GVCN'),
+('gvbm1', '123456', 'Lê Văn Đức', 'gvbm01@school.edu.vn', 'GVBM')
+ON CONFLICT (TenDangNhap) DO NOTHING;
+
 -- ========================================
 -- HIỂN THỊ THÔNG BÁO HOÀN TẤT
 -- ========================================
-SELECT 'Database đã được tạo thành công!' AS message;
+SELECT '✓ Database đã được khởi tạo thành công!' AS Status;

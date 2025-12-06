@@ -213,6 +213,14 @@ Trang mặc định là trang đăng nhập (`login.html`).
 - **Không đưa thư mục `node_modules` lên Git.**  
   Thư mục này đã được khai báo trong `.gitignore`.
 
+### 🔧 Fix: Ngăn chặn học sinh học nhiều lớp cùng năm học
+
+**Vấn đề**: Học sinh có thể bị thêm vào nhiều lớp trong cùng một năm học (vi phạm QĐ4).
+
+**Giải pháp**: Validation trong `bulkAddStudents()` kiểm tra năm học trước khi thêm học sinh.
+
+**Nếu đã có dữ liệu duplicate**: Xem phần "Fix dữ liệu duplicate" trong `DATABASE_GUIDE.md`
+
 ## 👥 9. Thành viên thực hiện
 
 **Project:** Quản lý học sinh – SE104

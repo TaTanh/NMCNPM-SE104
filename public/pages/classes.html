@@ -274,6 +274,80 @@
         </div>
     </div>
 
+    <!-- ========== POPUP NHẬP DANH SÁCH HỌC SINH ========== -->
+    <div class="modal-overlay" id="importStudentsModal">
+        <div class="modal modal-large">
+            <div class="modal-header">
+                <h2 id="importStudentsTitle">📥 Nhập danh sách học sinh</h2>
+                <button class="modal-close" id="closeImportStudentsModalBtn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Thông tin lớp đích -->
+                <div style="padding: 12px; background: #e3f2fd; border-radius: 8px; margin-bottom: 16px;">
+                    <div style="font-weight: 500; margin-bottom: 4px;">Lớp đích: <span id="importTargetClassName"></span></div>
+                    <div style="color: #666; font-size: 14px;">
+                        Sĩ số hiện tại: <span id="importCurrentSize">0</span> / <span id="importMaxSize">40</span> học sinh
+                    </div>
+                </div>
+
+                <!-- Bộ lọc -->
+                <div style="margin-bottom: 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: end;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; margin-bottom: 4px; font-weight: 500;">Nguồn học sinh</label>
+                        <select id="importSourceType" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="unassigned">Học sinh chưa phân lớp</option>
+                            <option value="currentClass">Học sinh trong lớp hiện tại</option>
+                            <option value="fromClass">Import từ lớp khác</option>
+                        </select>
+                    </div>
+                    <div id="importSourceClassContainer" style="flex: 1; min-width: 200px; display: none;">
+                        <label style="display: block; margin-bottom: 4px; font-weight: 500;">Chọn lớp nguồn</label>
+                        <select id="importSourceClass" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="">-- Chọn lớp --</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <label style="display: block; margin-bottom: 4px; font-weight: 500;">Tìm kiếm</label>
+                        <input type="text" id="importSearchInput" placeholder="Tìm theo tên hoặc mã HS..." style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    </div>
+                    <button type="button" class="btn btn-outline" id="btnSelectAll">Chọn tất cả</button>
+                    <button type="button" class="btn btn-outline" id="btnDeselectAll">Bỏ chọn tất cả</button>
+                </div>
+
+                <!-- Danh sách học sinh có thể chọn -->
+                <div class="table-wrapper" style="max-height: 400px; overflow-y: auto;">
+                    <table class="data-table">
+                        <thead style="position: sticky; top: 0; background: white; z-index: 1;">
+                            <tr>
+                                <th style="width: 50px;"><input type="checkbox" id="importSelectAllCheckbox"></th>
+                                <th>Mã HS</th>
+                                <th>Họ tên</th>
+                                <th>Giới tính</th>
+                                <th>Ngày sinh</th>
+                                <th>Địa chỉ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="importStudentsTableBody">
+                            <tr><td colspan="6" style="text-align:center;">Đang tải...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Thống kê số lượng đã chọn -->
+                <div style="margin-top: 12px; padding: 8px; background: #fff3cd; border-radius: 4px; border: 1px solid #ffc107;">
+                    <strong>Đã chọn: <span id="importSelectedCount">0</span> học sinh</strong>
+                </div>
+
+                <div class="modal-footer" style="margin-top: 16px;">
+                    <button type="button" class="btn btn-outline" id="btnCancelImport">Hủy</button>
+                    <button type="button" class="btn btn-danger" id="btnRemoveFromClass" style="margin-left: auto;">Xóa khỏi lớp</button>
+                    <button type="button" class="btn btn-primary" id="btnConfirmImport">Xác nhận nhập lớp</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ========== POPUP QUY ĐỊNH LỚP HỌC ========== -->
     <div class="modal-overlay" id="classRulesModal">
         <div class="modal" style="max-width: 580px;">
@@ -417,7 +491,7 @@
             }
             
             classTableBody.innerHTML = classes.map(lop => `
-                <tr data-id="${lop.malop}">
+                <tr data-id="${lop.malop}" data-namhoc="${lop.namhoc || ''}" data-siso="${lop.siso || 0}">
                     <td class="select-cell">
                         <input type="checkbox" class="row-select-checkbox">
                     </td>
@@ -427,9 +501,12 @@
                     <td>${lop.siso || 0}</td>
                     <td></td>
                     <td>${lop.namhoc || ''}</td>
-                    <td>
-                        <button class="btn-view-students" onclick="viewClassStudents('${lop.malop}', '${lop.tenlop}')">
+                    <td style="white-space: nowrap;">
+                        <button class="btn btn-sm btn-outline" onclick="viewClassStudents('${lop.malop}', '${lop.tenlop}')" title="Xem danh sách">
                             👁 Xem
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="openImportStudentsModal('${lop.malop}', '${lop.tenlop}', '${lop.namhoc || ''}', ${lop.siso || 0}, '${lop.khoi || ''}')" title="Nhập học sinh">
+                            📥 Nhập
                         </button>
                     </td>
                 </tr>
@@ -981,6 +1058,375 @@
         classRulesModal.onclick = (e) => {
             if (e.target === classRulesModal) classRulesModal.classList.remove('show');
         };
+
+        // ========== POPUP NHẬP DANH SÁCH HỌC SINH ==========
+        const importStudentsModal = document.getElementById('importStudentsModal');
+        const importSourceType = document.getElementById('importSourceType');
+        const importSourceClassContainer = document.getElementById('importSourceClassContainer');
+        const importSourceClass = document.getElementById('importSourceClass');
+        const importSearchInput = document.getElementById('importSearchInput');
+        const importStudentsTableBody = document.getElementById('importStudentsTableBody');
+        const importSelectAllCheckbox = document.getElementById('importSelectAllCheckbox');
+        const btnSelectAll = document.getElementById('btnSelectAll');
+        const btnDeselectAll = document.getElementById('btnDeselectAll');
+        const btnConfirmImport = document.getElementById('btnConfirmImport');
+        const btnRemoveFromClass = document.getElementById('btnRemoveFromClass');
+        
+        let currentImportTargetClass = null;
+        let currentImportTargetYear = null;
+        let currentImportTargetKhoi = null;
+        let availableStudents = [];
+        let selectedStudents = [];
+
+        // Event listener cho thay đổi nguồn học sinh
+        importSourceType.addEventListener('change', () => {
+            updateButtonVisibility();
+            loadAvailableStudents();
+        });
+
+        async function openImportStudentsModal(maLop, tenLop, namHoc, siSoHienTai, khoiLop) {
+            currentImportTargetClass = maLop;
+            currentImportTargetYear = namHoc;
+            currentImportTargetKhoi = khoiLop;
+            
+            document.getElementById('importTargetClassName').textContent = tenLop;
+            document.getElementById('importCurrentSize').textContent = siSoHienTai;
+            
+            // Load sĩ số tối đa
+            try {
+                const paramsRes = await fetch('/api/settings/params');
+                const params = await paramsRes.json();
+                const sisoParam = params.find(p => p.tenthamso === 'SiSoToiDa');
+                document.getElementById('importMaxSize').textContent = sisoParam ? sisoParam.giatri : 40;
+            } catch (err) {
+                document.getElementById('importMaxSize').textContent = 40;
+            }
+            
+            // Load danh sách lớp cho dropdown
+            await loadSourceClasses(namHoc);
+            
+            // Reset selections
+            selectedStudents = [];
+            updateSelectedCount();
+            
+            // Load học sinh chưa phân lớp
+            await loadAvailableStudents();
+            
+            // Ẩn/hiện nút dựa vào nguồn
+            updateButtonVisibility();
+            
+            importStudentsModal.classList.add('show');
+        }
+
+        function updateButtonVisibility() {
+            const sourceType = importSourceType.value;
+            if (sourceType === 'currentClass') {
+                btnRemoveFromClass.style.display = 'inline-block';
+                btnConfirmImport.style.display = 'none';
+            } else {
+                btnRemoveFromClass.style.display = 'none';
+                btnConfirmImport.style.display = 'inline-block';
+            }
+        }
+
+        async function loadSourceClasses(targetYear) {
+            try {
+                const response = await fetch('/api/classes');
+                const classes = await response.json();
+                
+                // Lọc các lớp khác năm học đích
+                const sourceClasses = classes.filter(c => c.namhoc !== targetYear);
+                
+                importSourceClass.innerHTML = '<option value="">-- Chọn lớp --</option>';
+                sourceClasses.forEach(c => {
+                    importSourceClass.innerHTML += `<option value="${c.malop}">${c.tenlop} (${c.namhoc})</option>`;
+                });
+            } catch (err) {
+                console.error('Lỗi load lớp nguồn:', err);
+            }
+        }
+
+        async function loadAvailableStudents() {
+            try {
+                const sourceType = importSourceType.value;
+                let url = '';
+                
+                if (sourceType === 'unassigned') {
+                    url = `/api/classes/unassigned/students?namhoc=${currentImportTargetYear}&khoi=${currentImportTargetKhoi}`;
+                } else if (sourceType === 'currentClass') {
+                    url = `/api/classes/${currentImportTargetClass}/students`;
+                } else if (sourceType === 'fromClass') {
+                    const sourceClassId = importSourceClass.value;
+                    if (!sourceClassId) {
+                        importStudentsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Vui lòng chọn lớp nguồn</td></tr>';
+                        return;
+                    }
+                    url = `/api/classes/available/from-class?sourceClass=${sourceClassId}&targetYear=${currentImportTargetYear}`;
+                }
+                
+                importStudentsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Đang tải...</td></tr>';
+                
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Lỗi tải dữ liệu');
+                
+                availableStudents = await response.json();
+                renderAvailableStudents(availableStudents);
+            } catch (err) {
+                console.error('Lỗi:', err);
+                importStudentsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:red;">Lỗi tải dữ liệu</td></tr>';
+            }
+        }
+
+        function renderAvailableStudents(students) {
+            if (students.length === 0) {
+                importStudentsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Không có học sinh nào</td></tr>';
+                return;
+            }
+            
+            importStudentsTableBody.innerHTML = students.map(hs => {
+                const isSelected = selectedStudents.includes(hs.mahocsinh);
+                return `
+                    <tr>
+                        <td><input type="checkbox" class="student-checkbox" value="${hs.mahocsinh}" ${isSelected ? 'checked' : ''}></td>
+                        <td>${hs.mahocsinh}</td>
+                        <td>${hs.hoten}</td>
+                        <td>${hs.gioitinh || ''}</td>
+                        <td>${formatDate(hs.ngaysinh)}</td>
+                        <td>${hs.diachi || ''}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Gắn event cho checkbox
+            attachStudentCheckboxEvents();
+        }
+
+        function attachStudentCheckboxEvents() {
+            const checkboxes = importStudentsTableBody.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(cb => {
+                cb.addEventListener('change', (e) => {
+                    const maHocSinh = e.target.value;
+                    if (e.target.checked) {
+                        if (!selectedStudents.includes(maHocSinh)) {
+                            selectedStudents.push(maHocSinh);
+                        }
+                    } else {
+                        selectedStudents = selectedStudents.filter(id => id !== maHocSinh);
+                    }
+                    updateSelectedCount();
+                });
+            });
+        }
+
+        function updateSelectedCount() {
+            document.getElementById('importSelectedCount').textContent = selectedStudents.length;
+        }
+
+        // Event listeners
+        importSourceType.addEventListener('change', () => {
+            if (importSourceType.value === 'fromClass') {
+                importSourceClassContainer.style.display = 'block';
+            } else {
+                importSourceClassContainer.style.display = 'none';
+                loadAvailableStudents();
+            }
+        });
+
+        importSourceClass.addEventListener('change', () => {
+            if (importSourceClass.value) {
+                loadAvailableStudents();
+            }
+        });
+
+        importSearchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filtered = availableStudents.filter(hs => 
+                hs.mahocsinh.toLowerCase().includes(searchTerm) ||
+                hs.hoten.toLowerCase().includes(searchTerm)
+            );
+            renderAvailableStudents(filtered);
+        });
+
+        importSelectAllCheckbox.addEventListener('change', (e) => {
+            const checkboxes = importStudentsTableBody.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = e.target.checked;
+                const maHocSinh = cb.value;
+                if (e.target.checked) {
+                    if (!selectedStudents.includes(maHocSinh)) {
+                        selectedStudents.push(maHocSinh);
+                    }
+                } else {
+                    selectedStudents = selectedStudents.filter(id => id !== maHocSinh);
+                }
+            });
+            updateSelectedCount();
+        });
+
+        btnSelectAll.addEventListener('click', () => {
+            const checkboxes = importStudentsTableBody.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = true;
+                const maHocSinh = cb.value;
+                if (!selectedStudents.includes(maHocSinh)) {
+                    selectedStudents.push(maHocSinh);
+                }
+            });
+            importSelectAllCheckbox.checked = true;
+            updateSelectedCount();
+        });
+
+        btnDeselectAll.addEventListener('click', () => {
+            const checkboxes = importStudentsTableBody.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = false;
+            });
+            selectedStudents = [];
+            importSelectAllCheckbox.checked = false;
+            updateSelectedCount();
+        });
+
+        btnConfirmImport.addEventListener('click', async () => {
+            if (selectedStudents.length === 0) {
+                toastWarning('Vui lòng chọn ít nhất một học sinh!');
+                return;
+            }
+            
+            const sourceType = importSourceType.value;
+            let confirmMsg = `Bạn có chắc muốn thêm ${selectedStudents.length} học sinh vào lớp?`;
+            
+            if (sourceType === 'fromClass') {
+                const sourceClassName = importSourceClass.options[importSourceClass.selectedIndex].text;
+                confirmMsg = `Bạn có chắc muốn CHUYỂN ${selectedStudents.length} học sinh từ ${sourceClassName} sang lớp này? Học sinh sẽ bị xóa khỏi lớp cũ.`;
+            }
+            
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+            
+            try {
+                btnConfirmImport.disabled = true;
+                btnConfirmImport.textContent = 'Đang xử lý...';
+                
+                // Nếu import từ lớp khác, xóa học sinh khỏi lớp nguồn trước
+                if (sourceType === 'fromClass') {
+                    const sourceClassId = importSourceClass.value;
+                    for (const maHS of selectedStudents) {
+                        try {
+                            await fetch(`/api/classes/${sourceClassId}/students/${maHS}`, {
+                                method: 'DELETE'
+                            });
+                        } catch (err) {
+                            console.error(`Lỗi xóa học sinh ${maHS} khỏi lớp nguồn:`, err);
+                        }
+                    }
+                }
+                
+                const response = await fetch(`/api/classes/${currentImportTargetClass}/students/bulk`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ students: selectedStudents })
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Lỗi khi nhập học sinh');
+                }
+                
+                toastSuccess(result.message || 'Nhập học sinh thành công!');
+                
+                // Hiển thị chi tiết nếu có lỗi một phần
+                if (result.failed && result.failed.length > 0) {
+                    console.warn('Một số học sinh không thể thêm:', result.failed);
+                }
+                
+                closeImportStudentsModal();
+                await loadClasses();
+                
+            } catch (err) {
+                console.error('Lỗi:', err);
+                toastError(err.message);
+            } finally {
+                btnConfirmImport.disabled = false;
+                btnConfirmImport.textContent = 'Xác nhận nhập lớp';
+            }
+        });
+
+        function closeImportStudentsModal() {
+            importStudentsModal.classList.remove('show');
+            selectedStudents = [];
+            availableStudents = [];
+            importSourceType.value = 'unassigned';
+            importSourceClassContainer.style.display = 'none';
+            importSearchInput.value = '';
+            updateSelectedCount();
+        }
+
+        document.getElementById('closeImportStudentsModalBtn').addEventListener('click', closeImportStudentsModal);
+        document.getElementById('btnCancelImport').addEventListener('click', closeImportStudentsModal);
+
+        importStudentsModal.addEventListener('click', (e) => {
+            if (e.target === importStudentsModal) {
+                closeImportStudentsModal();
+            }
+        });
+
+        // ========== XÓA HỌC SINH KHỎI LỚP ==========
+        btnRemoveFromClass.addEventListener('click', async () => {
+            if (selectedStudents.length === 0) {
+                toastWarning('Vui lòng chọn ít nhất một học sinh để xóa!');
+                return;
+            }
+
+            const confirmMsg = `Bạn có chắc chắn muốn xóa ${selectedStudents.length} học sinh đã chọn khỏi lớp ${document.getElementById('importTargetClassName').textContent}?`;
+            if (!confirm(confirmMsg)) return;
+
+            try {
+                btnRemoveFromClass.disabled = true;
+                btnRemoveFromClass.textContent = 'Đang xử lý...';
+
+                let successCount = 0;
+                let failCount = 0;
+
+                for (const maHS of selectedStudents) {
+                    try {
+                        const response = await fetch(`/api/classes/${currentImportTargetClass}/students/${maHS}`, {
+                            method: 'DELETE'
+                        });
+                        
+                        if (response.ok) {
+                            successCount++;
+                        } else {
+                            failCount++;
+                        }
+                    } catch (err) {
+                        failCount++;
+                    }
+                }
+
+                if (successCount > 0) {
+                    toastSuccess(`Đã xóa ${successCount} học sinh khỏi lớp!`);
+                }
+                if (failCount > 0) {
+                    toastWarning(`${failCount} học sinh không thể xóa!`);
+                }
+
+                // Reload danh sách và cập nhật sĩ số
+                await loadAvailableStudents();
+                await loadClasses();
+                
+                // Reset selections
+                selectedStudents = [];
+                updateSelectedCount();
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi xóa học sinh khỏi lớp!');
+            } finally {
+                btnRemoveFromClass.disabled = false;
+                btnRemoveFromClass.textContent = 'Xóa khỏi lớp';
+            }
+        });
     </script>
 
 </body>

@@ -173,6 +173,107 @@ const removeStudentFromClass = async (req, res) => {
     }
 };
 
+// ========== THÊM NHIỀU HỌC SINH VÀO LỚP (BULK) ==========
+const bulkAddStudentsToClass = async (req, res) => {
+    try {
+        const { id: maLop } = req.params;
+        const { students } = req.body; // Array of MaHocSinh
+        
+        if (!students || !Array.isArray(students) || students.length === 0) {
+            return res.status(400).json({ error: 'Danh sách học sinh không hợp lệ' });
+        }
+        
+        // Lấy thông tin lớp
+        const lop = await classModel.findById(maLop);
+        if (!lop) {
+            return res.status(404).json({ error: 'Không tìm thấy lớp' });
+        }
+        
+        // QĐ3: Kiểm tra sĩ số tối đa
+        const sisoParam = await settingModel.getParam('SiSoToiDa');
+        const sisoToiDa = sisoParam ? parseInt(sisoParam.giatri) : 40;
+        
+        // Đếm số học sinh hiện tại trong lớp
+        const sisoHienTai = await classModel.countStudents(maLop);
+        const sisoSauKhiThem = sisoHienTai + students.length;
+        
+        if (sisoSauKhiThem > sisoToiDa) {
+            return res.status(400).json({ 
+                error: `Vượt quá sĩ số tối đa. Lớp hiện có ${sisoHienTai}/${sisoToiDa} học sinh. Không thể thêm ${students.length} học sinh.`,
+                currentSize: sisoHienTai,
+                maxSize: sisoToiDa,
+                requestedAdd: students.length
+            });
+        }
+        
+        // QĐ4: Kiểm tra học sinh đã thuộc lớp khác trong cùng năm học chưa
+        const conflictStudents = [];
+        for (const maHocSinh of students) {
+            const existingClass = await classModel.checkStudentInYearClass(maHocSinh, lop.manamhoc);
+            if (existingClass) {
+                conflictStudents.push({
+                    maHocSinh,
+                    existingClass: existingClass.tenlop
+                });
+            }
+        }
+        
+        if (conflictStudents.length > 0) {
+            return res.status(400).json({ 
+                error: 'Một số học sinh đã thuộc lớp khác trong năm học này',
+                conflicts: conflictStudents
+            });
+        }
+        
+        // Thêm học sinh vào lớp (bulk)
+        const result = await classModel.bulkAddStudents(maLop, students);
+        
+        res.status(201).json({ 
+            message: `Đã thêm ${result.success.length}/${students.length} học sinh vào lớp thành công`,
+            success: result.success,
+            failed: result.failed,
+            total: students.length
+        });
+    } catch (err) {
+        console.error('Lỗi thêm nhiều học sinh vào lớp:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
+// ========== LẤY DANH SÁCH HỌC SINH CHƯA ĐƯỢC PHÂN LỚP ==========
+const getUnassignedStudents = async (req, res) => {
+    try {
+        const { namhoc } = req.query;
+        
+        if (!namhoc) {
+            return res.status(400).json({ error: 'Thiếu tham số năm học' });
+        }
+        
+        const students = await classModel.getUnassignedStudents(namhoc);
+        res.json(students);
+    } catch (err) {
+        console.error('Lỗi lấy học sinh chưa phân lớp:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
+// ========== LẤY DANH SÁCH HỌC SINH TỪ LỚP NGUỒN (KHẢ DỤNG ĐỂ IMPORT) ==========
+const getAvailableStudentsFromClass = async (req, res) => {
+    try {
+        const { sourceClass, targetYear } = req.query;
+        
+        if (!sourceClass || !targetYear) {
+            return res.status(400).json({ error: 'Thiếu tham số lớp nguồn hoặc năm học đích' });
+        }
+        
+        const students = await classModel.getAvailableStudentsFromClass(sourceClass, targetYear);
+        res.json(students);
+    } catch (err) {
+        console.error('Lỗi lấy học sinh từ lớp nguồn:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
 module.exports = {
     getClasses,
     getClassById,
@@ -181,5 +282,8 @@ module.exports = {
     deleteClass,
     getClassStudents,
     addStudentToClass,
-    removeStudentFromClass
+    removeStudentFromClass,
+    bulkAddStudentsToClass,
+    getUnassignedStudents,
+    getAvailableStudentsFromClass
 };
