@@ -165,7 +165,17 @@ Web/
         └── users.html
 ```
 
-## 8. Troubleshooting
+## 8. Fix dữ liệu duplicate (nếu cần)
+
+Nếu học sinh bị thêm vào nhiều lớp cùng năm học, chạy lại file `regulations.sql`:
+
+```bash
+psql -U postgres -d student_management -f database/regulations.sql
+```
+
+Script này đã tích hợp sẵn câu lệnh xóa duplicate và cập nhật sĩ số.
+
+## 9. Troubleshooting
 
 ### Lỗi "Cannot connect to database"
 - Kiểm tra PostgreSQL đã chạy chưa

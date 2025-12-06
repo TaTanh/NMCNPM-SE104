@@ -419,8 +419,8 @@
                     </td>
                     <td>${hs.diachi || ''}</td>
                     <td>${hs.email || ''}</td>
-                    <td>${hs.hotenphuhuuynh || ''}</td>
-                    <td>${hs.sdtphuhuuynh || ''}</td>
+                    <td>${hs.hotenphuhuynh || ''}</td>
+                    <td>${hs.sdtphuhuynh || ''}</td>
                 </tr>
             `).join('');
             
@@ -723,14 +723,19 @@
 
             // Cột: 0=checkbox, 1=Mã, 2=Tên, 3=GT, 4=NS, 5=Lớp, 6=ĐC, 7=Email, 8=PH, 9=SDT
             const cells = selectedRow.querySelectorAll('td');
-            document.getElementById('studentIdEdit').value = cells[1].textContent.trim();
-            document.getElementById('fullNameEdit').value  = cells[2].textContent.trim();
-            document.getElementById('genderEdit').value    = cells[3].textContent.trim();
-            document.getElementById('dobEdit').value       = formatDateForInput(cells[4].textContent.trim());
-            document.getElementById('addressEdit').value   = cells[6].textContent.trim();
-            document.getElementById('emailEdit').value     = cells[7].textContent.trim();
-            document.getElementById('parentNameEdit').value = cells[8].textContent.trim();
-            document.getElementById('parentPhoneEdit').value = cells[9].textContent.trim();
+            const maHS = cells[1].textContent.trim();
+            
+            // Lấy dữ liệu từ allStudents array thay vì từ cells
+            const student = allStudents.find(s => s.mahocsinh === maHS);
+            
+            document.getElementById('studentIdEdit').value = maHS;
+            document.getElementById('fullNameEdit').value  = student ? student.hoten : cells[2].textContent.trim();
+            document.getElementById('genderEdit').value    = student ? student.gioitinh : cells[3].textContent.trim();
+            document.getElementById('dobEdit').value       = student ? student.ngaysinh.split('T')[0] : formatDateForInput(cells[4].textContent.trim());
+            document.getElementById('addressEdit').value   = student ? (student.diachi || '') : cells[6].textContent.trim();
+            document.getElementById('emailEdit').value     = student ? (student.email || '') : cells[7].textContent.trim();
+            document.getElementById('parentNameEdit').value = student ? (student.hotenphuhuynh || '') : cells[8].textContent.trim();
+            document.getElementById('parentPhoneEdit').value = student ? (student.sdtphuhuynh || '') : cells[9].textContent.trim();
 
             editModal.classList.add('show');
         });

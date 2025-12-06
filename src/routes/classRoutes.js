@@ -5,6 +5,12 @@ const classController = require('../controllers/classController');
 // ========== LẤY DANH SÁCH LỚP ==========
 router.get('/', classController.getClasses);
 
+// ========== LẤY DANH SÁCH HỌC SINH CHƯA ĐƯỢC PHÂN LỚP (PHẢI ĐẶT TRƯỚC /:id) ==========
+router.get('/unassigned/students', classController.getUnassignedStudents);
+
+// ========== LẤY DANH SÁCH HỌC SINH TỪ LỚP NGUỒN (PHẢI ĐẶT TRƯỚC /:id) ==========
+router.get('/available/from-class', classController.getAvailableStudentsFromClass);
+
 // ========== LẤY 1 LỚP THEO MÃ ==========
 router.get('/:id', classController.getClassById);
 
@@ -19,6 +25,9 @@ router.delete('/:id', classController.deleteClass);
 
 // ========== LẤY DANH SÁCH HỌC SINH TRONG LỚP ==========
 router.get('/:id/students', classController.getClassStudents);
+
+// ========== THÊM NHIỀU HỌC SINH VÀO LỚP (BULK) ==========
+router.post('/:id/students/bulk', classController.bulkAddStudentsToClass);
 
 // ========== GÁN HỌC SINH VÀO LỚP ==========
 router.post('/:id/students', classController.addStudentToClass);

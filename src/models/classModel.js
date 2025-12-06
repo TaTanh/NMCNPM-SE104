@@ -164,6 +164,114 @@ const checkStudentInYearClass = async (maHocSinh, maNamHoc) => {
     return result.rows[0] || null;
 };
 
+// ========== THÊM NHIỀU HỌC SINH VÀO LỚP (BULK INSERT) ==========
+const bulkAddStudents = async (maLop, studentIds) => {
+    const client = await pool.connect();
+    const successList = [];
+    const failureList = [];
+    
+    try {
+        await client.query('BEGIN');
+        
+        // Lấy năm học của lớp đích
+        const lopResult = await client.query(
+            'SELECT MaNamHoc FROM LOP WHERE MaLop = $1',
+            [maLop]
+        );
+        
+        if (lopResult.rows.length === 0) {
+            throw new Error('Không tìm thấy lớp');
+        }
+        
+        const maNamHoc = lopResult.rows[0].manamhoc;
+        
+        for (const maHocSinh of studentIds) {
+            try {
+                // Kiểm tra học sinh đã có trong lớp nào của năm học này chưa
+                const existingCheck = await client.query(
+                    `SELECT l.TenLop FROM QUATRINHHOC qth
+                     JOIN LOP l ON qth.MaLop = l.MaLop
+                     WHERE qth.MaHocSinh = $1 AND l.MaNamHoc = $2`,
+                    [maHocSinh, maNamHoc]
+                );
+                
+                if (existingCheck.rows.length > 0) {
+                    failureList.push({ 
+                        maHocSinh, 
+                        reason: `Đã thuộc lớp ${existingCheck.rows[0].tenlop} trong năm học ${maNamHoc}` 
+                    });
+                    continue;
+                }
+                
+                // Thêm học sinh vào lớp
+                await client.query(
+                    'INSERT INTO QUATRINHHOC (MaHocSinh, MaLop) VALUES ($1, $2)',
+                    [maHocSinh, maLop]
+                );
+                successList.push(maHocSinh);
+            } catch (err) {
+                // Nếu duplicate key, bỏ qua
+                if (err.code === '23505') {
+                    failureList.push({ maHocSinh, reason: 'Học sinh đã có trong lớp này' });
+                } else {
+                    failureList.push({ maHocSinh, reason: err.message });
+                }
+            }
+        }
+        
+        // Cập nhật sĩ số lớp
+        if (successList.length > 0) {
+            await client.query(
+                'UPDATE LOP SET SiSo = SiSo + $1 WHERE MaLop = $2',
+                [successList.length, maLop]
+            );
+        }
+        
+        await client.query('COMMIT');
+        return { success: successList, failed: failureList };
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
+    }
+};
+
+// ========== LẤY DANH SÁCH HỌC SINH CHƯA ĐƯỢC PHÂN LỚP TRONG NĂM HỌC ==========
+const getUnassignedStudents = async (maNamHoc) => {
+    // Lấy tất cả học sinh chưa có lớp trong năm học đó
+    const result = await pool.query(
+        `SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email, hs.KhoiHienTai
+         FROM HOCSINH hs
+         WHERE NOT EXISTS (
+             SELECT 1 FROM QUATRINHHOC qth
+             JOIN LOP l ON qth.MaLop = l.MaLop
+             WHERE qth.MaHocSinh = hs.MaHocSinh AND l.MaNamHoc = $1
+         )
+         ORDER BY hs.MaHocSinh`,
+        [maNamHoc]
+    );
+    return result.rows;
+};
+
+// ========== LẤY HỌC SINH TỪ LỚP NGUỒN (CHƯA CÓ TRONG NĂM HỌC ĐÍCH) ==========
+const getAvailableStudentsFromClass = async (sourceMaLop, targetNamHoc) => {
+    const result = await pool.query(
+        `SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email
+         FROM HOCSINH hs
+         JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
+         WHERE qth.MaLop = $1
+         AND NOT EXISTS (
+             SELECT 1 FROM QUATRINHHOC qth2
+             JOIN LOP l2 ON qth2.MaLop = l2.MaLop
+             WHERE qth2.MaHocSinh = hs.MaHocSinh AND l2.MaNamHoc = $2
+         )
+         ORDER BY hs.HoTen`,
+        [sourceMaLop, targetNamHoc]
+    );
+    return result.rows;
+};
+
 module.exports = {
     findAll,
     findById,
@@ -175,5 +283,8 @@ module.exports = {
     countStudents,
     addStudent,
     removeStudent,
-    checkStudentInYearClass
+    checkStudentInYearClass,
+    bulkAddStudents,
+    getUnassignedStudents,
+    getAvailableStudentsFromClass
 };

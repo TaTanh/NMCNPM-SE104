@@ -1,7 +1,11 @@
 -- =====================================================
 -- FILE: generate.sql
--- MỤC ĐÍCH: Generate dữ liệu mẫu cho 1600 học sinh và điểm ngẫu nhiên
--- Mã học sinh: HS010000 đến HS011599 (tổng 1600 học sinh)
+-- MỤC ĐÍCH: Generate dữ liệu mẫu cho hệ thống quản lý học sinh
+-- - 3 khối: 10, 11, 12
+-- - Mỗi khối 4 lớp (A1, A2, A3, A4) = 12 lớp
+-- - Mỗi lớp 40 học sinh = 480 học sinh đã phân lớp
+-- - 50 học sinh chưa phân lớp
+-- - TỔNG: 530 học sinh (HS010000 - HS010529)
 -- =====================================================
 
 -- ========== THÊM CỘT ĐIỂM HẠNH KIỂM VÀO BẢNG HANHKIEM ==========
@@ -134,8 +138,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ========== GENERATE 1600 HỌC SINH ==========
--- Mã học sinh từ HS010000 đến HS011599
+-- ========== GENERATE 530 HỌC SINH ==========
+-- Mã học sinh từ HS010000 đến HS010529
 
 DO $$
 DECLARE
@@ -149,8 +153,8 @@ DECLARE
     email TEXT;
     sdt_ph TEXT;
 BEGIN
-    FOR i IN 0..1599 LOOP
-        -- Tạo mã học sinh: HS01 + 4 chữ số (0000-1599)
+    FOR i IN 0..529 LOOP
+        -- Tạo mã học sinh: HS01 + 4 chữ số (0000-0529)
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
         
         -- Generate thông tin ngẫu nhiên
@@ -178,36 +182,45 @@ BEGIN
         END IF;
     END LOOP;
     
-    RAISE NOTICE 'Hoàn thành! Đã tạo 1600 học sinh từ HS010000 đến HS011599';
+    RAISE NOTICE 'Hoàn thành! Đã tạo 530 học sinh từ HS010000 đến HS010529';
 END $$;
 
--- ========== TẠO THÊM CÁC LỚP CÒN THIẾU ==========
+-- ========== TẠO 12 LỚP CHO NĂM HỌC 2024-2025 ==========
 INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc) VALUES 
+    -- Khối 10 (4 lớp)
+    ('10A1', 'Lớp 10A1', 'K10', 0, '2024-2025'),
+    ('10A2', 'Lớp 10A2', 'K10', 0, '2024-2025'),
+    ('10A3', 'Lớp 10A3', 'K10', 0, '2024-2025'),
     ('10A4', 'Lớp 10A4', 'K10', 0, '2024-2025'),
+    -- Khối 11 (4 lớp)
+    ('11A1', 'Lớp 11A1', 'K11', 0, '2024-2025'),
     ('11A2', 'Lớp 11A2', 'K11', 0, '2024-2025'),
     ('11A3', 'Lớp 11A3', 'K11', 0, '2024-2025'),
     ('11A4', 'Lớp 11A4', 'K11', 0, '2024-2025'),
+    -- Khối 12 (4 lớp)
+    ('12A1', 'Lớp 12A1', 'K12', 0, '2024-2025'),
     ('12A2', 'Lớp 12A2', 'K12', 0, '2024-2025'),
     ('12A3', 'Lớp 12A3', 'K12', 0, '2024-2025'),
     ('12A4', 'Lớp 12A4', 'K12', 0, '2024-2025')
 ON CONFLICT (MaLop) DO NOTHING;
 
 -- ========== PHÂN BỔ HỌC SINH VÀO CÁC LỚP ==========
--- Có 12 lớp (10A1-10A4, 11A1-11A4, 12A1-12A4)
--- Mỗi lớp khoảng 40 học sinh
+-- 480 học sinh đầu tiên (HS010000 - HS010479) phân vào 12 lớp, mỗi lớp 40 học sinh
+-- 50 học sinh cuối (HS010480 - HS010529) để chưa phân lớp
 
 DO $$
 DECLARE
     ma_hs TEXT;
     lop_list TEXT[] := ARRAY['10A1', '10A2', '10A3', '10A4', '11A1', '11A2', '11A3', '11A4', '12A1', '12A2', '12A3', '12A4'];
     ma_lop TEXT;
-    idx INT := 0;
     lop_idx INT;
+    students_per_class INT := 40;
+    total_assigned INT := 0;
 BEGIN
-    -- Phân bổ 480 học sinh đầu vào 12 lớp (mỗi lớp 40 HS)
+    -- Phân bổ 480 học sinh đầu tiên vào 12 lớp (mỗi lớp 40 học sinh)
     FOR i IN 0..479 LOOP
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
-        lop_idx := (i / 40) + 1; -- Chia đều 40 HS/lớp
+        lop_idx := (i / students_per_class) + 1; -- Chia đều 40 HS/lớp
         
         IF lop_idx <= array_length(lop_list, 1) THEN
             ma_lop := lop_list[lop_idx];
@@ -215,17 +228,28 @@ BEGIN
             INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
             VALUES (ma_hs, ma_lop)
             ON CONFLICT DO NOTHING;
+            
+            total_assigned := total_assigned + 1;
+        END IF;
+        
+        -- In tiến trình
+        IF i % 100 = 0 THEN
+            RAISE NOTICE 'Đã phân % học sinh vào lớp...', i;
         END IF;
     END LOOP;
     
-    -- Cập nhật sĩ số lớp
-    UPDATE LOP SET SiSo = (
-        SELECT COUNT(*) FROM QUATRINHHOC WHERE QUATRINHHOC.MaLop = LOP.MaLop
-    );
-    
-    RAISE NOTICE 'Đã phân bổ 480 học sinh vào 12 lớp (40 HS/lớp)';
-    RAISE NOTICE 'Còn lại 1120 học sinh chưa được phân lớp';
+    -- 50 học sinh còn lại (HS010480 - HS010529) KHÔNG phân lớp
+    RAISE NOTICE '================================================';
+    RAISE NOTICE 'Hoàn thành phân lớp!';
+    RAISE NOTICE 'Tổng học sinh đã phân lớp: %', total_assigned;
+    RAISE NOTICE 'Học sinh chưa phân lớp: 50 (HS010480 - HS010529)';
+    RAISE NOTICE '================================================';
 END $$;
+
+-- Cập nhật sĩ số lớp
+UPDATE LOP SET SiSo = (
+    SELECT COUNT(*) FROM QUATRINHHOC WHERE QUATRINHHOC.MaLop = LOP.MaLop
+) WHERE MaNamHoc = '2024-2025';
 
 -- ========== TẠO BẢNG ĐIỂM VÀ LOẠI HÌNH KIỂM TRA ==========
 -- Đảm bảo có loại hình kiểm tra
@@ -238,8 +262,8 @@ INSERT INTO LOAIHINHKIEMTRA (MaLHKT, TenLHKT, HeSo) VALUES
     ('TX4', 'Thường xuyên 4', 1)
 ON CONFLICT (MaLHKT) DO NOTHING;
 
--- ========== GENERATE ĐIỂM CHO HỌC SINH TRONG 480 HS ĐÃ PHÂN LỚP ==========
--- Tạo điểm cho tất cả môn học, cả 2 học kỳ
+-- ========== GENERATE ĐIỂM CHO 480 HỌC SINH ĐÃ PHÂN LỚP ==========
+-- Tạo điểm cho tất cả môn học, cả 2 học kỳ (HK1, HK2)
 
 DO $$
 DECLARE
@@ -253,14 +277,15 @@ DECLARE
     diem_ck DECIMAL;
     diem_tx DECIMAL;
     so_cot_tx INT;
-    i INT;
     mon_list TEXT[] := ARRAY['TOAN', 'VAN', 'ANH', 'LY', 'HOA', 'SINH', 'SU', 'DIA', 'GDCD'];
     hocky_list TEXT[] := ARRAY['HK1', 'HK2'];
     diem_hk DECIMAL;
     xep_loai_hk TEXT;
     count_hs INT := 0;
+    i INT;
+    j INT;
 BEGIN
-    -- Lặp qua 480 học sinh đã được phân lớp
+    -- Lặp qua 480 học sinh đã được phân lớp (HS010000 - HS010479)
     FOR i IN 0..479 LOOP
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
         
@@ -380,3 +405,36 @@ ORDER BY
     END;
 
 SELECT '✓ Generate dữ liệu thành công!' as Status;
+
+-- =====================================================
+-- TIỆN ÍCH: XÓA HỌC SINH BỊ TRÙNG LỚP
+-- Chạy khi cần cleanup dữ liệu bị duplicate
+-- =====================================================
+
+-- Xem các học sinh bị trùng lớp trong cùng năm học
+-- SELECT 
+--     hs.MaHocSinh, hs.HoTen,
+--     COUNT(DISTINCT qth.MaLop) as SoLop,
+--     STRING_AGG(DISTINCT l.TenLop, ', ') as CacLop,
+--     l.MaNamHoc
+-- FROM HOCSINH hs
+-- JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
+-- JOIN LOP l ON qth.MaLop = l.MaLop
+-- GROUP BY hs.MaHocSinh, hs.HoTen, l.MaNamHoc
+-- HAVING COUNT(DISTINCT qth.MaLop) > 1;
+
+-- Xóa duplicate, giữ lại 1 bản ghi cho mỗi học sinh trong mỗi năm học
+-- WITH DuplicateRecords AS (
+--     SELECT 
+--         qth.MaHocSinh, qth.MaLop, l.MaNamHoc,
+--         ROW_NUMBER() OVER (PARTITION BY qth.MaHocSinh, l.MaNamHoc ORDER BY l.MaLop DESC) as rn
+--     FROM QUATRINHHOC qth
+--     JOIN LOP l ON qth.MaLop = l.MaLop
+-- )
+-- DELETE FROM QUATRINHHOC
+-- WHERE (MaHocSinh, MaLop) IN (
+--     SELECT MaHocSinh, MaLop FROM DuplicateRecords WHERE rn > 1
+-- );
+
+-- Cập nhật sĩ số
+-- UPDATE LOP SET SiSo = (SELECT COUNT(*) FROM QUATRINHHOC WHERE QUATRINHHOC.MaLop = LOP.MaLop);
