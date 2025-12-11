@@ -130,12 +130,12 @@ const deleteStudent = async (req, res) => {
         }
         
         // Kiểm tra trong bảng chi tiết điểm
-        const hasGrades = await studentModel.hasGrades(id);
-        if (hasGrades) {
-            return res.status(400).json({ 
-                error: 'Không thể xóa học sinh này vì đã có dữ liệu điểm. Vui lòng xóa điểm của học sinh trước.' 
-            });
-        }
+        // const hasGrades = await studentModel.hasGrades(id);
+        // if (hasGrades) {
+        //     return res.status(400).json({ 
+        //         error: 'Không thể xóa học sinh này vì đã có dữ liệu điểm. Vui lòng xóa điểm của học sinh trước.' 
+        //     });
+        // }
         
         const student = await studentModel.remove(id);
         

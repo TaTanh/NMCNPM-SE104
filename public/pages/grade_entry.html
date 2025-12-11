@@ -189,6 +189,13 @@
                 return;
             }
 
+            // Sắp xếp theo tên (phần cuối cùng của họ tên)
+            students.sort((a, b) => {
+                const tenA = a.HoTen.trim().split(' ').pop().toLowerCase();
+                const tenB = b.HoTen.trim().split(' ').pop().toLowerCase();
+                return tenA.localeCompare(tenB, 'vi');
+            });
+
             tbody.innerHTML = students.map(hs => {
                 const gradeInputs = examTypes.map(et => {
                     const diem = hs.Diem && hs.Diem[et.tenlhkt] ? hs.Diem[et.tenlhkt][0] : '';

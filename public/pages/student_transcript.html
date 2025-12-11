@@ -272,6 +272,13 @@
                 return;
             }
             
+            // Sắp xếp theo tên (phần cuối cùng của họ tên)
+            students.sort((a, b) => {
+                const tenA = a.hoten.trim().split(' ').pop().toLowerCase();
+                const tenB = b.hoten.trim().split(' ').pop().toLowerCase();
+                return tenA.localeCompare(tenB, 'vi');
+            });
+            
             listDiv.innerHTML = students.map(hs => `
                 <div class="student-item ${selectedStudent?.mahocsinh === hs.mahocsinh ? 'active' : ''}" 
                      onclick="selectStudent('${hs.mahocsinh}')" data-id="${hs.mahocsinh}">
