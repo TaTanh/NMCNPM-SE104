@@ -23,8 +23,8 @@ const getSubjectReport = async (namhoc, hocky, monhoc) => {
                 COUNT(CASE WHEN avg_diem.DiemTB >= 5 THEN 1 END) as SoLuongDat
          FROM LOP l
          LEFT JOIN (
-             SELECT qth.MaLop, hs.MaHocSinh, 
-                    AVG(ct.Diem * lhkt.HeSo) / SUM(lhkt.HeSo) as DiemTB
+             SELECT qth.MaLop, hs.MaHocSinh,
+                    SUM(ct.Diem * lhkt.HeSo) / SUM(lhkt.HeSo) as DiemTB
              FROM HOCSINH hs
              JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
              JOIN BANGDIEMMON bdm ON bdm.MaLop = qth.MaLop
