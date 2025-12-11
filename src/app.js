@@ -14,21 +14,21 @@ async function initializeDatabase() {
         );
         
         if (!result.rows[0].exists) {
-            console.log('📝 Initializing database schema...');
+            console.log('Initializing database schema...');
             const initPath = path.join(__dirname, '../database/init.sql');
             const initSQL = fs.readFileSync(initPath, 'utf-8');
             await pool.query(initSQL);
-            console.log('✅ Database schema initialized');
+            console.log('Database schema initialized');
         }
         
         // Check if NAMHOC has data
         const checkData = await pool.query('SELECT COUNT(*) as cnt FROM NAMHOC');
         if (parseInt(checkData.rows[0].cnt) === 0) {
-            console.log('📝 Seeding database with initial data...');
+            console.log('Seeding database with initial data...');
             const seedPath = path.join(__dirname, '../database/seed.sql');
             const seedSQL = fs.readFileSync(seedPath, 'utf-8');
             await pool.query(seedSQL);
-            console.log('✅ Database seeded with data');
+            console.log('Database seeded with data');
         }
         
         // Verify key tables
@@ -41,7 +41,7 @@ async function initializeDatabase() {
                 (SELECT COUNT(*) FROM HOCSINH) as hocsinh_count
         `);
         
-        console.log('📊 Database Statistics:');
+        console.log('Database Statistics:');
         console.log(`   - NAMHOC: ${stats.rows[0].namhoc_count} records`);
         console.log(`   - HOCKY: ${stats.rows[0].hocky_count} records`);
         console.log(`   - KHOILOP: ${stats.rows[0].khoilop_count} records`);
@@ -49,14 +49,14 @@ async function initializeDatabase() {
         console.log(`   - HOCSINH: ${stats.rows[0].hocsinh_count} records`);
         
     } catch (err) {
-        console.error('⚠️ Database initialization warning:', err.message);
+        console.error('Database initialization warning:', err.message);
         // Don't exit - server can still run
     }
 }
 
 // Initialize database on startup
 initializeDatabase().then(() => {
-    console.log('✨ Database ready for use');
+    console.log('Database ready for use');
 });
 
 // Middleware parse JSON
