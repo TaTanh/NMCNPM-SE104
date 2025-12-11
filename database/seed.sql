@@ -51,14 +51,24 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ========== FUNCTION: Generate random ngày sinh (2007-2009) ==========
-CREATE OR REPLACE FUNCTION random_ngay_sinh() RETURNS DATE AS $$
+-- ========== FUNCTION: Generate random ngày sinh theo khối lớp ==========
+-- Khối 10: sinh năm 2010 (15 tuổi)
+-- Khối 11: sinh năm 2009 (16 tuổi)  
+-- Khối 12: sinh năm 2008 (17 tuổi)
+CREATE OR REPLACE FUNCTION random_ngay_sinh(khoi_lop VARCHAR) RETURNS DATE AS $$
 DECLARE
     nam INT;
     thang INT;
     ngay INT;
 BEGIN
-    nam := 2007 + floor(random() * 3)::INT; -- 2007, 2008, 2009
+    -- Xác định năm sinh dựa trên khối lớp
+    nam := CASE khoi_lop
+        WHEN 'K10' THEN 2010
+        WHEN 'K11' THEN 2009
+        WHEN 'K12' THEN 2008
+        ELSE 2010 -- Mặc định cho học sinh chưa phân lớp
+    END;
+    
     thang := 1 + floor(random() * 12)::INT;
     ngay := 1 + floor(random() * 28)::INT; -- Đơn giản hóa, tránh ngày không hợp lệ
     RETURN make_date(nam, thang, ngay);
@@ -142,11 +152,18 @@ $$ LANGUAGE plpgsql;
 
 -- ========== GENERATE 530 HỌC SINH ==========
 -- Mã học sinh từ HS010000 đến HS010529
+-- 160 học sinh khối 10 (sinh năm 2010): HS010000-HS010159
+-- 160 học sinh khối 11 (sinh năm 2009): HS010160-HS010319
+-- 160 học sinh khối 12 (sinh năm 2008): HS010320-HS010479
+-- 50 học sinh chưa phân lớp (sinh năm 2010): HS010480-HS010529
 
 DO $$
 DECLARE
     i INT;
     ma_hs TEXT;
+    ho TEXT;
+    ten_dem TEXT;
+    ten TEXT;
     ho_ten TEXT;
     ho_ten_ph TEXT;
     gioi_tinh TEXT;
@@ -154,23 +171,43 @@ DECLARE
     dia_chi TEXT;
     email TEXT;
     sdt_ph TEXT;
+    khoi_lop VARCHAR;
 BEGIN
     FOR i IN 0..529 LOOP
         -- Tạo mã học sinh: HS01 + 4 chữ số (0000-0529)
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
         
+        -- Xác định khối lớp dựa trên số thứ tự
+        -- 0-159: Khối 10, 160-319: Khối 11, 320-479: Khối 12, 480-529: Chưa phân lớp (K10)
+        IF i < 160 THEN
+            khoi_lop := 'K10';
+        ELSIF i < 320 THEN
+            khoi_lop := 'K11';
+        ELSIF i < 480 THEN
+            khoi_lop := 'K12';
+        ELSE
+            khoi_lop := 'K10'; -- Học sinh chưa phân lớp sinh năm 2010
+        END IF;
+        
         -- Generate thông tin ngẫu nhiên
-        ho_ten := random_ho_ten();
-        ho_ten_ph := random_ho() || ' ' || random_ten_dem() || ' ' || random_ten();
+        -- HỌ CỦA CON PHẢI GIỐNG HỌ CỦA CHA
+        ho := random_ho();
+        ten_dem := random_ten_dem();
+        ten := random_ten();
+        ho_ten := ho || ' ' || ten_dem || ' ' || ten;
+        
+        -- Phụ huynh (cha) có cùng họ với con
+        ho_ten_ph := ho || ' ' || random_ten_dem() || ' ' || random_ten();
+        
         gioi_tinh := random_gioi_tinh();
-        ngay_sinh := random_ngay_sinh();
+        ngay_sinh := random_ngay_sinh(khoi_lop); -- Năm sinh phù hợp với khối lớp
         dia_chi := random_dia_chi();
         email := lower(ma_hs) || '@school.edu.vn';
         sdt_ph := random_sdt();
         
-        -- Insert học sinh
-        INSERT INTO HOCSINH (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh)
-        VALUES (ma_hs, ho_ten, gioi_tinh, ngay_sinh, dia_chi, email, ho_ten_ph, sdt_ph)
+        -- Insert học sinh với khối hiện tại
+        INSERT INTO HOCSINH (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh, KhoiHienTai)
+        VALUES (ma_hs, ho_ten, gioi_tinh, ngay_sinh, dia_chi, email, ho_ten_ph, sdt_ph, khoi_lop)
         ON CONFLICT (MaHocSinh) DO NOTHING;
         
         -- Tạo tài khoản học sinh (mật khẩu mặc định: 123456)
@@ -185,6 +222,10 @@ BEGIN
     END LOOP;
     
     RAISE NOTICE 'Hoàn thành! Đã tạo 530 học sinh từ HS010000 đến HS010529';
+    RAISE NOTICE '  - Khối 10 (sinh 2010): 160 HS (HS010000-HS010159)';
+    RAISE NOTICE '  - Khối 11 (sinh 2009): 160 HS (HS010160-HS010319)';
+    RAISE NOTICE '  - Khối 12 (sinh 2008): 160 HS (HS010320-HS010479)';
+    RAISE NOTICE '  - Chưa phân lớp (sinh 2010): 50 HS (HS010480-HS010529)';
 END $$;
 
 -- ========== TẠO 12 LỚP CHO NĂM HỌC 2024-2025 ==========
@@ -207,44 +248,70 @@ INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc) VALUES
 ON CONFLICT (MaLop) DO NOTHING;
 
 -- ========== PHÂN BỔ HỌC SINH VÀO CÁC LỚP ==========
--- 480 học sinh đầu tiên (HS010000 - HS010479) phân vào 12 lớp, mỗi lớp 40 học sinh
--- 50 học sinh cuối (HS010480 - HS010529) để chưa phân lớp
+-- Phân bổ theo đúng khối lớp và năm sinh:
+-- Khối 10 (sinh 2010): HS010000-HS010159 → 10A1, 10A2, 10A3, 10A4 (40 HS/lớp)
+-- Khối 11 (sinh 2009): HS010160-HS010319 → 11A1, 11A2, 11A3, 11A4 (40 HS/lớp)
+-- Khối 12 (sinh 2008): HS010320-HS010479 → 12A1, 12A2, 12A3, 12A4 (40 HS/lớp)
+-- Chưa phân lớp: HS010480-HS010529 (50 học sinh)
 
 DO $$
 DECLARE
     ma_hs TEXT;
-    lop_list TEXT[] := ARRAY['10A1', '10A2', '10A3', '10A4', '11A1', '11A2', '11A3', '11A4', '12A1', '12A2', '12A3', '12A4'];
     ma_lop TEXT;
-    lop_idx INT;
     students_per_class INT := 40;
     total_assigned INT := 0;
+    lop_10 TEXT[] := ARRAY['10A1', '10A2', '10A3', '10A4'];
+    lop_11 TEXT[] := ARRAY['11A1', '11A2', '11A3', '11A4'];
+    lop_12 TEXT[] := ARRAY['12A1', '12A2', '12A3', '12A4'];
+    lop_idx INT;
 BEGIN
-    -- Phân bổ 480 học sinh đầu tiên vào 12 lớp (mỗi lớp 40 học sinh)
-    FOR i IN 0..479 LOOP
+    -- Phân bổ học sinh khối 10: HS010000-HS010159 (160 HS = 4 lớp x 40 HS)
+    FOR i IN 0..159 LOOP
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
-        lop_idx := (i / students_per_class) + 1; -- Chia đều 40 HS/lớp
+        lop_idx := (i / students_per_class) + 1; -- 1-4
+        ma_lop := lop_10[lop_idx];
         
-        IF lop_idx <= array_length(lop_list, 1) THEN
-            ma_lop := lop_list[lop_idx];
-            
-            INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
-            VALUES (ma_hs, ma_lop)
-            ON CONFLICT DO NOTHING;
-            
-            total_assigned := total_assigned + 1;
-        END IF;
+        INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
+        VALUES (ma_hs, ma_lop)
+        ON CONFLICT DO NOTHING;
         
-        -- In tiến trình
-        IF i % 100 = 0 THEN
-            RAISE NOTICE 'Đã phân % học sinh vào lớp...', i;
-        END IF;
+        total_assigned := total_assigned + 1;
     END LOOP;
+    RAISE NOTICE 'Đã phân 160 học sinh khối 10 vào 4 lớp (10A1-10A4)';
+    
+    -- Phân bổ học sinh khối 11: HS010160-HS010319 (160 HS = 4 lớp x 40 HS)
+    FOR i IN 160..319 LOOP
+        ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
+        lop_idx := ((i - 160) / students_per_class) + 1; -- 1-4
+        ma_lop := lop_11[lop_idx];
+        
+        INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
+        VALUES (ma_hs, ma_lop)
+        ON CONFLICT DO NOTHING;
+        
+        total_assigned := total_assigned + 1;
+    END LOOP;
+    RAISE NOTICE 'Đã phân 160 học sinh khối 11 vào 4 lớp (11A1-11A4)';
+    
+    -- Phân bổ học sinh khối 12: HS010320-HS010479 (160 HS = 4 lớp x 40 HS)
+    FOR i IN 320..479 LOOP
+        ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
+        lop_idx := ((i - 320) / students_per_class) + 1; -- 1-4
+        ma_lop := lop_12[lop_idx];
+        
+        INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
+        VALUES (ma_hs, ma_lop)
+        ON CONFLICT DO NOTHING;
+        
+        total_assigned := total_assigned + 1;
+    END LOOP;
+    RAISE NOTICE 'Đã phân 160 học sinh khối 12 vào 4 lớp (12A1-12A4)';
     
     -- 50 học sinh còn lại (HS010480 - HS010529) KHÔNG phân lớp
     RAISE NOTICE '================================================';
     RAISE NOTICE 'Hoàn thành phân lớp!';
     RAISE NOTICE 'Tổng học sinh đã phân lớp: %', total_assigned;
-    RAISE NOTICE 'Học sinh chưa phân lớp: 50 (HS010480 - HS010529)';
+    RAISE NOTICE 'Học sinh chưa phân lớp: 50 (HS010480-HS010529)';
     RAISE NOTICE '================================================';
 END $$;
 
@@ -376,7 +443,7 @@ DROP FUNCTION IF EXISTS random_ten_dem();
 DROP FUNCTION IF EXISTS random_ten();
 DROP FUNCTION IF EXISTS random_ho_ten();
 DROP FUNCTION IF EXISTS random_gioi_tinh();
-DROP FUNCTION IF EXISTS random_ngay_sinh();
+DROP FUNCTION IF EXISTS random_ngay_sinh(VARCHAR);
 DROP FUNCTION IF EXISTS random_dia_chi();
 DROP FUNCTION IF EXISTS random_sdt();
 DROP FUNCTION IF EXISTS random_diem();

@@ -387,6 +387,7 @@
                 if (!response.ok) throw new Error('Lỗi tải dữ liệu');
                 
                 allStudents = await response.json();
+                console.log('Data từ API:', allStudents[0]); // Debug: kiểm tra tên field
                 renderStudentTable(allStudents);
             } catch (error) {
                 console.error('Lỗi:', error);
@@ -784,6 +785,8 @@
                 SdtPhuHuynh: document.getElementById('parentPhoneEdit').value || null
             };
             
+            console.log('Data gửi lên API khi sửa:', data); // Debug: kiểm tra data trước khi gửi
+            
             try {
                 const response = await fetch(`/api/students/${maHocSinh}`, {
                     method: 'PUT',
@@ -804,6 +807,7 @@
                     throw new Error(result.error || 'Lỗi cập nhật học sinh');
                 }
                 
+                console.log('Response từ API sau khi UPDATE:', result); // Debug: xem data API trả về
                 toastSuccess('Cập nhật học sinh thành công!');
                 editModal.classList.remove('show');
                 editForm.reset();
