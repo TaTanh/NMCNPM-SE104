@@ -84,7 +84,7 @@ const findById = async (id) => {
 const create = async (studentData) => {
     const { MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh } = studentData;
     const result = await pool.query(
-        `INSERT INTO HOCSINH (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh)
+        `INSERT INTO hocsinh (mahocsinh, hoten, gioitinh, ngaysinh, diachi, email, hotenphuhuynh, sdtphuhuynh)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
          RETURNING *`,
         [MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh]
@@ -96,10 +96,10 @@ const create = async (studentData) => {
 const update = async (id, studentData) => {
     const { HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh } = studentData;
     const result = await pool.query(
-        `UPDATE HOCSINH 
-         SET HoTen = $1, GioiTinh = $2, NgaySinh = $3, DiaChi = $4, Email = $5,
-             HoTenPhuHuynh = $6, SdtPhuHuynh = $7
-         WHERE MaHocSinh = $8
+        `UPDATE hocsinh 
+         SET hoten = $1, gioitinh = $2, ngaysinh = $3, diachi = $4, email = $5,
+             hotenphuhuynh = $6, sdtphuhuynh = $7
+         WHERE mahocsinh = $8
          RETURNING *`,
         [HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh, id]
     );

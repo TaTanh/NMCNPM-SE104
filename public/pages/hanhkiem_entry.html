@@ -245,6 +245,13 @@
                     ghichu: hanhkiemMap[hs.mahocsinh]?.ghichu || ''
                 }));
 
+                // Sắp xếp theo tên (phần cuối cùng của họ tên)
+                currentStudents.sort((a, b) => {
+                    const tenA = a.hoten.trim().split(' ').pop().toLowerCase();
+                    const tenB = b.hoten.trim().split(' ').pop().toLowerCase();
+                    return tenA.localeCompare(tenB, 'vi');
+                });
+
                 renderHanhKiemTable();
 
                 const className = document.getElementById('classFilter').selectedOptions[0].text;

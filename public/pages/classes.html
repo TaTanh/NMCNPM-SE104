@@ -843,6 +843,14 @@
                     return;
                 }
                 
+                // Sắp xếp theo chữ cái đầu tiên của tên (tên cuối cùng trong họ tên)
+                students.sort((a, b) => {
+                    // Lấy tên (phần cuối cùng của họ tên)
+                    const tenA = a.hoten.trim().split(' ').pop().toLowerCase();
+                    const tenB = b.hoten.trim().split(' ').pop().toLowerCase();
+                    return tenA.localeCompare(tenB, 'vi');
+                });
+                
                 classStudentsTableBody.innerHTML = students.map((hs, index) => `
                     <tr>
                         <td>${index + 1}</td>
@@ -1182,6 +1190,13 @@
                 importStudentsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Không có học sinh nào</td></tr>';
                 return;
             }
+            
+            // Sắp xếp theo tên (phần cuối cùng của họ tên)
+            students.sort((a, b) => {
+                const tenA = a.hoten.trim().split(' ').pop().toLowerCase();
+                const tenB = b.hoten.trim().split(' ').pop().toLowerCase();
+                return tenA.localeCompare(tenB, 'vi');
+            });
             
             importStudentsTableBody.innerHTML = students.map(hs => {
                 const isSelected = selectedStudents.includes(hs.mahocsinh);
