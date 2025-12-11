@@ -89,14 +89,16 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION random_diem() RETURNS DECIMAL AS $$
 DECLARE
     diem DECIMAL;
+    rand_val DECIMAL;
 BEGIN
-    -- Tạo điểm từ 0-10 với độ chính xác 0.5
-    -- Phân bố: 10% điểm 9-10, 30% điểm 7-8.5, 40% điểm 5-6.5, 20% điểm dưới 5
+    -- Tạo điểm từ 0-10 với phân bố đều hơn
+    -- Phân bố: 15% điểm giỏi (8.5-10), 35% điểm khá (7-8.5), 35% điểm TB (5-7), 15% điểm yếu (2-5)
+    rand_val := random();
     diem := CASE 
-        WHEN random() < 0.10 THEN 9.0 + (random() * 1.0)  -- 10% điểm giỏi (9-10)
-        WHEN random() < 0.40 THEN 7.0 + (random() * 1.5)  -- 30% điểm khá (7-8.5)
-        WHEN random() < 0.80 THEN 5.0 + (random() * 1.5)  -- 40% điểm TB (5-6.5)
-        ELSE 2.0 + (random() * 3.0)                       -- 20% điểm yếu (2-5)
+        WHEN rand_val < 0.15 THEN 8.5 + (random() * 1.5)  -- 15% điểm giỏi (8.5-10)
+        WHEN rand_val < 0.50 THEN 7.0 + (random() * 1.5)  -- 35% điểm khá (7-8.5)
+        WHEN rand_val < 0.85 THEN 5.0 + (random() * 2.0)  -- 35% điểm TB (5-7)
+        ELSE 2.0 + (random() * 3.0)                       -- 15% điểm yếu (2-5)
     END;
     -- Đảm bảo điểm không vượt quá 10
     IF diem > 10 THEN
