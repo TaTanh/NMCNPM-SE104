@@ -102,11 +102,11 @@ DECLARE
     rand_val DECIMAL;
 BEGIN
     -- Tạo điểm từ 0-10 với phân bố mới
-    -- Phân bố: 50% điểm giỏi (8.5-10), 35% điểm khá (7-8.5), 10% điểm TB (5-7), 5% điểm yếu (2-5)
+    -- Phân bố: 60% điểm giỏi (8.5-10), 25% điểm khá (7-8.5), 10% điểm TB (5-7), 5% điểm yếu (2-5)
     rand_val := random();
     diem := CASE 
-        WHEN rand_val < 0.50 THEN 8.5 + (random() * 1.5)  -- 50% điểm giỏi (8.5-10)
-        WHEN rand_val < 0.85 THEN 7.0 + (random() * 1.5)  -- 35% điểm khá (7-8.5)
+        WHEN rand_val < 0.60 THEN 8.5 + (random() * 1.5)  -- 60% điểm giỏi (8.5-10)
+        WHEN rand_val < 0.85 THEN 7.0 + (random() * 1.5)  -- 25% điểm khá (7-8.5)
         WHEN rand_val < 0.95 THEN 5.0 + (random() * 2.0)  -- 10% điểm TB (5-7)
         ELSE 2.0 + (random() * 3.0)                       -- 5% điểm yếu (2-5)
     END;
@@ -124,13 +124,13 @@ DECLARE
     diem DECIMAL;
     rand_val DECIMAL;
 BEGIN
-    -- Phân bố hạnh kiểm: 60% Tốt (>=80), 25% Khá (65-80), 10% TB (50-65), 5% Yếu (<50)
+    -- Phân bố hạnh kiểm: 70% Tốt (>=80), 20% Khá (65-80), 7% TB (50-65), 3% Yếu (<50)
     rand_val := random();
     diem := CASE 
-        WHEN rand_val < 0.60 THEN 80 + (random() * 20)  -- 60% Tốt (80-100)
-        WHEN rand_val < 0.85 THEN 65 + (random() * 15)  -- 25% Khá (65-80)
-        WHEN rand_val < 0.95 THEN 50 + (random() * 15)  -- 10% TB (50-65)
-        ELSE 30 + (random() * 20)                       -- 5% Yếu (30-50)
+        WHEN rand_val < 0.70 THEN 80 + (random() * 20)  -- 70% Tốt (80-100)
+        WHEN rand_val < 0.90 THEN 65 + (random() * 15)  -- 20% Khá (65-80)
+        WHEN rand_val < 0.97 THEN 50 + (random() * 15)  -- 7% TB (50-65)
+        ELSE 30 + (random() * 20)                       -- 3% Yếu (30-50)
     END;
     -- Đảm bảo điểm không vượt quá 100
     IF diem > 100 THEN
