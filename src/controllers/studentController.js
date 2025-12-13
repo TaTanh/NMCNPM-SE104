@@ -71,7 +71,7 @@ const getStudentById = async (req, res) => {
 // ========== THÊM HỌC SINH ==========
 const createStudent = async (req, res) => {
     try {
-        const { MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email } = req.body;
+        const { MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh } = req.body;
         
         // QĐ1: Kiểm tra tuổi học sinh
         const ageCheck = await validateAge(NgaySinh);
@@ -79,7 +79,7 @@ const createStudent = async (req, res) => {
             return res.status(400).json({ error: ageCheck.error });
         }
         
-        const student = await studentModel.create({ MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email });
+        const student = await studentModel.create({ MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh });
         res.status(201).json(student);
     } catch (err) {
         console.error('Lỗi thêm học sinh:', err);
@@ -95,7 +95,7 @@ const createStudent = async (req, res) => {
 const updateStudent = async (req, res) => {
     try {
         const { id } = req.params;
-        const { HoTen, GioiTinh, NgaySinh, DiaChi, Email } = req.body;
+        const { HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh } = req.body;
         
         // QĐ1: Kiểm tra tuổi học sinh
         const ageCheck = await validateAge(NgaySinh);
@@ -103,7 +103,7 @@ const updateStudent = async (req, res) => {
             return res.status(400).json({ error: ageCheck.error });
         }
         
-        const student = await studentModel.update(id, { HoTen, GioiTinh, NgaySinh, DiaChi, Email });
+        const student = await studentModel.update(id, { HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh });
         
         if (!student) {
             return res.status(404).json({ error: 'Không tìm thấy học sinh' });
@@ -130,12 +130,12 @@ const deleteStudent = async (req, res) => {
         }
         
         // Kiểm tra trong bảng chi tiết điểm
-        const hasGrades = await studentModel.hasGrades(id);
-        if (hasGrades) {
-            return res.status(400).json({ 
-                error: 'Không thể xóa học sinh này vì đã có dữ liệu điểm. Vui lòng xóa điểm của học sinh trước.' 
-            });
-        }
+        // const hasGrades = await studentModel.hasGrades(id);
+        // if (hasGrades) {
+        //     return res.status(400).json({ 
+        //         error: 'Không thể xóa học sinh này vì đã có dữ liệu điểm. Vui lòng xóa điểm của học sinh trước.' 
+        //     });
+        // }
         
         const student = await studentModel.remove(id);
         

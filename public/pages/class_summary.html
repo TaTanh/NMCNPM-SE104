@@ -210,57 +210,923 @@
 
         <!-- CONTENT -->
         <div class="content">
-            <!-- FILTER ROW -->
+
+            <!-- Filters: Năm học + Lớp -->
             <div class="filters-row">
                 <div class="filter-item">
-                    <label class="filter-label">Năm học <span style="color:red;">*</span></label>
-                    <select id="yearFilter" required>
-                        <option value="">-- Chọn năm học --</option>
+                    <label class="filter-label" for="yearFilter">Năm học</label>
+                    <select id="yearFilter">
+                        <option>2024–2025</option>
+                        <option>2023–2024</option>
                     </select>
                 </div>
 
                 <div class="filter-item">
-                    <label class="filter-label">Học kỳ <span style="color:red;">*</span></label>
-                    <select id="semesterFilter" required>
-                        <option value="">-- Chọn học kỳ --</option>
-                        <option value="HK1">Học kỳ 1</option>
-                        <option value="HK2">Học kỳ 2</option>
-                        <option value="CN">Cả năm</option>
+                    <label class="filter-label" for="classFilter">Lớp</label>
+                    <select id="classFilter">
+                        <option value="">Chọn lớp</option>
                     </select>
                 </div>
 
-                <div class="filter-item">
-                    <label class="filter-label">Khối <span style="color:red;">*</span></label>
-                    <select id="khoiFilter" required>
-                        <option value="">-- Chọn khối --</option>
-                        <option value="K10">Khối 10</option>
-                        <option value="K11">Khối 11</option>
-                        <option value="K12">Khối 12</option>
-                    </select>
-                </div>
+                <button class="btn btn-primary" id="btnLoadSummary">Xem tổng kết</button>
+            </div>
 
-                <div class="filter-item">
-                    <label class="filter-label">Lớp <span style="color:red;">*</span></label>
-                    <select id="classFilter" required>
-                        <option value="">-- Chọn lớp --</option>
-                    </select>
-                </div>
+            <!-- Info card -->
+            <div class="info-card" id="classInfo" style="display:none;">
+                <h3>Thông tin lớp</h3>
+                <p><strong>Lớp:</strong> <span id="infoClass">-</span></p>
+                <p><strong>GVCN:</strong> <span id="infoGVCN">-</span></p>
+                <p><strong>Sĩ số:</strong> <span id="infoSiSo">-</span></p>
+            </div>
 
-                <div class="filter-item" style="display:flex; align-items:flex-end;">
-                    <button class="btn btn-primary" id="btnLoadSummary">Xem tổng kết</button>
+            <!-- Tabs for HK1, HK2, Cả năm -->
+            <div class="tab-container" id="tabContainer" style="display:none;">
+                <button class="tab-btn active" data-tab="hk1">Học kỳ 1</button>
+                <button class="tab-btn" data-tab="hk2">Học kỳ 2</button>
+                <button class="tab-btn" data-tab="canam">Cả năm</button>
+            </div>
+
+            <!-- Table wrapper -->
+            <div class="table-wrapper" id="tableWrapper" style="display:none;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>STT</th>
+                            <th>Mã HS</th>
+                            <th>Họ và tên</th>
+                            <th>Giới tính</th>
+                    <span>Báo cáo</span>
+                </a>
+                <a href="teaching_assignment.html" class="nav-item">
+                    <span class="icon">👨‍🏫</span>
+                    <span>Phân công GD</span>
+                </a>
+                <a href="users.html" class="nav-item">
+                    <span class="icon">👤</span>
+                    <span>Người dùng</span>
+                </a>
+            </nav>
+            <div class="user-section">
+                <div class="user-info">
+                    <span id="userName">User</span>
+                    <small id="userRole">Role</small>
+                </div>
+                <button class="btn-logout" onclick="logout()">🚪 Đăng xuất</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="content-header">
+                <h1>📈 Tổng kết lớp</h1>
+                <p>Xem báo cáo tổng hợp điểm và hạnh kiểm của từng lớp</p>
+            </div>
+
+            <!-- Filter Section -->
+            <div class="filter-section">
+                <div class="filter-row">
+                    <div class="filter-group">
+                        <label>Năm học:</label>
+                        <select id="yearFilter" class="filter-select">
+                            <option value="">-- Chọn năm học --</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Học kỳ:</label>
+                        <select id="semesterFilter" class="filter-select">
+                            <option value="">-- Chọn học kỳ --</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Khối:</label>
+                        <select id="gradeFilter" class="filter-select">
+                            <option value="">-- Chọn khối --</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Lớp:</label>
+                        <select id="classFilter" class="filter-select">
+                            <option value="">-- Chọn lớp --</option>
+                        </select>
+                    </div>
+                    <button class="btn-primary" id="btnLoadSummary">
+                        <span>📊</span> Xem tổng kết
+                    </button>
                 </div>
             </div>
 
-            <!-- MAIN CONTAINER -->
-            <div class="summary-container" id="mainContainer">
-                <div class="empty-message">
-                    Vui lòng chọn năm học, học kỳ và lớp, sau đó nhấn "Xem tổng kết"
+            <!-- Class Info Section -->
+            <div id="classInfoSection" style="display: none;">
+                <div class="info-card">
+                    <h3>Thông tin lớp</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Lớp:</label>
+                            <span id="className">-</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Khối:</label>
+                            <span id="gradeLevel">-</span>
+                        </div>
+                        <div class="info-item">
+                            <label>GVCN:</label>
+                            <span id="homeRoomTeacher">-</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Sĩ số:</label>
+                            <span id="totalStudents">-</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Năm học:</label>
+                            <span id="selectedYear">-</span>
+                        </div>
+                        <div class="info-item">
+                            <label>Học kỳ:</label>
+                            <span id="selectedSemester">-</span>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Summary Cards -->
+                <div class="summary-grid">
+                    <div class="stat-card blue">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Điểm TB lớp</div>
+                            <div class="stat-value" id="classAvgScore">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-icon">🏆</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Học sinh giỏi</div>
+                            <div class="stat-value" id="excellentCount">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-card yellow">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Học sinh đạt</div>
+                            <div class="stat-value" id="passedCount">-</div>
+                        </div>
+                    </div>
+                    <div class="stat-card purple">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Hạnh kiểm tốt</div>
+                            <div class="stat-value" id="goodBehaviorCount">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Behavior Grade Distribution -->
+                <div class="section-card">
+                    <h3>📊 Phân bố hạnh kiểm</h3>
+                    <div class="chart-container">
+                        <div class="bar-chart" id="behaviorChart"></div>
+                    </div>
+                </div>
+
+                <!-- Academic Performance Distribution -->
+                <div class="section-card">
+                    <h3>📈 Phân loại học lực</h3>
+                    <div class="chart-container">
+                        <div class="bar-chart" id="academicChart"></div>
+                    </div>
+                </div>
+
+                <!-- Subject Performance Table -->
+                <div class="section-card">
+                    <h3>📚 Kết quả theo môn học</h3>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Môn học</th>
+                                    <th>ĐTB môn</th>
+                                    <th>Số HS đạt</th>
+                                    <th>Tỷ lệ đạt</th>
+                                    <th>Giỏi</th>
+                                    <th>Khá</th>
+                                    <th>TB</th>
+                                    <th>Yếu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subjectPerformanceBody">
+                                <tr>
+                                    <td colspan="8" style="text-align: center;">Chưa có dữ liệu</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Student List with Rankings -->
+                <div class="section-card">
+                    <h3>👥 Danh sách học sinh</h3>
+                    <div class="table-wrapper">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Mã HS</th>
+                                    <th>Họ tên</th>
+                                    <th>Điểm TB</th>
+                                    <th>Xếp loại</th>
+                                    <th>Hạnh kiểm</th>
+                                    <th>Số môn đạt</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentRankingBody">
+                                <tr>
+                                    <td colspan="7" style="text-align: center;">Chưa có dữ liệu</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
 
-        </div>
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state-large">
+                <div class="empty-icon">📊</div>
+                <h3>Chọn lớp để xem tổng kết</h3>
+                <p>Vui lòng chọn năm học, học kỳ và lớp để xem báo cáo tổng kết</p>
+            </div>
+        </main>
     </div>
 
-    <script src="/js/class_summary.js"></script>
+    <script src="../js/toast.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        let currentUser = null;
+        let selectedClass = null;
+
+        // ========== INIT ==========
+        document.addEventListener('DOMContentLoaded', async () => {
+            currentUser = getCurrentUser();
+            if (!currentUser) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Display user info
+            document.getElementById('userName').textContent = currentUser.hoten || currentUser.tendangnhap;
+            document.getElementById('userRole').textContent = currentUser.vaiTro;
+
+            // Load filters
+            await loadFilters();
+
+            // Event listeners
+            document.getElementById('gradeFilter').addEventListener('change', loadClasses);
+            document.getElementById('btnLoadSummary').addEventListener('click', loadClassSummary);
+        });
+
+        // ========== LOAD FILTERS ==========
+        async function loadFilters() {
+            try {
+                // Load years
+                const yearRes = await fetch('/api/settings/school-years');
+                const years = await yearRes.json();
+                const yearSelect = document.getElementById('yearFilter');
+                years.forEach(y => {
+                    const opt = document.createElement('option');
+                    opt.value = y.manamhoc;
+                    opt.textContent = y.tennamhoc;
+                    yearSelect.appendChild(opt);
+                });
+
+                // Load semesters
+                const semRes = await fetch('/api/settings/semesters');
+                const semesters = await semRes.json();
+                const semSelect = document.getElementById('semesterFilter');
+                semesters.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.mahocky;
+                    opt.textContent = s.tenhocky;
+                    semSelect.appendChild(opt);
+                });
+
+                // Load grades
+                const gradeRes = await fetch('/api/settings/grade-levels');
+                const grades = await gradeRes.json();
+                const gradeSelect = document.getElementById('gradeFilter');
+                grades.forEach(g => {
+                    const opt = document.createElement('option');
+                    opt.value = g.makhoi;
+                    opt.textContent = `Khối ${g.tenkhoi}`;
+                    gradeSelect.appendChild(opt);
+                });
+            } catch (error) {
+                console.error('Lỗi tải bộ lọc:', error);
+                toastError('Lỗi tải bộ lọc');
+            }
+        }
+
+        async function loadClasses() {
+            const gradeId = document.getElementById('gradeFilter').value;
+            const classSelect = document.getElementById('classFilter');
+            
+            classSelect.innerHTML = '<option value="">-- Chọn lớp --</option>';
+            
+            if (!gradeId) return;
+
+            try {
+                const res = await fetch(`/api/classes?khoi=${gradeId}`);
+                const classes = await res.json();
+                classes.forEach(c => {
+                    const opt = document.createElement('option');
+                    opt.value = c.malop;
+                    opt.textContent = c.tenlop;
+                    classSelect.appendChild(opt);
+                });
+            } catch (error) {
+                console.error('Lỗi tải danh sách lớp:', error);
+                toastError('Lỗi tải danh sách lớp');
+            }
+        }
+
+        // ========== LOAD CLASS SUMMARY ==========
+        async function loadClassSummary() {
+            const yearId = document.getElementById('yearFilter').value;
+            const semesterId = document.getElementById('semesterFilter').value;
+            const classId = document.getElementById('classFilter').value;
+
+            if (!yearId || !semesterId || !classId) {
+                toastError('Vui lòng chọn đầy đủ năm học, học kỳ và lớp');
+                return;
+            }
+
+            try {
+                // Hide empty state, show content
+                document.getElementById('emptyState').style.display = 'none';
+                document.getElementById('classInfoSection').style.display = 'block';
+
+                // Load class info
+                const classRes = await fetch(`/api/classes/${classId}`);
+                selectedClass = await classRes.json();
+
+                // Display class info
+                document.getElementById('className').textContent = selectedClass.tenlop;
+                document.getElementById('gradeLevel').textContent = selectedClass.tenkhoi || '-';
+                document.getElementById('homeRoomTeacher').textContent = selectedClass.tengvcn || 'Chưa phân công';
+                
+                // Get year and semester names
+                const yearText = document.getElementById('yearFilter').selectedOptions[0].textContent;
+                const semText = document.getElementById('semesterFilter').selectedOptions[0].textContent;
+                document.getElementById('selectedYear').textContent = yearText;
+                document.getElementById('selectedSemester').textContent = semText;
+
+                // Load students
+                const studentsRes = await fetch(`/api/classes/${classId}/students`);
+                const students = await studentsRes.json();
+                document.getElementById('totalStudents').textContent = students.length;
+
+                // Load behavior statistics
+                await loadBehaviorStats(classId, yearId, semesterId);
+
+                // Load academic performance
+                await loadAcademicPerformance(classId, yearId, semesterId, students);
+
+                toastSuccess('Đã tải tổng kết lớp');
+            } catch (error) {
+                console.error('Lỗi tải tổng kết:', error);
+                toastError('Lỗi tải dữ liệu tổng kết');
+            }
+        }
+
+        // ========== LOAD BEHAVIOR STATS ==========
+        async function loadBehaviorStats(classId, yearId, semesterId) {
+            try {
+                const res = await fetch(`/api/hanhkiem/thongke/lop/${classId}?maNamHoc=${yearId}&maHocKy=${semesterId}`);
+                const result = await res.json();
+
+                if (result.success && result.data) {
+                    const stats = result.data;
+                    
+                    // Update good behavior count
+                    document.getElementById('goodBehaviorCount').textContent = 
+                        `${stats.tot || 0}/${stats.tongSoHocSinh || 0}`;
+
+                    // Render behavior chart
+                    renderBehaviorChart(stats);
+                } else {
+                    document.getElementById('goodBehaviorCount').textContent = '-';
+                }
+            } catch (error) {
+                console.error('Lỗi tải thống kê hạnh kiểm:', error);
+                document.getElementById('goodBehaviorCount').textContent = '-';
+            }
+        }
+
+        function renderBehaviorChart(stats) {
+            const chartContainer = document.getElementById('behaviorChart');
+            const total = stats.tongSoHocSinh || 1;
+            
+            const categories = [
+                { label: 'Tốt', count: stats.tot || 0, color: '#22c55e' },
+                { label: 'Khá', count: stats.kha || 0, color: '#3b82f6' },
+                { label: 'Trung bình', count: stats.trungBinh || 0, color: '#eab308' },
+                { label: 'Yếu', count: stats.yeu || 0, color: '#ef4444' }
+            ];
+
+            chartContainer.innerHTML = categories.map(cat => {
+                const percentage = ((cat.count / total) * 100).toFixed(1);
+                return `
+                    <div class="chart-bar-item">
+                        <div class="chart-label">${cat.label}</div>
+                        <div class="chart-bar-wrapper">
+                            <div class="chart-bar" style="width: ${percentage}%; background: ${cat.color}"></div>
+                            <span class="chart-value">${cat.count} (${percentage}%)</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ========== LOAD ACADEMIC PERFORMANCE ==========
+        async function loadAcademicPerformance(classId, yearId, semesterId, students) {
+            try {
+                // Load all students' grades
+                const gradePromises = students.map(s => 
+                    fetch(`/api/grades/student/${s.mahocsinh}?hocky=${semesterId}`)
+                        .then(res => res.json())
+                        .catch(() => [])
+                );
+
+                const allGrades = await Promise.all(gradePromises);
+
+                // Calculate averages for each student
+                const studentStats = students.map((student, index) => {
+                    const grades = allGrades[index];
+                    const { avgScore, ranking, passedCount } = calculateStudentAverage(grades);
+                    
+                    return {
+                        mahocsinh: student.mahocsinh,
+                        hoten: student.hoten,
+                        avgScore,
+                        ranking,
+                        passedCount,
+                        totalSubjects: grades.length
+                    };
+                });
+
+                // Load behavior grades for students
+                const behaviorPromises = students.map(s =>
+                    fetch(`/api/hanhkiem/hocsinh/${s.mahocsinh}?maNamHoc=${yearId}&maHocKy=${semesterId}`)
+                        .then(res => res.json())
+                        .then(result => result.success && result.data.length > 0 ? result.data[0].xeploai : '-')
+                        .catch(() => '-')
+                );
+
+                const behaviorGrades = await Promise.all(behaviorPromises);
+                studentStats.forEach((stat, idx) => {
+                    stat.hanhkiem = behaviorGrades[idx];
+                });
+
+                // Calculate class statistics
+                const validScores = studentStats.filter(s => s.avgScore !== null);
+                const classAvg = validScores.length > 0
+                    ? (validScores.reduce((sum, s) => sum + s.avgScore, 0) / validScores.length).toFixed(2)
+                    : '-';
+
+                const excellentCount = validScores.filter(s => s.avgScore >= 8).length;
+                const passedCount = validScores.filter(s => s.avgScore >= 5).length;
+
+                // Update summary cards
+                document.getElementById('classAvgScore').textContent = classAvg;
+                document.getElementById('excellentCount').textContent = `${excellentCount}/${students.length}`;
+                document.getElementById('passedCount').textContent = `${passedCount}/${students.length}`;
+
+                // Render academic chart
+                renderAcademicChart(validScores);
+
+                // Render student ranking table
+                renderStudentRanking(studentStats);
+
+                // Calculate and render subject performance
+                await renderSubjectPerformance(allGrades);
+
+            } catch (error) {
+                console.error('Lỗi tải học lực:', error);
+                toastError('Lỗi tải dữ liệu học lực');
+            }
+        }
+
+        function calculateStudentAverage(grades) {
+            if (!grades || grades.length === 0) {
+                return { avgScore: null, ranking: '-', passedCount: 0 };
+            }
+
+            // Get exam types with weights: 4 TX + 1 GK + 1 CK
+            const examTypes = [
+                { tenlhkt: 'Thường xuyên 1', heso: 1 },
+                { tenlhkt: 'Thường xuyên 2', heso: 1 },
+                { tenlhkt: 'Thường xuyên 3', heso: 1 },
+                { tenlhkt: 'Thường xuyên 4', heso: 1 },
+                { tenlhkt: 'Thi giữa kỳ', heso: 2 },
+                { tenlhkt: 'Thi cuối kỳ', heso: 3 }
+            ];
+
+            let totalSubjectAvg = 0;
+            let subjectCount = 0;
+            let passedCount = 0;
+
+            grades.forEach(mon => {
+                let totalScore = 0;
+                let totalWeight = 0;
+
+                examTypes.forEach(et => {
+                    const diemArr = mon.Diem[et.tenlhkt];
+                    if (diemArr && diemArr.length > 0) {
+                        diemArr.forEach(d => {
+                            totalScore += d.diem * et.heso;
+                            totalWeight += et.heso;
+                        });
+                    }
+                });
+
+                if (totalWeight > 0) {
+                    const subjectAvg = totalScore / totalWeight;
+                    totalSubjectAvg += subjectAvg;
+                    subjectCount++;
+                    if (subjectAvg >= 5) passedCount++;
+                }
+            });
+
+            if (subjectCount === 0) {
+                return { avgScore: null, ranking: '-', passedCount: 0 };
+            }
+
+            const avgScore = totalSubjectAvg / subjectCount;
+            let ranking = '';
+            if (avgScore >= 8) ranking = 'Giỏi';
+            else if (avgScore >= 6.5) ranking = 'Khá';
+            else if (avgScore >= 5) ranking = 'TB';
+            else ranking = 'Yếu';
+
+            return { avgScore, ranking, passedCount };
+        }
+
+        function renderAcademicChart(studentStats) {
+            const chartContainer = document.getElementById('academicChart');
+            const total = studentStats.length || 1;
+
+            const categories = [
+                { label: 'Giỏi', count: studentStats.filter(s => s.avgScore >= 8).length, color: '#22c55e' },
+                { label: 'Khá', count: studentStats.filter(s => s.avgScore >= 6.5 && s.avgScore < 8).length, color: '#3b82f6' },
+                { label: 'TB', count: studentStats.filter(s => s.avgScore >= 5 && s.avgScore < 6.5).length, color: '#eab308' },
+                { label: 'Yếu', count: studentStats.filter(s => s.avgScore < 5).length, color: '#ef4444' }
+            ];
+
+            chartContainer.innerHTML = categories.map(cat => {
+                const percentage = ((cat.count / total) * 100).toFixed(1);
+                return `
+                    <div class="chart-bar-item">
+                        <div class="chart-label">${cat.label}</div>
+                        <div class="chart-bar-wrapper">
+                            <div class="chart-bar" style="width: ${percentage}%; background: ${cat.color}"></div>
+                            <span class="chart-value">${cat.count} (${percentage}%)</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderStudentRanking(studentStats) {
+            const tbody = document.getElementById('studentRankingBody');
+            
+            // Sort by average score descending
+            studentStats.sort((a, b) => (b.avgScore || 0) - (a.avgScore || 0));
+
+            tbody.innerHTML = studentStats.map((student, index) => {
+                const avgDisplay = student.avgScore !== null ? student.avgScore.toFixed(2) : '-';
+                return `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${student.mahocsinh}</td>
+                        <td>${student.hoten}</td>
+                        <td><strong>${avgDisplay}</strong></td>
+                        <td><span class="badge ${getRankingClass(student.ranking)}">${student.ranking}</span></td>
+                        <td><span class="badge ${getBehaviorClass(student.hanhkiem)}">${student.hanhkiem}</span></td>
+                        <td>${student.passedCount}/${student.totalSubjects}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function renderSubjectPerformance(allGrades) {
+            try {
+                // Get all subjects
+                const subjectRes = await fetch('/api/subjects');
+                const subjects = await subjectRes.json();
+
+                const tbody = document.getElementById('subjectPerformanceBody');
+                const subjectStats = {};
+
+                // Calculate stats for each subject
+                allGrades.forEach(studentGrades => {
+                    studentGrades.forEach(grade => {
+                        const subjectId = grade.MaMonHoc;
+                        const subjectName = grade.TenMonHoc;
+
+                        if (!subjectStats[subjectId]) {
+                            subjectStats[subjectId] = {
+                                name: subjectName,
+                                totalScore: 0,
+                                count: 0,
+                                passed: 0,
+                                excellent: 0,
+                                good: 0,
+                                average: 0,
+                                poor: 0
+                            };
+                        }
+
+                        const { avgScore } = calculateSubjectAverage(grade);
+                        if (avgScore !== null) {
+                            subjectStats[subjectId].totalScore += avgScore;
+                            subjectStats[subjectId].count++;
+                            if (avgScore >= 5) subjectStats[subjectId].passed++;
+                            if (avgScore >= 8) subjectStats[subjectId].excellent++;
+                            else if (avgScore >= 6.5) subjectStats[subjectId].good++;
+                            else if (avgScore >= 5) subjectStats[subjectId].average++;
+                            else subjectStats[subjectId].poor++;
+                        }
+                    });
+                });
+
+                // Render table
+                tbody.innerHTML = Object.values(subjectStats).map(stat => {
+                    const avgScore = stat.count > 0 ? (stat.totalScore / stat.count).toFixed(2) : '-';
+                    const passRate = stat.count > 0 ? ((stat.passed / stat.count) * 100).toFixed(1) : '0.0';
+                    
+                    return `
+                        <tr>
+                            <td><strong>${stat.name}</strong></td>
+                            <td>${avgScore}</td>
+                            <td>${stat.passed}/${stat.count}</td>
+                            <td>${passRate}%</td>
+                            <td>${stat.excellent}</td>
+                            <td>${stat.good}</td>
+                            <td>${stat.average}</td>
+                            <td>${stat.poor}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            } catch (error) {
+                console.error('Lỗi render bảng môn học:', error);
+            }
+        }
+
+        function calculateSubjectAverage(gradeData) {
+            const examTypes = [
+                { tenlhkt: 'Thường xuyên 1', heso: 1 },
+                { tenlhkt: 'Thường xuyên 2', heso: 1 },
+                { tenlhkt: 'Thường xuyên 3', heso: 1 },
+                { tenlhkt: 'Thường xuyên 4', heso: 1 },
+                { tenlhkt: 'Thi giữa kỳ', heso: 2 },
+                { tenlhkt: 'Thi cuối kỳ', heso: 3 }
+            ];
+
+            let totalScore = 0;
+            let totalWeight = 0;
+
+            examTypes.forEach(et => {
+                const diemArr = gradeData.Diem[et.tenlhkt];
+                if (diemArr && diemArr.length > 0) {
+                    diemArr.forEach(d => {
+                        totalScore += d.diem * et.heso;
+                        totalWeight += et.heso;
+                    });
+                }
+            });
+
+            return totalWeight > 0 ? { avgScore: totalScore / totalWeight } : { avgScore: null };
+        }
+
+        function getRankingClass(ranking) {
+            switch(ranking) {
+                case 'Giỏi': return 'badge-success';
+                case 'Khá': return 'badge-info';
+                case 'TB': return 'badge-warning';
+                case 'Yếu': return 'badge-danger';
+                default: return '';
+            }
+        }
+
+        function getBehaviorClass(behavior) {
+            switch(behavior) {
+                case 'Tốt': return 'badge-success';
+                case 'Khá': return 'badge-info';
+                case 'Trung bình': return 'badge-warning';
+                case 'Yếu': return 'badge-danger';
+                default: return '';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('user');
+            window.location.href = 'login.html';
+        }
+    </script>
+
+    <style>
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .stat-card.blue { border-left: 4px solid #3b82f6; }
+        .stat-card.green { border-left: 4px solid #22c55e; }
+        .stat-card.yellow { border-left: 4px solid #eab308; }
+        .stat-card.purple { border-left: 4px solid #a855f7; }
+
+        .stat-icon {
+            font-size: 2rem;
+            opacity: 0.8;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .info-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .info-card h3 {
+            margin: 0 0 1rem 0;
+            color: #1e293b;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .info-item label {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .info-item span {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .section-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .section-card h3 {
+            margin: 0 0 1.5rem 0;
+            color: #1e293b;
+        }
+
+        .chart-container {
+            padding: 1rem 0;
+        }
+
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .chart-bar-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .chart-label {
+            width: 100px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .chart-bar-wrapper {
+            flex: 1;
+            position: relative;
+            height: 32px;
+            background: #f1f5f9;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .chart-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            padding-left: 0.5rem;
+        }
+
+        .chart-value {
+            position: absolute;
+            right: 0.5rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #1e293b;
+        }
+
+        .empty-state-large {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 2rem;
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-large h3 {
+            margin: 0 0 0.5rem 0;
+            color: #475569;
+        }
+
+        .empty-state-large p {
+            margin: 0;
+            color: #94a3b8;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #ca8a04;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+    </style>
 </body>
 </html>

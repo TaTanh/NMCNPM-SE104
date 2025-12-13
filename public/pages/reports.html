@@ -287,14 +287,16 @@
                 });
 
                 // Load học kỳ
-                const semRes = await fetch('/api/settings/semesters');
-                const semesters = await semRes.json();
-                ['semesterSelect1', 'semesterSelect2'].forEach(id => {
-                    const select = document.getElementById(id);
-                    semesters.forEach(s => {
-                        select.innerHTML += `<option value="${s.mahocky}">${s.tenhocky}</option>`;
+                    const semRes = await fetch('/api/settings/semesters');
+                    const semesters = await semRes.json();
+                    ['semesterSelect1', 'semesterSelect2'].forEach(id => {
+                        const select = document.getElementById(id);
+                        semesters.forEach(s => {
+                            select.innerHTML += `<option value="${s.mahocky}">${s.tenhocky}</option>`;
+                        });
+                        // Thêm lựa chọn cả năm
+                        select.innerHTML += `<option value="CN">Cả năm (HK1 + HK2)</option>`;
                     });
-                });
 
                 // Load năm học
                 const yearRes = await fetch('/api/settings/school-years');
@@ -338,10 +340,42 @@
             }
 
             try {
-                const response = await fetch(
-                    `/api/reports/subject?monhoc=${subject.value}&hocky=${semester.value}&namhoc=${year.value}`
-                );
-                const data = await response.json();
+                let data = [];
+
+                // Nếu chọn Cả năm: lấy HK1 + HK2 và gộp
+                if (semester.value === 'CN') {
+                    const [hk1, hk2] = await Promise.all([
+                        fetch(`/api/reports/subject?monhoc=${subject.value}&hocky=HK1&namhoc=${year.value}`).then(r=>r.json()),
+                        fetch(`/api/reports/subject?monhoc=${subject.value}&hocky=HK2&namhoc=${year.value}`).then(r=>r.json())
+                    ]);
+
+                    const map = new Map();
+                    [...(hk1||[]), ...(hk2||[])].forEach(row => {
+                        const key = row.malop || row.MaLop || row.tenlop;
+                        if (!map.has(key)) {
+                            map.set(key, {
+                                tenlop: row.tenlop,
+                                siso: parseInt(row.siso) || 0,
+                                datSum: 0,
+                                count: 0
+                            });
+                        }
+                        const item = map.get(key);
+                        item.datSum += parseInt(row.soluongdat) || 0;
+                        item.count += 1;
+                        item.siso = Math.max(item.siso, parseInt(row.siso) || 0);
+                    });
+                    data = Array.from(map.values()).map(item => ({
+                        tenlop: item.tenlop,
+                        siso: item.siso,
+                        soluongdat: Math.round(item.datSum / (item.count || 1))
+                    }));
+                } else {
+                    const response = await fetch(
+                        `/api/reports/subject?monhoc=${subject.value}&hocky=${semester.value}&namhoc=${year.value}`
+                    );
+                    data = await response.json();
+                }
 
                 // Update header
                 document.getElementById('reportSubjectName').textContent = 
@@ -412,10 +446,42 @@
             }
 
             try {
-                const response = await fetch(
-                    `/api/reports/semester?hocky=${semester.value}&namhoc=${year.value}`
-                );
-                const data = await response.json();
+                let data = [];
+
+                // Nếu chọn Cả năm: lấy HK1 + HK2 và gộp
+                if (semester.value === 'CN') {
+                    const [hk1, hk2] = await Promise.all([
+                        fetch(`/api/reports/semester?hocky=HK1&namhoc=${year.value}`).then(r=>r.json()),
+                        fetch(`/api/reports/semester?hocky=HK2&namhoc=${year.value}`).then(r=>r.json())
+                    ]);
+
+                    const map = new Map();
+                    [...(hk1||[]), ...(hk2||[])].forEach(row => {
+                        const key = row.malop || row.MaLop || row.tenlop;
+                        if (!map.has(key)) {
+                            map.set(key, {
+                                tenlop: row.tenlop,
+                                siso: parseInt(row.siso) || 0,
+                                datSum: 0,
+                                count: 0
+                            });
+                        }
+                        const item = map.get(key);
+                        item.datSum += parseInt(row.soluongdat) || 0;
+                        item.count += 1;
+                        item.siso = Math.max(item.siso, parseInt(row.siso) || 0);
+                    });
+                    data = Array.from(map.values()).map(item => ({
+                        tenlop: item.tenlop,
+                        siso: item.siso,
+                        soluongdat: Math.round(item.datSum / (item.count || 1))
+                    }));
+                } else {
+                    const response = await fetch(
+                        `/api/reports/semester?hocky=${semester.value}&namhoc=${year.value}`
+                    );
+                    data = await response.json();
+                }
 
                 // Update header
                 document.getElementById('reportSemester2').textContent = 

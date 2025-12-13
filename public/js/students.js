@@ -46,8 +46,8 @@ function renderStudentTable(students) {
             <td>${hs.tenlop || ''}</td>
             <td>${hs.diachi || ''}</td>
             <td>${hs.email || ''}</td>
-            <td>${hs.hotenphuhuuynh || ''}</td>
-            <td>${hs.sdtphuhuuynh || ''}</td>
+            <td>${hs.hotenphuhuynh || ''}</td>
+            <td>${hs.sdtphuhuynh || ''}</td>
         </tr>
     `).join('');
     
