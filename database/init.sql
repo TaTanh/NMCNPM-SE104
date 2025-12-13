@@ -263,13 +263,6 @@ INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro) VALUES
 ('admin', 'admin123', 'Quản trị viên', 'admin@school.edu.vn', 'ADMIN')
 ON CONFLICT (TenDangNhap) DO NOTHING;
 
--- Giáo viên mẫu
-INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro) VALUES 
-('gvcn1', '123456', 'Nguyễn Văn Thành', 'gvcn01@school.edu.vn', 'GVCN'),
-('gvbm1', '123456', 'Lê Văn Đức', 'gvbm01@school.edu.vn', 'GVBM')
-ON CONFLICT (TenDangNhap) DO NOTHING;
-
-
 -- Thêm 18 tài khoản GVBM (2 giáo viên mỗi môn)
 INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro)
 VALUES
