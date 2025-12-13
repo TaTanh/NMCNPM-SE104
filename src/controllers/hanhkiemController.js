@@ -1,4 +1,5 @@
 const hanhkiemModel = require('../models/hanhkiemModel');
+const gradeModel = require('../models/gradeModel');
 
 // ========== LẤY HẠNH KIỂM CỦA HỌC SINH ==========
 const getByHocSinh = async (req, res) => {
@@ -7,9 +8,9 @@ const getByHocSinh = async (req, res) => {
         const { maNamHoc, maHocKy } = req.query;
 
         const hanhkiem = await hanhkiemModel.getByHocSinh(
-            parseInt(maHocSinh),
-            maNamHoc ? parseInt(maNamHoc) : null,
-            maHocKy ? parseInt(maHocKy) : null
+            maHocSinh,
+            maNamHoc || null,
+            maHocKy || null
         );
 
         res.json({
@@ -21,6 +22,31 @@ const getByHocSinh = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Lỗi khi lấy hạnh kiểm học sinh',
+            error: error.message
+        });
+    }
+};
+
+// ========== LẤY HẠNH KIỂM CỤ THỂ CỦA HỌC SINH (THEO NĂM HỌC VÀ HỌC KỲ) ==========
+const getByHocSinhSpecific = async (req, res) => {
+    try {
+        const { maHocSinh, maNamHoc, maHocKy } = req.params;
+
+        const hanhkiem = await hanhkiemModel.getSpecific(maHocSinh, maNamHoc, maHocKy);
+
+        if (!hanhkiem) {
+            return res.status(404).json({
+                success: false,
+                message: 'Chưa có hạnh kiểm'
+            });
+        }
+
+        res.json(hanhkiem);
+    } catch (error) {
+        console.error('Error in getByHocSinhSpecific:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy hạnh kiểm',
             error: error.message
         });
     }
@@ -40,9 +66,9 @@ const getByLop = async (req, res) => {
         }
 
         const danhSach = await hanhkiemModel.getByLop(
-            parseInt(maLop),
-            parseInt(maNamHoc),
-            parseInt(maHocKy)
+            maLop,
+            maNamHoc,
+            maHocKy
         );
 
         res.json({
@@ -62,7 +88,7 @@ const getByLop = async (req, res) => {
 // ========== NHẬP/CẬP NHẬT HẠNH KIỂM ==========
 const upsert = async (req, res) => {
     try {
-        const { maHocSinh, maNamHoc, maHocKy, diemHanhKiem, xepLoai, ghiChu } = req.body;
+        const { maHocSinh, maNamHoc, maHocKy, xepLoai, ghiChu } = req.body;
 
         if (!maHocSinh || !maNamHoc || !maHocKy || !xepLoai) {
             return res.status(400).json({
@@ -75,7 +101,6 @@ const upsert = async (req, res) => {
             maHocSinh,
             maNamHoc,
             maHocKy,
-            diemHanhKiem || null,
             xepLoai,
             ghiChu || null
         );
@@ -138,9 +163,9 @@ const deleteHanhKiem = async (req, res) => {
         }
 
         const result = await hanhkiemModel.delete(
-            parseInt(maHocSinh),
-            parseInt(maNamHoc),
-            parseInt(maHocKy)
+            maHocSinh,
+            maNamHoc,
+            maHocKy
         );
 
         if (result) {
@@ -231,6 +256,7 @@ const getHanhKiemNam = async (req, res) => {
 
 module.exports = {
     getByHocSinh,
+    getByHocSinhSpecific,
     getByLop,
     upsert,
     bulkUpsert,

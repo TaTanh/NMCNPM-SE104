@@ -233,6 +233,35 @@ const getStudentYearSummary = async (maHocSinh, maLop, maNamHoc) => {
     return result.rows;
 };
 
+// ========== LẤY ĐIỂM TRUNG BÌNH CẢ KỲ CỦA HỌC SINH ==========
+const getAverageGrade = async (maHocSinh, maLop, maHocKy) => {
+    try {
+        const query = `
+            SELECT 
+                ROUND(AVG(
+                    COALESCE(
+                        (SELECT ROUND(
+                            (COALESCE(SUM(ct.Diem * lhkt.HeSo), 0) / 
+                            NULLIF(SUM(lhkt.HeSo), 0))
+                        , 1))
+                        , 0
+                    )
+                ), 1) as DiemTrungBinhCaKy
+            FROM MONHOC mh
+            JOIN BANGDIEMMON bdm ON mh.MaMonHoc = bdm.MaMonHoc
+            LEFT JOIN CT_BANGDIEMMON_HOCSINH ct ON bdm.MaBangDiem = ct.MaBangDiem AND ct.MaHocSinh = $1
+            LEFT JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+            WHERE bdm.MaLop = $2 AND bdm.MaHocKy = $3
+            GROUP BY bdm.MaHocKy
+        `;
+        
+        const result = await pool.query(query, [maHocSinh, maLop, maHocKy]);
+        return result.rows.length > 0 ? result.rows[0].diemtrungbinhcaky : 0;
+    } catch (error) {
+        throw error;
+    }
+};
+
 module.exports = {
     getClassSubjectGrades,
     getExamTypes,
@@ -249,5 +278,6 @@ module.exports = {
     calculateSemesterAverage,
     calculateYearAverage,
     getStudentSemesterSummary,
-    getStudentYearSummary
+    getStudentYearSummary,
+    getAverageGrade
 };

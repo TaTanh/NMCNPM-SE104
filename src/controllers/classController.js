@@ -274,6 +274,18 @@ const getAvailableStudentsFromClass = async (req, res) => {
     }
 };
 
+// ========== LẤY DANH SÁCH NĂM HỌC ==========
+const getNamHoc = async (req, res) => {
+    try {
+        const pool = require('../config/db');
+        const result = await pool.query('SELECT * FROM NAMHOC ORDER BY MaNamHoc DESC');
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Lỗi lấy danh sách năm học:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
 module.exports = {
     getClasses,
     getClassById,
@@ -285,5 +297,6 @@ module.exports = {
     removeStudentFromClass,
     bulkAddStudentsToClass,
     getUnassignedStudents,
-    getAvailableStudentsFromClass
+    getAvailableStudentsFromClass,
+    getNamHoc
 };

@@ -301,15 +301,6 @@ BEGIN
         -- Tạo điểm cho cả 2 học kỳ
         FOREACH ma_hocky IN ARRAY hocky_list LOOP
             
-            -- Tạo hạnh kiểm ngẫu nhiên
-            diem_hk := random_diem_hanh_kiem();
-            xep_loai_hk := tinh_xep_loai_hanh_kiem(diem_hk);
-            
-            INSERT INTO HANHKIEM (MaHocSinh, MaNamHoc, MaHocKy, DiemHanhKiem, XepLoai)
-            VALUES (ma_hs, ma_nam_hoc, ma_hocky, diem_hk, xep_loai_hk)
-            ON CONFLICT (MaHocSinh, MaNamHoc, MaHocKy) DO UPDATE 
-            SET DiemHanhKiem = EXCLUDED.DiemHanhKiem, XepLoai = EXCLUDED.XepLoai;
-            
             -- Tạo điểm cho tất cả các môn học
             FOREACH ma_mon IN ARRAY mon_list LOOP
                 

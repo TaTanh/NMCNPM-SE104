@@ -8,6 +8,9 @@ const { checkAuth, canInputHanhKiem } = require('../middleware/authMiddleware');
 // Lấy hạnh kiểm của học sinh (theo mã học sinh)
 router.get('/hocsinh/:maHocSinh', checkAuth, hanhkiemController.getByHocSinh);
 
+// Lấy hạnh kiểm cụ thể của học sinh theo năm học và học kỳ
+router.get('/:maHocSinh/:maNamHoc/:maHocKy', checkAuth, hanhkiemController.getByHocSinhSpecific);
+
 // Lấy hạnh kiểm của lớp
 router.get('/lop/:maLop', checkAuth, hanhkiemController.getByLop);
 

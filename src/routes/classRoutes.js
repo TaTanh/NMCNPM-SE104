@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const classController = require('../controllers/classController');
 
+// ========== LẤY DANH SÁCH NĂM HỌC (PHẢI ĐẶT TRƯỚC) ==========
+router.get('/nam-hoc', classController.getNamHoc);
+
 // ========== LẤY DANH SÁCH LỚP ==========
 router.get('/', classController.getClasses);
 

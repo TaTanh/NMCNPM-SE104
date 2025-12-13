@@ -26,7 +26,7 @@ app.use('/api/classes', classRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/grades', gradeRoutes);
 app.use('/api/settings', settingRoutes);
-app.use('/api/reports', reportRoutes);
+app.use('/api/report', reportRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/hanhkiem', hanhkiemRoutes);
 app.use('/api/giangday', giangdayRoutes);

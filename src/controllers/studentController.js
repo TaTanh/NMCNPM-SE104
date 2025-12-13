@@ -154,11 +154,24 @@ const deleteStudent = async (req, res) => {
     }
 };
 
+// ========== LẤY DANH SÁCH HỌC SINH TRONG LỚP ==========
+const getStudentsByClass = async (req, res) => {
+    try {
+        const { classId } = req.params;
+        const students = await studentModel.findByClass(classId);
+        res.json(students);
+    } catch (err) {
+        console.error('Lỗi lấy danh sách học sinh theo lớp:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
 module.exports = {
     getStudentsWithClass,
     getStudents,
     getStudentById,
     createStudent,
     updateStudent,
-    deleteStudent
+    deleteStudent,
+    getStudentsByClass
 };

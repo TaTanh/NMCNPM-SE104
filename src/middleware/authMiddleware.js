@@ -23,7 +23,7 @@ const checkAuth = async (req, res, next) => {
             maNguoiDung: user.manguoidung,
             tenDangNhap: user.tendangnhap,
             hoTen: user.hoten,
-            vaiTro: user.tenvaitro,
+            vaiTro: user.mavaitro,
             quyen: typeof user.quyen === 'string' ? JSON.parse(user.quyen) : user.quyen
         };
         
@@ -73,7 +73,7 @@ const optionalAuth = async (req, res, next) => {
                     maNguoiDung: user.manguoidung,
                     tenDangNhap: user.tendangnhap,
                     hoTen: user.hoten,
-                    vaiTro: user.tenvaitro,
+                    vaiTro: user.mavaitro,
                     quyen: typeof user.quyen === 'string' ? JSON.parse(user.quyen) : user.quyen
                 };
             }

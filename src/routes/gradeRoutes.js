@@ -20,4 +20,7 @@ router.get('/average/:maBangDiem/:maHocSinh', gradeController.getStudentAverage)
 // ========== LẤY BẢNG ĐIỂM TỔNG HỢP CỦA HỌC SINH ==========
 router.get('/student/:maHocSinh', gradeController.getStudentGrades);
 
+// ========== LẤY ĐIỂM TRUNG BÌNH CẢ KỲ CỦA HỌC SINH ==========
+router.get('/semester-average/:maHocSinh/:maLop/:maHocKy', gradeController.getAverageGrade);
+
 module.exports = router;

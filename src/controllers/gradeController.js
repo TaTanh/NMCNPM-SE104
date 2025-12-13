@@ -195,11 +195,35 @@ const getStudentGrades = async (req, res) => {
     }
 };
 
+// ========== LẤY ĐIỂM TRUNG BÌNH CẢ KỲ CỦA HỌC SINH ==========
+const getAverageGrade = async (req, res) => {
+    try {
+        const { maHocSinh, maLop, maHocKy } = req.params;
+        
+        const diemTBC = await gradeModel.getAverageGrade(maHocSinh, maLop, maHocKy);
+        
+        res.json({
+            success: true,
+            maHocSinh: maHocSinh,
+            maLop: maLop,
+            maHocKy: maHocKy,
+            diemTrungBinhCaKy: diemTBC || 0
+        });
+    } catch (err) {
+        console.error('Lỗi lấy điểm trung bình cả kỳ:', err);
+        res.status(500).json({ 
+            success: false,
+            error: 'Lỗi server' 
+        });
+    }
+};
+
 module.exports = {
     getClassSubjectGrades,
     getExamTypes,
     updateGrade,
     createGradeSheet,
     getStudentAverage,
-    getStudentGrades
+    getStudentGrades,
+    getAverageGrade
 };

@@ -143,6 +143,21 @@ const hasGrades = async (id) => {
     }
 };
 
+// ========== LẤY DANH SÁCH HỌC SINH TRONG LỚP ==========
+const findByClass = async (classId) => {
+    const result = await pool.query(`
+        SELECT hs.MaHocSinh, hs.HoTen, hs.GioiTinh, hs.NgaySinh, hs.DiaChi, hs.Email,
+               hs.HoTenPhuHuynh, hs.SdtPhuHuynh,
+               l.MaLop, l.TenLop
+        FROM HOCSINH hs
+        JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
+        JOIN LOP l ON qth.MaLop = l.MaLop
+        WHERE l.MaLop = $1
+        ORDER BY hs.MaHocSinh ASC
+    `, [classId]);
+    return result.rows;
+};
+
 module.exports = {
     findAllWithClass,
     findAll,
@@ -151,5 +166,6 @@ module.exports = {
     update,
     remove,
     isInClass,
-    hasGrades
+    hasGrades,
+    findByClass
 };

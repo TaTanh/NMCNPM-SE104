@@ -53,26 +53,39 @@ const HanhKiemModel = {
         }
     },
 
-    // Thêm hoặc cập nhật hạnh kiểm
-    upsert: async (maHocSinh, maNamHoc, maHocKy, diemHanhKiem, xepLoai, ghiChu = null) => {
+    // Lấy hạnh kiểm cụ thể của học sinh (1 bản ghi)
+    getSpecific: async (maHocSinh, maNamHoc, maHocKy) => {
         try {
-            // Validate xếp loại (chỉ validate nếu có giá trị)
+            const query = `
+                SELECT * FROM HANHKIEM 
+                WHERE MaHocSinh = $1 AND MaNamHoc = $2 AND MaHocKy = $3
+            `;
+            const result = await pool.query(query, [maHocSinh, maNamHoc, maHocKy]);
+            return result.rows[0] || null;
+        } catch (error) {
+            throw error;
+        }
+    },
+
+    // Thêm hoặc cập nhật hạnh kiểm
+    upsert: async (maHocSinh, maNamHoc, maHocKy, xepLoai, ghiChu = null) => {
+        try {
+            // Validate xếp loại
             const validXepLoai = ['Tốt', 'Khá', 'Trung bình', 'Yếu'];
-            if (xepLoai && !validXepLoai.includes(xepLoai)) {
+            if (!validXepLoai.includes(xepLoai)) {
                 throw new Error('Xếp loại không hợp lệ. Chỉ chấp nhận: Tốt, Khá, Trung bình, Yếu');
             }
 
             const query = `
-                INSERT INTO HANHKIEM (MaHocSinh, MaNamHoc, MaHocKy, DiemHanhKiem, XepLoai, GhiChu)
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO HANHKIEM (MaHocSinh, MaNamHoc, MaHocKy, XepLoai, GhiChu)
+                VALUES ($1, $2, $3, $4, $5)
                 ON CONFLICT (MaHocSinh, MaNamHoc, MaHocKy) 
                 DO UPDATE SET 
-                    DiemHanhKiem = EXCLUDED.DiemHanhKiem,
                     XepLoai = EXCLUDED.XepLoai,
                     GhiChu = EXCLUDED.GhiChu
                 RETURNING *
             `;
-            const result = await pool.query(query, [maHocSinh, maNamHoc, maHocKy, diemHanhKiem, xepLoai, ghiChu]);
+            const result = await pool.query(query, [maHocSinh, maNamHoc, maHocKy, xepLoai, ghiChu]);
             return result.rows[0];
         } catch (error) {
             throw error;
@@ -87,19 +100,18 @@ const HanhKiemModel = {
 
             const results = [];
             for (const hk of hanhKiemList) {
-                const { maHocSinh, maNamHoc, maHocKy, diemHanhKiem, xepLoai, ghiChu } = hk;
+                const { maHocSinh, maNamHoc, maHocKy, xepLoai, ghiChu } = hk;
                 
                 const query = `
-                    INSERT INTO HANHKIEM (MaHocSinh, MaNamHoc, MaHocKy, DiemHanhKiem, XepLoai, GhiChu)
-                    VALUES ($1, $2, $3, $4, $5, $6)
+                    INSERT INTO HANHKIEM (MaHocSinh, MaNamHoc, MaHocKy, XepLoai, GhiChu)
+                    VALUES ($1, $2, $3, $4, $5)
                     ON CONFLICT (MaHocSinh, MaNamHoc, MaHocKy) 
                     DO UPDATE SET 
-                        DiemHanhKiem = EXCLUDED.DiemHanhKiem,
                         XepLoai = EXCLUDED.XepLoai,
                         GhiChu = EXCLUDED.GhiChu
                     RETURNING *
                 `;
-                const result = await client.query(query, [maHocSinh, maNamHoc, maHocKy, diemHanhKiem, xepLoai, ghiChu]);
+                const result = await client.query(query, [maHocSinh, maNamHoc, maHocKy, xepLoai, ghiChu]);
                 results.push(result.rows[0]);
             }
 

@@ -59,8 +59,80 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+// ========== LẤY TỔNG KẾT LỚP ==========
+const getClassSummary = async (req, res) => {
+    try {
+        const { maLop, maNamHoc, maHocKy } = req.params;
+        
+        if (!maLop || !maNamHoc || !maHocKy) {
+            return res.status(400).json({ error: 'Thiếu tham số: maLop, maNamHoc, maHocKy' });
+        }
+        
+        const summary = await reportModel.getClassSummary(maLop, maNamHoc, maHocKy);
+        res.json(summary);
+    } catch (err) {
+        console.error('Lỗi lấy tổng kết lớp:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
+// ========== LẤY TỔNG KẾT LỚP VỚI ĐIỂM TỪNG MÔN ==========
+const getClassSummaryWithSubjects = async (req, res) => {
+    try {
+        const { maLop, maNamHoc, maHocKy } = req.params;
+        
+        if (!maLop || !maNamHoc || !maHocKy) {
+            return res.status(400).json({ error: 'Thiếu tham số: maLop, maNamHoc, maHocKy' });
+        }
+        
+        const data = await reportModel.getClassSummaryWithSubjectGrades(maLop, maNamHoc, maHocKy);
+        res.json(data);
+    } catch (err) {
+        console.error('Lỗi lấy tổng kết lớp với điểm từng môn:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
+// ========== LẤY DANH SÁCH MÔN ==========
+const getSubjectsInClass = async (req, res) => {
+    try {
+        const { maLop, maHocKy } = req.params;
+        
+        if (!maLop || !maHocKy) {
+            return res.status(400).json({ error: 'Thiếu tham số: maLop, maHocKy' });
+        }
+        
+        const subjects = await reportModel.getSubjectsInClass(maLop, maHocKy);
+        res.json(subjects);
+    } catch (err) {
+        console.error('Lỗi lấy danh sách môn:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
+// ========== LẤY ĐIỂM TỪNG MÔN CỦA HỌC SINH ==========
+const getStudentSubjectGrades = async (req, res) => {
+    try {
+        const { maHocSinh, maLop, maHocKy } = req.params;
+        
+        if (!maHocSinh || !maLop || !maHocKy) {
+            return res.status(400).json({ error: 'Thiếu tham số' });
+        }
+        
+        const grades = await reportModel.getStudentSubjectGrades(maHocSinh, maLop, maHocKy);
+        res.json(grades);
+    } catch (err) {
+        console.error('Lỗi lấy điểm từng môn:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
 module.exports = {
     getSubjectReport,
     getSemesterReport,
-    getDashboardStats
+    getDashboardStats,
+    getClassSummary,
+    getClassSummaryWithSubjects,
+    getSubjectsInClass,
+    getStudentSubjectGrades
 };

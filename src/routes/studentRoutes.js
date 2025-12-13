@@ -2,6 +2,9 @@ const express = require('express');
 const router = express.Router();
 const studentController = require('../controllers/studentController');
 
+// ========== LẤY DANH SÁCH HỌC SINH TỪ LỚP (PHẢI ĐẶT TRƯỚC) ==========
+router.get('/class/:classId', studentController.getStudentsByClass);
+
 // ========== LẤY DANH SÁCH HỌC SINH KÈM THÔNG TIN LỚP ==========
 router.get('/with-class', studentController.getStudentsWithClass);
 
