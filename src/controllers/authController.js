@@ -47,6 +47,17 @@ const login = async (req, res) => {
 // ========== LẤY DANH SÁCH NGƯỜI DÙNG ==========
 const getUsers = async (req, res) => {
     try {
+        const { role } = req.query;
+
+        if (role === 'teacher') {
+            // Return both GVBM and GVCN
+            const gvbm = await userModel.findAllGVBM();
+            const gvcn = await userModel.findAllGVCN();
+            // Merge and sort by name
+            const users = [...gvcn, ...gvbm].sort((a, b) => (a.hoten || a.hoTen || '').localeCompare(b.hoten || b.hoTen || ''));
+            return res.json(users);
+        }
+
         const users = await userModel.findAll();
         res.json(users);
     } catch (err) {

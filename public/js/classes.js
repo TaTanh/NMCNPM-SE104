@@ -22,12 +22,12 @@ function renderClassTable(classes) {
     const tbody = document.getElementById('classTableBody');
     
     if (!classes || classes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có dữ liệu</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Không có dữ liệu</td></tr>';
         return;
     }
     
     tbody.innerHTML = classes.map(lop => `
-        <tr data-id="${lop.malop}">
+        <tr data-id="${lop.malop}" data-gvcn="${lop.magvcn || ''}">
             <td class="select-cell">
                 <input type="checkbox" class="row-select-checkbox">
             </td>
@@ -39,6 +39,14 @@ function renderClassTable(classes) {
             <td>${lop.namhoc || ''}</td>
             <td>
                 <button class="btn btn-sm btn-outline" onclick="viewStudentList('${lop.malop}', '${lop.tenlop}')">Xem DS</button>
+            </td>
+            <td style="white-space: nowrap;">
+                ${lop.magvcn ? `
+                    <button class="btn btn-sm btn-warning" onclick="openAssignGvcnModal('${lop.malop}', '${lop.magvcn || ''}')" title="Thay GVCN">🔁 Gán lại</button>
+                    <button class="btn btn-sm btn-danger" onclick="removeGvcn('${lop.malop}')" title="Huỷ GVCN">⛔ Huỷ GVCN</button>
+                ` : `
+                    <button class="btn btn-sm btn-success" onclick="openAssignGvcnModal('${lop.malop}', '')" title="Gán GVCN">➕ Gán GVCN</button>
+                `}
             </td>
         </tr>
     `).join('');
@@ -57,7 +65,8 @@ async function addClass(data) {
                 MaLop: data.MaLop,
                 TenLop: data.TenLop,
                 MaKhoiLop: data.MaKhoiLop,
-                MaNamHoc: data.MaNamHoc
+                MaNamHoc: data.MaNamHoc,
+                MaGVCN: data.MaGVCN || null
             })
         });
         

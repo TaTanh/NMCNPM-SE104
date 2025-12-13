@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const classController = require('../controllers/classController');
+const { checkAuth, isAdmin } = require('../middleware/authMiddleware');
 
 // ========== LẤY DANH SÁCH LỚP ==========
 router.get('/', classController.getClasses);
@@ -34,5 +35,9 @@ router.post('/:id/students', classController.addStudentToClass);
 
 // ========== XÓA HỌC SINH KHỎI LỚP ==========
 router.delete('/:id/students/:maHocSinh', classController.removeStudentFromClass);
+
+// ========== GÁN / HỦY GVCN CHO LỚP (Chỉ Admin) ==========
+router.put('/:id/gvcn', checkAuth, isAdmin, classController.assignGvcnToClass);
+router.delete('/:id/gvcn', checkAuth, isAdmin, classController.removeGvcnFromClass);
 
 module.exports = router;

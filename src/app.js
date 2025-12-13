@@ -11,6 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // ========== API ROUTES ==========
+const { normalizeHocKyMiddleware } = require('./middleware/semesterMiddleware');
 const studentRoutes = require('./routes/studentRoutes');
 const classRoutes = require('./routes/classRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
@@ -20,7 +21,9 @@ const reportRoutes = require('./routes/reportRoutes');
 const authRoutes = require('./routes/authRoutes');
 const hanhkiemRoutes = require('./routes/hanhkiemRoutes');
 const giangdayRoutes = require('./routes/giangdayRoutes');
+const teachingAssignmentRoutes = require('./routes/teachingAssignmentRoutes');
 
+app.use(normalizeHocKyMiddleware);
 app.use('/api/students', studentRoutes);
 app.use('/api/classes', classRoutes);
 app.use('/api/subjects', subjectRoutes);
@@ -30,6 +33,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/hanhkiem', hanhkiemRoutes);
 app.use('/api/giangday', giangdayRoutes);
+app.use('/api/teaching-assignments', teachingAssignmentRoutes);
 
 // ========== DASHBOARD STATS API ==========
 const reportController = require('./controllers/reportController');

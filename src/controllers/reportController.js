@@ -1,4 +1,5 @@
 const reportModel = require('../models/reportModel');
+const { normalizeHocKy } = require('../utils/semesterUtil');
 
 // ========== BÁO CÁO TỔNG KẾT MÔN ==========
 const getSubjectReport = async (req, res) => {
@@ -9,7 +10,7 @@ const getSubjectReport = async (req, res) => {
             return res.status(400).json({ error: 'Thiếu tham số: namhoc, hocky, monhoc' });
         }
         
-        const rows = await reportModel.getSubjectReport(namhoc, hocky, monhoc);
+        const rows = await reportModel.getSubjectReport(namhoc, normalizeHocKy(hocky), monhoc);
         
         // Tính tỉ lệ
         const report = rows.map(row => ({
@@ -33,7 +34,7 @@ const getSemesterReport = async (req, res) => {
             return res.status(400).json({ error: 'Thiếu tham số: namhoc, hocky' });
         }
         
-        const rows = await reportModel.getSemesterReport(namhoc, hocky);
+        const rows = await reportModel.getSemesterReport(namhoc, normalizeHocKy(hocky));
         
         // Tính tỉ lệ
         const report = rows.map(row => ({

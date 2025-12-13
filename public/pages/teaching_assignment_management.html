@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Thay đổi thông tin giảng dạy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/layout/styles.css">
+    <script src="/js/toast.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/teaching_assignment_service.js"></script>
+</head>
+
+<body class="dashboard-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-logo">
+            <img src="/assets/uit_logo.png" alt="UIT Logo">
+            <span>QL Học Sinh</span>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="/pages/dashboard.html">Dashboard</a>
+            <a href="/pages/students.html">Quản lý học sinh</a>
+            <a href="/pages/classes.html">Quản lý lớp học</a>
+            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/grade_entry_select.html">Nhập điểm</a>
+            <a href="/pages/hanhkiem_entry.html">Nhập hạnh kiểm</a>
+            <a href="/pages/grade_select.html">Bảng điểm</a>
+            <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
+            <a href="/pages/class_summary.html">Tổng kết lớp</a>
+            <a href="/pages/reports.html">Báo cáo tổng kết</a>
+            <a href="/pages/teaching_assignment_management.html" class="active">Thay đổi giảng dạy</a>
+            <a href="/pages/users.html">Quản lý người dùng</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- HEADER -->
+        <header class="topbar">
+            <div class="page-title">Thay đổi thông tin giảng dạy của giáo viên</div>
+            <div class="user-info">
+                <span id="userGreeting">Xin chào, Admin</span>
+                <img src="/assets/user.png" class="avatar" alt="user">
+                <button class="btn btn-outline btn-sm" onclick="logout()" style="margin-left:10px;">Đăng xuất</button>
+            </div>
+        </header>
+
+        <!-- CONTENT -->
+        <div class="content">
+            <!-- FILTER BAR -->
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label class="filter-label">Năm học</label>
+                    <select id="filterYear" class="filter-select">
+                        <option value="">-- Chọn năm học --</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Học kỳ</label>
+                    <select id="filterSemester" class="filter-select">
+                        <option value="">-- Chọn học kỳ --</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label class="filter-label">Khối</label>
+                    <select id="filterGrade" class="filter-select">
+                        <option value="">-- Chọn khối --</option>
+                    </select>
+                </div>
+
+                <button id="btnApplyFilter" class="btn btn-primary" style="align-self: flex-end;">
+                    Hiển thị
+                </button>
+            </div>
+
+            <!-- STATUS MESSAGE -->
+            <div id="statusMessage" class="status-message" style="display:none; text-align:center; padding:20px; color:#6b7280;">
+                Vui lòng chọn Năm học, Học kỳ, Khối
+            </div>
+
+            <!-- TABLE CONTAINER -->
+            <div id="tableContainer" style="display:none;">
+                <!-- Loading spinner -->
+                <div id="loadingSpinner" class="loading-spinner" style="display:none; text-align:center; padding:20px;">
+                    <p>Đang tải dữ liệu...</p>
+                </div>
+
+                <!-- Assignments Table -->
+                <div class="table-wrapper" id="assignmentsTableWrapper" style="overflow-x:auto;">
+                    <table id="assignmentsTable" class="data-table">
+                        <thead id="tableHead">
+                            <!-- Populated by JS -->
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Save all button -->
+                <div style="margin-top:16px; display:flex; gap:8px;">
+                    <button id="btnSaveAll" class="btn btn-primary" style="display:none;">
+                        Lưu tất cả thay đổi
+                    </button>
+                    <button id="btnResetAll" class="btn btn-outline" style="display:none;">
+                        Làm mới
+                    </button>
+                </div>
+            </div>
+        </div><!-- content -->
+    </div><!-- main -->
+
+    <script>
+        let filterData = {};
+        let currentAssignments = {};
+        let changedRows = new Set();
+        let isSaving = false;
+
+        // ========== INITIALIZATION ==========
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getCurrentUser();
+            if (!user) {
+                window.location.href = '/pages/login.html';
+                return;
+            }
+
+            document.getElementById('userGreeting').textContent = `Xin chào, ${user.hoTen || user.HoTen || 'Admin'}`;
+
+            try {
+                // Load filter options
+                filterData = await TeachingAssignmentService.getFilterData();
+                populateFilterSelects();
+            } catch (error) {
+                console.error('Error loading filter data:', error);
+                toastError('Lỗi: Không thể tải dữ liệu lọc');
+            }
+        });
+
+        // ========== POPULATE FILTER SELECTS ==========
+        function populateFilterSelects() {
+            // Years
+            const yearSelect = document.getElementById('filterYear');
+            filterData.years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year.manamhoc || year.MaNamHoc || '';
+                option.textContent = year.tennamhoc || year.TenNamHoc || '';
+                yearSelect.appendChild(option);
+            });
+
+            // Semesters
+            const semesterSelect = document.getElementById('filterSemester');
+            filterData.semesters.forEach(sem => {
+                const option = document.createElement('option');
+                option.value = sem.id;
+                option.textContent = sem.name;
+                semesterSelect.appendChild(option);
+            });
+
+            // Grades
+            const gradeSelect = document.getElementById('filterGrade');
+            filterData.grades.forEach(grade => {
+                const option = document.createElement('option');
+                option.value = grade;
+                option.textContent = `Khối ${grade}`;
+                gradeSelect.appendChild(option);
+            });
+        }
+
+        // ========== APPLY FILTER ==========
+        document.getElementById('btnApplyFilter').addEventListener('click', applyFilter);
+
+        async function applyFilter() {
+            const year = document.getElementById('filterYear').value.trim();
+            const semester = document.getElementById('filterSemester').value.trim();
+            const grade = document.getElementById('filterGrade').value.trim();
+
+            if (!year || !semester || !grade) {
+                document.getElementById('statusMessage').style.display = 'block';
+                document.getElementById('tableContainer').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('statusMessage').style.display = 'none';
+            document.getElementById('loadingSpinner').style.display = 'block';
+            document.getElementById('tableContainer').style.display = 'block';
+            document.getElementById('btnSaveAll').style.display = 'none';
+            document.getElementById('btnResetAll').style.display = 'none';
+            changedRows.clear();
+
+            try {
+                currentAssignments = await TeachingAssignmentService.getAssignments(year, semester, grade);
+                renderAssignmentsTable(currentAssignments, year, semester);
+            } catch (error) {
+                console.error('Error loading assignments:', error);
+                document.getElementById('loadingSpinner').style.display = 'none';
+                toastError('Lỗi: ' + error.message);
+            } finally {
+                document.getElementById('loadingSpinner').style.display = 'none';
+            }
+        }
+
+        // ========== RENDER ASSIGNMENTS TABLE ==========
+        function renderAssignmentsTable(data, yearId, semesterId) {
+            const subjects = data.subjects || [];
+            const classes = data.classes || [];
+            const teachers = data.teachers || [];
+
+            // Build header
+            const thead = document.getElementById('tableHead');
+            thead.innerHTML = '';
+
+            const headerRow = document.createElement('tr');
+
+            // Class name header
+            const thClass = document.createElement('th');
+            thClass.style.minWidth = '150px';
+            thClass.textContent = 'Lớp';
+            headerRow.appendChild(thClass);
+
+            // Subject headers
+            subjects.forEach(subj => {
+                const th = document.createElement('th');
+                th.style.minWidth = '120px';
+                th.style.textAlign = 'center';
+                th.textContent = subj.tenmonhoc || subj.TenMonHoc || '';
+                headerRow.appendChild(th);
+            });
+
+            // GVCN header
+            const thGvcn = document.createElement('th');
+            thGvcn.style.minWidth = '150px';
+            thGvcn.style.textAlign = 'center';
+            thGvcn.textContent = 'Giáo viên chủ nhiệm';
+            headerRow.appendChild(thGvcn);
+
+            thead.appendChild(headerRow);
+
+            // Build rows
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            classes.forEach(cls => {
+                const tr = document.createElement('tr');
+                tr.dataset.classId = cls.malop || cls.MaLop || '';
+
+                // Class name cell
+                const tdClass = document.createElement('td');
+                tdClass.style.fontWeight = '600';
+                tdClass.textContent = cls.tenlop || cls.TenLop || '';
+                tr.appendChild(tdClass);
+
+                // Subject cells
+                subjects.forEach(subj => {
+                    const td = document.createElement('td');
+                    td.dataset.subjectId = subj.mamonhoc || subj.MaMonHoc || '';
+
+                    // Find assigned teacher for this class-subject combo
+                    const assignedTeacher = cls.subjects?.find(s => 
+                        (s.mamonhoc || s.MaMonHoc) === (subj.mamonhoc || subj.MaMonHoc)
+                    );
+                    const teacherId = assignedTeacher?.magiaoVien || assignedTeacher?.MaGiaoVien || null;
+
+                    // Create dropdown
+                    const select = document.createElement('select');
+                    select.className = 'cell-select';
+                    select.dataset.classId = cls.malop || cls.MaLop || '';
+                    select.dataset.subjectId = subj.mamonhoc || subj.MaMonHoc || '';
+                    select.value = teacherId || '';
+
+                    const optEmpty = document.createElement('option');
+                    optEmpty.value = '';
+                    optEmpty.textContent = '—';
+                    select.appendChild(optEmpty);
+
+                    teachers.forEach(teacher => {
+                        const opt = document.createElement('option');
+                        opt.value = teacher.manguoidung || teacher.MaNguoiDung || '';
+                        opt.textContent = teacher.hoten || teacher.HoTen || '';
+                        select.appendChild(opt);
+                    });
+
+                    select.addEventListener('change', (e) => {
+                        handleCellChange(e, yearId, semesterId);
+                    });
+
+                    td.appendChild(select);
+                    tr.appendChild(td);
+                });
+
+                // GVCN cell
+                const tdGvcn = document.createElement('td');
+                const selectGvcn = document.createElement('select');
+                selectGvcn.className = 'cell-select';
+                selectGvcn.dataset.classId = cls.malop || cls.MaLop || '';
+                selectGvcn.dataset.isGvcn = 'true';
+                selectGvcn.value = cls.magvcn || cls.MaGVCN || '';
+
+                const optEmptyGvcn = document.createElement('option');
+                optEmptyGvcn.value = '';
+                optEmptyGvcn.textContent = '—';
+                selectGvcn.appendChild(optEmptyGvcn);
+
+                teachers.forEach(teacher => {
+                    const opt = document.createElement('option');
+                    opt.value = teacher.manguoidung || teacher.MaNguoiDung || '';
+                    opt.textContent = teacher.hoten || teacher.HoTen || '';
+                    selectGvcn.appendChild(opt);
+                });
+
+                selectGvcn.addEventListener('change', (e) => {
+                    handleCellChange(e, yearId, semesterId);
+                });
+
+                tdGvcn.appendChild(selectGvcn);
+                tr.appendChild(tdGvcn);
+
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('btnSaveAll').style.display = 'inline-block';
+            document.getElementById('btnResetAll').style.display = 'inline-block';
+        }
+
+        // ========== HANDLE CELL CHANGE (with auto-save) ==========
+        let saveTimeouts = {};
+
+        function handleCellChange(event, yearId, semesterId) {
+            const select = event.target;
+            const classId = select.dataset.classId;
+            const isGvcn = select.dataset.isGvcn === 'true';
+            const newValue = select.value;
+
+            changedRows.add(classId);
+
+            // Show loading state
+            const originalText = select.textContent;
+            select.disabled = true;
+            select.style.opacity = '0.6';
+
+            // Debounce save (300ms)
+            if (saveTimeouts[classId]) {
+                clearTimeout(saveTimeouts[classId]);
+            }
+
+            saveTimeouts[classId] = setTimeout(async () => {
+                try {
+                    if (isGvcn) {
+                        // Save GVCN
+                        if (newValue) {
+                            await TeachingAssignmentService.updateHomeroomTeacher(classId, parseInt(newValue));
+                        }
+                    } else {
+                        // Save subject teacher
+                        const subjectId = select.dataset.subjectId;
+                        if (newValue) {
+                            await TeachingAssignmentService.updateSubjectTeacher(
+                                classId,
+                                subjectId,
+                                parseInt(newValue),
+                                yearId,
+                                semesterId
+                            );
+                        }
+                    }
+
+                    // Restore state
+                    select.disabled = false;
+                    select.style.opacity = '1';
+                    toastSuccess('Đã lưu thay đổi');
+                } catch (error) {
+                    console.error('Error saving:', error);
+                    select.disabled = false;
+                    select.style.opacity = '1';
+                    toastError('Lỗi lưu: ' + error.message);
+                }
+            }, 300);
+        }
+
+        // ========== SAVE ALL ==========
+        document.getElementById('btnSaveAll').addEventListener('click', async () => {
+            if (isSaving) return;
+            isSaving = true;
+            document.getElementById('btnSaveAll').disabled = true;
+
+            try {
+                // Collect all current values from table
+                const rows = document.querySelectorAll('#tableBody tr');
+                for (const row of rows) {
+                    const classId = row.dataset.classId;
+                    const selects = row.querySelectorAll('.cell-select');
+
+                    for (const select of selects) {
+                        if (select.dataset.isGvcn === 'true') {
+                            if (select.value) {
+                                await TeachingAssignmentService.updateHomeroomTeacher(classId, parseInt(select.value));
+                            }
+                        } else {
+                            const subjectId = select.dataset.subjectId;
+                            const yearId = document.getElementById('filterYear').value;
+                            const semesterId = document.getElementById('filterSemester').value;
+                            if (select.value) {
+                                await TeachingAssignmentService.updateSubjectTeacher(
+                                    classId,
+                                    subjectId,
+                                    parseInt(select.value),
+                                    yearId,
+                                    semesterId
+                                );
+                            }
+                        }
+                    }
+                }
+
+                toastSuccess('Đã lưu tất cả thay đổi!');
+                changedRows.clear();
+            } catch (error) {
+                console.error('Error saving all:', error);
+                toastError('Lỗi lưu: ' + error.message);
+            } finally {
+                isSaving = false;
+                document.getElementById('btnSaveAll').disabled = false;
+            }
+        });
+
+        // ========== RESET ==========
+        document.getElementById('btnResetAll').addEventListener('click', () => {
+            const year = document.getElementById('filterYear').value;
+            const semester = document.getElementById('filterSemester').value;
+            const grade = document.getElementById('filterGrade').value;
+
+            if (year && semester && grade) {
+                document.getElementById('loadingSpinner').style.display = 'block';
+                applyFilter();
+            }
+        });
+    </script>
+
+    <style>
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            gap: 16px;
+            align-items: flex-end;
+            padding: 16px;
+            background: #ffffff;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 0 1 auto;
+        }
+
+        .filter-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: #ffffff;
+            cursor: pointer;
+            min-width: 180px;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Status Message */
+        .status-message {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            color: #92400e;
+            font-size: 14px;
+        }
+
+        /* Cell Select in Table */
+        .cell-select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            background: #ffffff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .cell-select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+        }
+
+        .cell-select:disabled {
+            background: #f3f4f6;
+            cursor: not-allowed;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        /* Responsive table wrapper */
+        .table-wrapper {
+            background: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+            overflow-x: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .data-table thead {
+            background: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .data-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .data-table tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        @media (max-width: 1024px) {
+            .filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                flex: 1;
+            }
+
+            .filter-select {
+                min-width: auto;
+            }
+        }
+    </style>
+
+</body>
+</html>

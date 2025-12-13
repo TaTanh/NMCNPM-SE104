@@ -80,6 +80,18 @@ const update = async (id, classData) => {
     return result.rows[0] || null;
 };
 
+// ========== CẬP NHẬT GVCN CHO LỚP ==========
+const updateGvcn = async (maLop, maGvcn) => {
+    const result = await pool.query(
+        `UPDATE LOP
+         SET MaGVCN = $1
+         WHERE MaLop = $2
+         RETURNING *`,
+        [maGvcn, maLop]
+    );
+    return result.rows[0] || null;
+};
+
 // ========== XÓA LỚP ==========
 const remove = async (id) => {
     const result = await pool.query(
@@ -277,6 +289,7 @@ module.exports = {
     findById,
     create,
     update,
+    updateGvcn,
     remove,
     hasStudents,
     getStudents,

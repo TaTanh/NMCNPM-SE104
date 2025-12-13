@@ -133,7 +133,7 @@ const updateRole = async (id, roleData) => {
 // ========== LẤY GIÁO VIÊN THEO VAI TRÒ ==========
 const findTeachersByRole = async (roleCode) => {
     const result = await pool.query(
-        `SELECT u.MaNguoiDung, u.HoTen, u.Email, r.TenVaiTro
+        `SELECT u.MaNguoiDung, u.HoTen, u.Email, u.MaVaiTro, r.TenVaiTro
          FROM NGUOIDUNG u
          JOIN VAITRO r ON u.MaVaiTro = r.MaVaiTro
          WHERE r.MaVaiTro = $1 AND u.TrangThai = true
@@ -203,5 +203,12 @@ module.exports = {
     findAllGVBM,
     isGVCN,
     isGVBM,
-    isAdmin
+    isAdmin,
+    setRole: async (userId, role) => {
+        const result = await pool.query(
+            `UPDATE NGUOIDUNG SET MaVaiTro = $1 WHERE MaNguoiDung = $2 RETURNING *`,
+            [role, userId]
+        );
+        return result.rows[0] || null;
+    }
 };

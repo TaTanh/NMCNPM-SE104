@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 
+const { normalizeHocKy } = require('../utils/semesterUtil');
 const GiangDayModel = {
     // Lấy danh sách lớp-môn mà giáo viên được phân công
     getByGiaoVien: async (maGiaoVien, maNamHoc = null, maHocKy = null) => {
@@ -28,8 +29,9 @@ const GiangDayModel = {
             }
 
             if (maHocKy) {
+                const val = normalizeHocKy(maHocKy);
                 query += ` AND gd.MaHocKy = $${params.length + 1}`;
-                params.push(maHocKy);
+                params.push(val);
             }
 
             query += ` ORDER BY l.TenLop, mh.TenMonHoc`;
@@ -65,8 +67,9 @@ const GiangDayModel = {
             }
 
             if (maHocKy) {
+                const val = normalizeHocKy(maHocKy);
                 query += ` AND gd.MaHocKy = $${params.length + 1}`;
-                params.push(maHocKy);
+                params.push(val);
             }
 
             query += ` ORDER BY mh.TenMonHoc`;
@@ -89,7 +92,7 @@ const GiangDayModel = {
                     AND MaHocKy = $4 
                     AND MaNamHoc = $5
             `;
-            const result = await pool.query(query, [maGiaoVien, maLop, maMonHoc, maHocKy, maNamHoc]);
+            const result = await pool.query(query, [maGiaoVien, maLop, maMonHoc, normalizeHocKy(maHocKy), maNamHoc]);
             return result.rows.length > 0;
         } catch (error) {
             throw error;
@@ -105,7 +108,7 @@ const GiangDayModel = {
                 ON CONFLICT (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc) DO NOTHING
                 RETURNING *
             `;
-            const result = await pool.query(query, [maLop, maMonHoc, maGiaoVien, maHocKy, maNamHoc, tuNgay, denNgay]);
+            const result = await pool.query(query, [maLop, maMonHoc, maGiaoVien, normalizeHocKy(maHocKy), maNamHoc, tuNgay, denNgay]);
             return result.rows[0];
         } catch (error) {
             throw error;
@@ -128,7 +131,7 @@ const GiangDayModel = {
                     ON CONFLICT (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc) DO NOTHING
                     RETURNING *
                 `;
-                const result = await client.query(query, [maLop, maMonHoc, maGiaoVien, maHocKy, maNamHoc, tuNgay, denNgay]);
+                const result = await client.query(query, [maLop, maMonHoc, maGiaoVien, normalizeHocKy(maHocKy), maNamHoc, tuNgay, denNgay]);
                 if (result.rows[0]) {
                     results.push(result.rows[0]);
                 }
@@ -157,7 +160,7 @@ const GiangDayModel = {
                     AND MaNamHoc = $5
                 RETURNING *
             `;
-            const result = await pool.query(query, [maLop, maMonHoc, maGiaoVien, maHocKy, maNamHoc, tuNgay, denNgay]);
+            const result = await pool.query(query, [maLop, maMonHoc, maGiaoVien, normalizeHocKy(maHocKy), maNamHoc, tuNgay, denNgay]);
             return result.rows[0];
         } catch (error) {
             throw error;
@@ -176,7 +179,7 @@ const GiangDayModel = {
                     AND MaNamHoc = $5
                 RETURNING *
             `;
-            const result = await pool.query(query, [maLop, maMonHoc, maGiaoVien, maHocKy, maNamHoc]);
+            const result = await pool.query(query, [maLop, maMonHoc, maGiaoVien, normalizeHocKy(maHocKy), maNamHoc]);
             return result.rows[0];
         } catch (error) {
             throw error;
@@ -232,12 +235,14 @@ const GiangDayModel = {
                     l.TenLop,
                     mh.TenMonHoc,
                     nd.HoTen as TenGiaoVien,
-                    vt.TenVaiTro
+                    vt.TenVaiTro,
+                    hk.TenHocKy AS TenHocKyDisplay
                 FROM GIANGDAY gd
                 JOIN LOP l ON gd.MaLop = l.MaLop
                 JOIN MONHOC mh ON gd.MaMonHoc = mh.MaMonHoc
                 JOIN NGUOIDUNG nd ON gd.MaGiaoVien = nd.MaNguoiDung
                 JOIN VAITRO vt ON nd.MaVaiTro = vt.MaVaiTro
+                JOIN HOCKY hk ON gd.MaHocKy = hk.MaHocKy
                 WHERE 1=1
             `;
             const params = [];
@@ -248,8 +253,9 @@ const GiangDayModel = {
             }
 
             if (maHocKy) {
+                const val = normalizeHocKy(maHocKy);
                 query += ` AND gd.MaHocKy = $${params.length + 1}`;
-                params.push(maHocKy);
+                params.push(val);
             }
 
             query += ` ORDER BY l.TenLop, mh.TenMonHoc, nd.HoTen`;

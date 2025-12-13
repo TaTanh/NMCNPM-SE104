@@ -276,30 +276,50 @@
         async function loadSubjectsForGrade() {
             const classId = document.getElementById('classSelect').value;
             const semester = document.getElementById('semesterSelect').value;
+            const year = document.getElementById('yearSelect').value;
             const tbody = document.getElementById('subjectGradeBody');
             
-            if (!classId || !semester) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Vui lòng chọn lớp và học kỳ</td></tr>';
+            if (!classId || !semester || !year) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Vui lòng chọn lớp, năm học và học kỳ</td></tr>';
                 return;
             }
 
             try {
-                const response = await fetch('/api/subjects');
-                const subjects = await response.json();
-                
-                if (subjects.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Không có môn học</td></tr>';
+                const user = getCurrentUser();
+                if (!user) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:red;">Bạn cần đăng nhập</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = subjects.map(mh => `
+                // Lấy phân công giảng dạy của lớp theo năm/học kỳ
+                const url = `/api/giangday/lop/${classId}?maNamHoc=${encodeURIComponent(year)}&maHocKy=${encodeURIComponent(semester)}`;
+                const res = await fetch(url, { headers: { 'x-user-id': user.maNguoiDung || user.maNguoidung || '' } });
+                const json = await res.json();
+                const assignments = json && json.data ? json.data : [];
+
+                // Lọc theo giáo viên đăng nhập (GVBM chỉ thấy môn mình dạy)
+                const mySubjects = assignments.filter(a => {
+                    const gvId = a.magiaovien || a.MaGiaoVien;
+                    return String(gvId) === String(user.maNguoiDung || user.maNguoidung);
+                }).map(a => ({
+                    mamonhoc: a.mamonhoc || a.MaMonHoc,
+                    tenmonhoc: a.tenmonhoc || a.TenMonHoc,
+                    heso: a.heso || a.HeSo || 1
+                }));
+
+                if (mySubjects.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Bạn không có phân công dạy môn nào cho lớp này trong học kỳ/năm học đã chọn</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = mySubjects.map(mh => `
                     <tr>
                         <td>${mh.mamonhoc}</td>
                         <td>${mh.tenmonhoc}</td>
                         <td>${mh.heso}</td>
                         <td>${semester}</td>
                         <td style="text-align: right;">
-                            <a href="/pages/grade_entry.html?subject=${mh.mamonhoc}&class=${classId}&semester=${semester}" 
+                            <a href="/pages/grade_entry.html?subject=${mh.mamonhoc}&class=${classId}&semester=${semester}&year=${year}" 
                                class="btn btn-primary" style="padding:6px 14px; font-size:14px;">Nhập điểm</a>
                         </td>
                     </tr>

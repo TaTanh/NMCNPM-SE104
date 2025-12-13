@@ -5,6 +5,8 @@ const { checkAuth, isAdmin, isTeacher } = require('../middleware/authMiddleware'
 
 // ========== ROUTES GIẢNG DẠY ==========
 
+// (No debug route)
+
 // Lấy phân công của giáo viên
 router.get('/giaovien/:maGiaoVien', checkAuth, isTeacher, giangdayController.getByGiaoVien);
 

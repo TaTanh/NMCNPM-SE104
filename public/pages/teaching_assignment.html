@@ -63,8 +63,8 @@
                     <label class="filter-label" for="semesterFilter">Học kỳ</label>
                     <select id="semesterFilter">
                         <option value="">-- Tất cả học kỳ --</option>
-                        <option value="1">Học kỳ 1</option>
-                        <option value="2">Học kỳ 2</option>
+                        <option value="HK1">Học kỳ 1</option>
+                        <option value="HK2">Học kỳ 2</option>
                     </select>
                 </div>
 
@@ -85,8 +85,14 @@
                 </div>
             </div>
 
+            <!-- VIEWS: Table / Teacher-centric -->
+            <div class="view-toggle" style="margin-bottom:10px;">
+                <button class="btn btn-outline" id="btnViewList">Danh sách</button>
+                <button class="btn btn-outline" id="btnViewByTeacher">Giáo viên - Môn</button>
+            </div>
+
             <!-- TABLE -->
-            <div class="table-wrapper">
+            <div class="table-wrapper" id="assignmentsView">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -106,6 +112,14 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <!-- TEACHER-CENTRIC VIEW -->
+            <div id="teacherView" style="display:none;">
+                <div id="teacherContainer"></div>
+                <div style="margin-top: 10px;">
+                    <button class="btn btn-outline" id="btnBackToList">Quay lại danh sách</button>
+                </div>
             </div>
 
         </div><!-- content -->
@@ -134,8 +148,8 @@
                             <label class="required-label">Học kỳ</label>
                             <select id="semesterAdd" required>
                                 <option value="">-- Chọn học kỳ --</option>
-                                <option value="1">Học kỳ 1</option>
-                                <option value="2">Học kỳ 2</option>
+                                <option value="HK1">Học kỳ 1</option>
+                                <option value="HK2">Học kỳ 2</option>
                             </select>
                             <span class="error-message" id="errorSemesterAdd">Vui lòng chọn học kỳ</span>
                         </div>
@@ -264,10 +278,16 @@
                 const teachersRes = await fetch('/api/auth/users?role=teacher');
                 const teachers = await teachersRes.json();
                 const teacherSelect = document.getElementById('teacherAdd');
-                teachers.forEach(t => {
+                // Filter to ensure only teacher roles are shown (safety check)
+                const filtered = (Array.isArray(teachers) ? teachers : []).filter(t => {
+                    const role = t.mavaitro || t.MaVaiTro || '';
+                    const roleName = (t.tenvaitro || t.TenVaiTro || '').toLowerCase();
+                    return role === 'GVBM' || role === 'GVCN' || roleName.includes('giáo');
+                });
+                filtered.forEach(t => {
                     const option = document.createElement('option');
                     option.value = t.manguoidung;
-                    option.textContent = `${t.hoten} (${t.tenvaitro})`;
+                    option.textContent = `${t.hoten} (${t.tenvaitro || t.TenVaiTro || ''})`;
                     teacherSelect.appendChild(option);
                 });
 
@@ -314,27 +334,153 @@
         function renderAssignments(assignments) {
             const tbody = document.getElementById('assignmentTableBody');
 
+            tbody.innerHTML = '';
+
             if (assignments.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có dữ liệu</td></tr>';
                 return;
             }
 
-            tbody.innerHTML = assignments.map((item, index) => `
-                <tr>
-                    <td style="text-align:center;">${index + 1}</td>
-                    <td>${item.tengiaovien || ''}</td>
-                    <td>${item.tenlop || ''}</td>
-                    <td>${item.tenmonhoc || ''}</td>
-                    <td>Học kỳ ${item.mahocky}</td>
-                    <td>${item.tennamhoc || item.manamhoc}</td>
-                    <td style="text-align:center;">
-                        <button class="btn btn-sm btn-danger" 
-                                onclick="openDeleteModal(${item.malop}, ${item.mamonhoc}, ${item.magiaovien}, ${item.mahocky}, ${item.manamhoc}, '${item.tengiaovien}', '${item.tenlop}', '${item.tenmonhoc}')">
-                            Xóa
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+            assignments.forEach((item, index) => {
+                const tr = document.createElement('tr');
+
+                const tdIndex = document.createElement('td');
+                tdIndex.style.textAlign = 'center';
+                tdIndex.textContent = index + 1;
+                tr.appendChild(tdIndex);
+
+                const tdGV = document.createElement('td');
+                tdGV.textContent = item.tengiaovien || '';
+                tr.appendChild(tdGV);
+
+                const tdLop = document.createElement('td');
+                tdLop.textContent = item.tenlop || '';
+                tr.appendChild(tdLop);
+
+                const tdMon = document.createElement('td');
+                tdMon.textContent = item.tenmonhoc || '';
+                tr.appendChild(tdMon);
+
+                const tdHK = document.createElement('td');
+                tdHK.textContent = item.tenhockydisplay ? item.tenhockydisplay : (item.tenhocky ? item.tenhocky : ('Học kỳ ' + (item.mahocky || '')));
+                tr.appendChild(tdHK);
+
+                const tdNam = document.createElement('td');
+                tdNam.textContent = item.tennamhoc || item.manamhoc || '';
+                tr.appendChild(tdNam);
+
+                const tdActions = document.createElement('td');
+                tdActions.style.textAlign = 'center';
+                const btnDelete = document.createElement('button');
+                btnDelete.className = 'btn btn-sm btn-danger';
+                btnDelete.textContent = 'Xóa';
+                btnDelete.addEventListener('click', () => {
+                    openDeleteModal(item.malop, item.mamonhoc, item.magiaovien, item.mahocky, item.manamhoc, item.tengiaovien, item.tenlop, item.tenmonhoc);
+                });
+                tdActions.appendChild(btnDelete);
+                tr.appendChild(tdActions);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        // ========== TEACHER-CENTRIC RENDER ==========
+        function renderTeacherView(assignments) {
+            const container = document.getElementById('teacherContainer');
+            container.innerHTML = '';
+
+            if (!assignments || assignments.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#666;">Không có phân công</div>';
+                return;
+            }
+
+            // Group by teacher -> subject -> classes
+            const grouped = {};
+            assignments.forEach(item => {
+                const teacherId = item.magiaovien;
+                if (!grouped[teacherId]) {
+                    grouped[teacherId] = {
+                        magiaovien: item.magiaovien,
+                        tengiaovien: item.tengiaovien,
+                        email: item.email || item.emailgiaovien || '',
+                        role: item.tenvaitro || '',
+                        subjects: {}
+                    };
+                }
+                const subjId = item.mamonhoc;
+                if (!grouped[teacherId].subjects[subjId]) {
+                    grouped[teacherId].subjects[subjId] = {
+                        mamonhoc: item.mamonhoc,
+                        tenmonhoc: item.tenmonhoc,
+                        classes: []
+                    };
+                }
+
+                grouped[teacherId].subjects[subjId].classes.push({
+                    malop: item.malop,
+                    tenlop: item.tenlop,
+                    mahocky: item.mahocky,
+                    manamhoc: item.manamhoc
+                });
+            });
+
+            Object.values(grouped).forEach(teacher => {
+                const card = document.createElement('div');
+                card.className = 'teacher-card';
+                card.style.border = '1px solid #e5e7eb';
+                card.style.padding = '12px';
+                card.style.marginBottom = '10px';
+                card.style.borderRadius = '6px';
+
+                const header = document.createElement('div');
+                header.style.display = 'flex';
+                header.style.justifyContent = 'space-between';
+                header.style.alignItems = 'center';
+
+                const info = document.createElement('div');
+                info.innerHTML = `<strong>${teacher.tengiaovien}</strong> <span style="margin-left:8px; color:#6b7280;">${teacher.role}</span>`;
+                header.appendChild(info);
+
+                const email = document.createElement('div');
+                email.style.color = '#6b7280';
+                email.style.fontSize = '12px';
+                email.textContent = teacher.email || '';
+                header.appendChild(email);
+
+                card.appendChild(header);
+
+                // Subjects list
+                const subjectList = document.createElement('div');
+                subjectList.style.marginTop = '8px';
+                Object.values(teacher.subjects).forEach(subj => {
+                    const subjDiv = document.createElement('div');
+                    subjDiv.style.marginBottom = '8px';
+
+                    const subjTitle = document.createElement('div');
+                    subjTitle.style.fontWeight = '600';
+                    subjTitle.textContent = subj.tenmonhoc;
+                    subjDiv.appendChild(subjTitle);
+
+                    const classRow = document.createElement('div');
+                    classRow.style.display = 'flex';
+                    classRow.style.flexWrap = 'wrap';
+                    classRow.style.marginTop = '6px';
+                    subj.classes.forEach(c => {
+                        const badge = document.createElement('div');
+                        badge.className = 'badge';
+                        badge.style.marginRight = '6px';
+                        badge.style.marginBottom = '6px';
+                        badge.textContent = c.tenlop;
+                        classRow.appendChild(badge);
+                    });
+                    subjDiv.appendChild(classRow);
+
+                    subjectList.appendChild(subjDiv);
+                });
+
+                card.appendChild(subjectList);
+                container.appendChild(card);
+            });
         }
 
         // ========== TÌM KIếM ==========
@@ -342,7 +488,11 @@
             const keyword = e.target.value.toLowerCase().trim();
 
             if (!keyword) {
-                renderAssignments(allAssignments);
+                if (document.getElementById('teacherView').style.display !== 'none') {
+                    renderTeacherView(allAssignments);
+                } else {
+                    renderAssignments(allAssignments);
+                }
                 return;
             }
 
@@ -352,11 +502,34 @@
                        (item.tenmonhoc && item.tenmonhoc.toLowerCase().includes(keyword));
             });
 
-            renderAssignments(filtered);
+            if (document.getElementById('teacherView').style.display !== 'none') {
+                renderTeacherView(filtered);
+            } else {
+                renderAssignments(filtered);
+            }
         });
 
         // ========== LỌC ==========
         document.getElementById('btnFilter').addEventListener('click', loadAssignments);
+
+        // ========== VIEW TOGGLE ========
+        document.getElementById('btnViewList').addEventListener('click', () => {
+            document.getElementById('assignmentsView').style.display = '';
+            document.getElementById('teacherView').style.display = 'none';
+        });
+
+        document.getElementById('btnViewByTeacher').addEventListener('click', async () => {
+            document.getElementById('assignmentsView').style.display = 'none';
+            document.getElementById('teacherView').style.display = '';
+            // Ensure assignments are loaded
+            if (!allAssignments || allAssignments.length === 0) await loadAssignments();
+            renderTeacherView(allAssignments);
+        });
+
+        document.getElementById('btnBackToList').addEventListener('click', () => {
+            document.getElementById('assignmentsView').style.display = '';
+            document.getElementById('teacherView').style.display = 'none';
+        });
 
         // ========== THÊM PHÂN CÔNG ==========
         const assignModal = document.getElementById('assignModal');
@@ -413,11 +586,11 @@
             if (!isValid) return;
 
             const data = {
-                maLop: parseInt(document.getElementById('classAdd').value),
-                maMonHoc: parseInt(document.getElementById('subjectAdd').value),
-                maGiaoVien: parseInt(document.getElementById('teacherAdd').value),
-                maHocKy: parseInt(document.getElementById('semesterAdd').value),
-                maNamHoc: parseInt(document.getElementById('yearAdd').value)
+                maLop: document.getElementById('classAdd').value,
+                maMonHoc: document.getElementById('subjectAdd').value,
+                maGiaoVien: parseInt(document.getElementById('teacherAdd').value, 10),
+                maHocKy: document.getElementById('semesterAdd').value,
+                maNamHoc: document.getElementById('yearAdd').value
             };
 
             try {
@@ -500,6 +673,12 @@
             }
         });
     </script>
+
+    <style>
+        .teacher-card .badge { display: inline-block; padding: 4px 8px; border-radius: 8px; background: #e5e7eb; color: #374151; margin-right:6px; }
+        .teacher-card .badge + .badge { margin-left: 6px; }
+        .teacher-card { background: #ffffff; }
+    </style>
 
 </body>
 </html>

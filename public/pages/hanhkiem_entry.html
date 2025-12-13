@@ -70,8 +70,8 @@
                     <label class="filter-label" for="semesterFilter">Học kỳ <span style="color:red">*</span></label>
                     <select id="semesterFilter" required>
                         <option value="">-- Chọn học kỳ --</option>
-                        <option value="1">Học kỳ 1</option>
-                        <option value="2">Học kỳ 2</option>
+                        <option value="HK1">Học kỳ 1</option>
+                        <option value="HK2">Học kỳ 2</option>
                     </select>
                 </div>
 
@@ -256,7 +256,7 @@
 
                 const className = document.getElementById('classFilter').selectedOptions[0].text;
                 const yearName = document.getElementById('yearFilter').selectedOptions[0].text;
-                const semester = maHocKy == 1 ? 'Học kỳ 1' : 'Học kỳ 2';
+                const semester = maHocKy === 'HK1' ? 'Học kỳ 1' : maHocKy === 'HK2' ? 'Học kỳ 2' : maHocKy;
                 document.getElementById('classInfo').textContent = `${className} - ${yearName} - ${semester} (${currentStudents.length} học sinh)`;
 
             } catch (error) {
@@ -362,10 +362,10 @@
             // Lọc chỉ học sinh đã nhập điểm hạnh kiểm
             const hanhKiemList = currentStudents
                 .filter(hs => hs.diemhanhkiem && hs.diemhanhkiem !== '')
-                .map(hs => ({
+                    .map(hs => ({
                     maHocSinh: hs.mahocsinh,
                     maNamHoc: parseInt(maNamHoc),
-                    maHocKy: parseInt(maHocKy),
+                    maHocKy: maHocKy,
                     diemHanhKiem: parseFloat(hs.diemhanhkiem),
                     xepLoai: hs.xeploai,
                     ghiChu: hs.ghichu || null

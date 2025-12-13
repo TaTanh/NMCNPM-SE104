@@ -1,5 +1,7 @@
 const classModel = require('../models/classModel');
 const settingModel = require('../models/settingModel');
+const userModel = require('../models/userModel');
+const auditModel = require('../models/auditModel');
 
 // ========== LẤY DANH SÁCH LỚP ==========
 const getClasses = async (req, res) => {
@@ -33,9 +35,35 @@ const getClassById = async (req, res) => {
 // ========== THÊM LỚP ==========
 const createClass = async (req, res) => {
     try {
-        const { MaLop, TenLop, MaKhoiLop, MaNamHoc, SiSo } = req.body;
+        const { MaLop, TenLop, MaKhoiLop, MaNamHoc, SiSo, MaGVCN } = req.body;
+        if (MaGVCN) {
+            const mg = parseInt(MaGVCN, 10);
+            if (isNaN(mg)) return res.status(400).json({ error: 'MaGVCN không hợp lệ' });
+            const isTeacher = await userModel.isGVBM(mg); // chấp nhận GVBM, GVCN, ADMIN
+            if (!isTeacher) {
+                return res.status(400).json({ error: 'Người được chọn không phải giáo viên hợp lệ hoặc sai ID' });
+            }
+            // Auto-switch role to GVCN if needed
+            await userModel.setRole(mg, 'GVCN');
+        }
         
-        const classData = await classModel.create({ MaLop, TenLop, MaKhoiLop, MaNamHoc, SiSo });
+        const classData = await classModel.create({ MaLop, TenLop, MaKhoiLop, MaNamHoc, SiSo, MaGVCN });
+
+        // Audit if MaGVCN provided
+        if (MaGVCN) {
+            try {
+                await auditModel.createLog({
+                    MaNguoiDung: req.user && req.user.maNguoiDung ? req.user.maNguoiDung : null,
+                    HanhDong: 'ASSIGN_GVCN',
+                    BangMuc: 'LOP',
+                    MaDoiTuong: MaLop,
+                    ChiTiet: { newGvcn: MaGVCN }
+                });
+            } catch (err) {
+                console.error('Không thể ghi audit log (create):', err);
+            }
+        }
+
         res.status(201).json(classData);
     } catch (err) {
         console.error('Lỗi thêm lớp:', err);
@@ -51,14 +79,43 @@ const createClass = async (req, res) => {
 const updateClass = async (req, res) => {
     try {
         const { id } = req.params;
-        const { TenLop, MaKhoiLop, MaNamHoc, SiSo } = req.body;
+        const { TenLop, MaKhoiLop, MaNamHoc, SiSo, MaGVCN } = req.body;
+        if (MaGVCN) {
+            const mg = parseInt(MaGVCN, 10);
+            if (isNaN(mg)) return res.status(400).json({ error: 'MaGVCN không hợp lệ' });
+            const isTeacher = await userModel.isGVBM(mg); // chấp nhận GVBM, GVCN, ADMIN
+            if (!isTeacher) {
+                return res.status(400).json({ error: 'Người được chọn không phải giáo viên hợp lệ hoặc sai ID' });
+            }
+            // Auto-switch role to GVCN if needed
+            await userModel.setRole(mg, 'GVCN');
+        }
         
-        const classData = await classModel.update(id, { TenLop, MaKhoiLop, MaNamHoc, SiSo });
+        // Fetch previous to detect GVCN changes
+        const prev = await classModel.findById(id);
+        const classData = await classModel.update(id, { TenLop, MaKhoiLop, MaNamHoc, SiSo, MaGVCN });
         
         if (!classData) {
             return res.status(404).json({ error: 'Không tìm thấy lớp' });
         }
         
+        // Audit if GVCN changed
+        try {
+            const prevGvcn = prev ? prev.magvcn : null;
+            const newGvcn = MaGVCN || null;
+            if (MaGVCN !== undefined && String(prevGvcn) !== String(newGvcn)) {
+                await auditModel.createLog({
+                    MaNguoiDung: req.user && req.user.maNguoiDung ? req.user.maNguoiDung : null,
+                    HanhDong: prevGvcn ? 'CHANGE_GVCN' : 'ASSIGN_GVCN',
+                    BangMuc: 'LOP',
+                    MaDoiTuong: id,
+                    ChiTiet: { previousGvcn: prevGvcn, newGvcn: newGvcn }
+                });
+            }
+        } catch (err) {
+            console.error('Không thể ghi audit log (update):', err);
+        }
+
         res.json(classData);
     } catch (err) {
         console.error('Lỗi cập nhật lớp:', err);
@@ -274,6 +331,82 @@ const getAvailableStudentsFromClass = async (req, res) => {
     }
 };
 
+// ========== GÁN GVCN CHO LỚP ==========
+const assignGvcnToClass = async (req, res) => {
+    try {
+        const { id } = req.params; // maLop
+        const { MaGVCN } = req.body;
+
+        if (!MaGVCN) {
+            return res.status(400).json({ error: 'Thiếu MaGVCN' });
+        }
+
+        const mg = parseInt(MaGVCN, 10);
+        if (isNaN(mg)) return res.status(400).json({ error: 'MaGVCN không hợp lệ' });
+
+        const isTeacher = await userModel.isGVBM(mg); // chấp nhận GVBM, GVCN, ADMIN
+        if (!isTeacher) {
+            return res.status(400).json({ error: 'Người được chọn không phải giáo viên hợp lệ hoặc sai ID' });
+        }
+        // Auto-switch role to GVCN if needed
+        await userModel.setRole(mg, 'GVCN');
+
+        // Kiểm tra lớp tồn tại
+        const lop = await classModel.findById(id);
+        if (!lop) return res.status(404).json({ error: 'Không tìm thấy lớp' });
+        const previousGvcn = lop.magvcn || lop.magvcn === 0 ? lop.magvcn : null;
+        const updated = await classModel.updateGvcn(id, mg);
+
+        // Log audit
+        try {
+            await auditModel.createLog({
+                MaNguoiDung: req.user && req.user.maNguoiDung ? req.user.maNguoiDung : null,
+                HanhDong: 'ASSIGN_GVCN',
+                BangMuc: 'LOP',
+                MaDoiTuong: id,
+                ChiTiet: { previousGvcn, newGvcn: mg }
+            });
+        } catch (err) {
+            console.error('Không thể ghi audit log:', err);
+        }
+
+        res.json(updated);
+    } catch (err) {
+        console.error('Lỗi gán GVCN cho lớp:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
+// ========== HỦY GVCN CHO LỚP ==========
+const removeGvcnFromClass = async (req, res) => {
+    try {
+        const { id } = req.params; // maLop
+        // Kiểm tra lớp tồn tại
+        const lop = await classModel.findById(id);
+        if (!lop) return res.status(404).json({ error: 'Không tìm thấy lớp' });
+
+        const previousGvcn = lop.magvcn || lop.magvcn === 0 ? lop.magvcn : null;
+        const updated = await classModel.updateGvcn(id, null);
+
+        try {
+            await auditModel.createLog({
+                MaNguoiDung: req.user && req.user.maNguoiDung ? req.user.maNguoiDung : null,
+                HanhDong: 'UNASSIGN_GVCN',
+                BangMuc: 'LOP',
+                MaDoiTuong: id,
+                ChiTiet: { previousGvcn }
+            });
+        } catch (err) {
+            console.error('Không thể ghi audit log:', err);
+        }
+
+        res.json(updated);
+    } catch (err) {
+        console.error('Lỗi hủy GVCN cho lớp:', err);
+        res.status(500).json({ error: 'Lỗi server' });
+    }
+};
+
 module.exports = {
     getClasses,
     getClassById,
@@ -286,4 +419,7 @@ module.exports = {
     bulkAddStudentsToClass,
     getUnassignedStudents,
     getAvailableStudentsFromClass
+    ,
+    assignGvcnToClass,
+    removeGvcnFromClass
 };

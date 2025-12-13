@@ -1,4 +1,5 @@
 const hanhkiemModel = require('../models/hanhkiemModel');
+const { normalizeHocKy } = require('../utils/semesterUtil');
 
 // ========== LẤY HẠNH KIỂM CỦA HỌC SINH ==========
 const getByHocSinh = async (req, res) => {
@@ -9,7 +10,7 @@ const getByHocSinh = async (req, res) => {
         const hanhkiem = await hanhkiemModel.getByHocSinh(
             parseInt(maHocSinh),
             maNamHoc ? parseInt(maNamHoc) : null,
-            maHocKy ? parseInt(maHocKy) : null
+            maHocKy ? normalizeHocKy(maHocKy) : null
         );
 
         res.json({
@@ -42,7 +43,7 @@ const getByLop = async (req, res) => {
         const danhSach = await hanhkiemModel.getByLop(
             parseInt(maLop),
             parseInt(maNamHoc),
-            parseInt(maHocKy)
+            normalizeHocKy(maHocKy)
         );
 
         res.json({
@@ -74,7 +75,7 @@ const upsert = async (req, res) => {
         const result = await hanhkiemModel.upsert(
             maHocSinh,
             maNamHoc,
-            maHocKy,
+            normalizeHocKy(maHocKy),
             diemHanhKiem || null,
             xepLoai,
             ghiChu || null
@@ -137,10 +138,10 @@ const deleteHanhKiem = async (req, res) => {
             });
         }
 
-        const result = await hanhkiemModel.delete(
+            const result = await hanhkiemModel.delete(
             parseInt(maHocSinh),
             parseInt(maNamHoc),
-            parseInt(maHocKy)
+            normalizeHocKy(maHocKy)
         );
 
         if (result) {
@@ -180,7 +181,7 @@ const getThongKeLop = async (req, res) => {
         const thongKe = await hanhkiemModel.getThongKeLop(
             parseInt(maLop),
             parseInt(maNamHoc),
-            parseInt(maHocKy)
+            normalizeHocKy(maHocKy)
         );
 
         res.json({

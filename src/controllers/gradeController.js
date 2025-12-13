@@ -1,12 +1,37 @@
 const gradeModel = require('../models/gradeModel');
+const { normalizeHocKy } = require('../utils/semesterUtil');
 
 // ========== LẤY BẢNG ĐIỂM MÔN CỦA LỚP ==========
 const getClassSubjectGrades = async (req, res) => {
     try {
         const { maLop, maMonHoc } = req.params;
-        const { hocky } = req.query;
+        const { hocky, namhoc } = req.query;
+        const hk = hocky ? normalizeHocKy(hocky) : null;
+
+        // Nếu là GVBM thì chỉ được xem/sửa môn mình dạy theo phân công
+        try {
+            const user = req.user;
+            if (user && (user.maVaiTro === 'GVBM' || user.maVaiTro === 'GVCN')) {
+                const db = require('../config/db');
+                const permQuery = `
+                    SELECT 1 FROM GIANGDAY gd
+                    WHERE gd.MaLop = $1 AND gd.MaMonHoc = $2 AND gd.MaGiaoVien = $3
+                    ${hk ? 'AND gd.MaHocKy = $4' : ''}
+                    ${namhoc ? (hk ? 'AND gd.MaNamHoc = $5' : 'AND gd.MaNamHoc = $4') : ''}
+                `;
+                const params = [maLop, maMonHoc, user.maNguoiDung];
+                if (hk) params.push(hk);
+                if (namhoc) params.push(namhoc);
+                const permRes = await db.query(permQuery, params);
+                if (!permRes.rows || permRes.rows.length === 0) {
+                    return res.status(403).json({ error: 'Bạn không có quyền nhập điểm cho môn này trong lớp/học kỳ đã chọn' });
+                }
+            }
+        } catch (e) {
+            console.warn('Permission check failed:', e.message);
+        }
         
-        const rows = await gradeModel.getClassSubjectGrades(maLop, maMonHoc, hocky);
+        const rows = await gradeModel.getClassSubjectGrades(maLop, maMonHoc, hk);
         
         // Gom điểm theo học sinh
         const studentsMap = new Map();
@@ -49,6 +74,33 @@ const getExamTypes = async (req, res) => {
 const updateGrade = async (req, res) => {
     try {
         const { MaBangDiem, MaHocSinh, MaLHKT, Diem } = req.body;
+        // Permission: ensure the requester (GVBM/GVCN) is assigned to this class/subject for the grade sheet
+        try {
+            const user = req.user;
+            if (user && (user.maVaiTro === 'GVBM' || user.maVaiTro === 'GVCN')) {
+                const db = require('../config/db');
+                // Resolve class and subject from MaBangDiem
+                const infoRes = await db.query(
+                    `SELECT bdm.MaLop, bdm.MaMonHoc, bdm.MaHocKy FROM BANGDIEMMON bdm WHERE bdm.MaBangDiem = $1`,
+                    [MaBangDiem]
+                );
+                if (!infoRes.rows || infoRes.rows.length === 0) {
+                    return res.status(404).json({ error: 'Không tìm thấy bảng điểm' });
+                }
+                const { malop, mamonhoc, mahocky } = infoRes.rows[0];
+                const permQuery = `
+                    SELECT 1 FROM GIANGDAY gd
+                    WHERE gd.MaLop = $1 AND gd.MaMonHoc = $2 AND gd.MaGiaoVien = $3
+                      AND ($4::text IS NULL OR gd.MaHocKy = $4)
+                `;
+                const permRes = await db.query(permQuery, [malop, mamonhoc, user.maNguoiDung, mahocky || null]);
+                if (!permRes.rows || permRes.rows.length === 0) {
+                    return res.status(403).json({ error: 'Bạn không có quyền cập nhật điểm cho môn này' });
+                }
+            }
+        } catch (e) {
+            console.warn('Update permission check failed:', e.message);
+        }
         
         // QĐ6: Lấy giới hạn điểm từ THAMSO
         const { diemMin, diemMax } = await gradeModel.getGradeLimits();
@@ -70,17 +122,37 @@ const updateGrade = async (req, res) => {
 // ========== TẠO BẢNG ĐIỂM MÔN CHO LỚP ==========
 const createGradeSheet = async (req, res) => {
     try {
-        const { MaLop, MaMonHoc, MaHocKy } = req.body;
+        const { MaLop, MaMonHoc, MaHocKy, MaNamHoc } = req.body;
+        const MaHocKyNormalized = MaHocKy ? normalizeHocKy(MaHocKy) : MaHocKy;
+        // Permission: GVBM/GVCN must be assigned to create/access grade sheet for this class/subject/semester/year
+        try {
+            const user = req.user;
+            if (user && (user.maVaiTro === 'GVBM' || user.maVaiTro === 'GVCN')) {
+                const db = require('../config/db');
+                const permQuery = `
+                    SELECT 1 FROM GIANGDAY gd
+                    WHERE gd.MaLop = $1 AND gd.MaMonHoc = $2 AND gd.MaGiaoVien = $3
+                      AND ($4::text IS NULL OR gd.MaHocKy = $4)
+                      AND ($5::text IS NULL OR gd.MaNamHoc = $5)
+                `;
+                const permRes = await db.query(permQuery, [MaLop, MaMonHoc, user.maNguoiDung, MaHocKyNormalized || null, MaNamHoc || null]);
+                if (!permRes.rows || permRes.rows.length === 0) {
+                    return res.status(403).json({ error: 'Bạn không có quyền tạo hoặc truy cập bảng điểm môn này' });
+                }
+            }
+        } catch (e) {
+            console.warn('Create permission check failed:', e.message);
+        }
         
         // Kiểm tra đã có bảng điểm chưa
-        const existing = await gradeModel.findGradeSheet(MaLop, MaMonHoc, MaHocKy);
+        const existing = await gradeModel.findGradeSheet(MaLop, MaMonHoc, MaHocKyNormalized);
         
         if (existing) {
             return res.json(existing);
         }
         
         // Tạo bảng điểm mới
-        const gradeSheet = await gradeModel.createGradeSheet(MaLop, MaMonHoc, MaHocKy);
+        const gradeSheet = await gradeModel.createGradeSheet(MaLop, MaMonHoc, MaHocKyNormalized);
         res.status(201).json(gradeSheet);
     } catch (err) {
         console.error('Lỗi tạo bảng điểm:', err);
@@ -133,6 +205,7 @@ const getStudentGrades = async (req, res) => {
     try {
         const { maHocSinh } = req.params;
         const { namhoc, hocky } = req.query;
+        const hkParam = hocky ? normalizeHocKy(hocky) : null;
         
         // Lấy thông tin lớp của học sinh
         const lopInfo = await gradeModel.getStudentClass(maHocSinh, namhoc);
@@ -145,10 +218,10 @@ const getStudentGrades = async (req, res) => {
         const allMonHoc = await gradeModel.getAllSubjects();
         
         // Lấy tất cả học kỳ
-        const allHocKy = await gradeModel.getAllSemesters(hocky);
+        const allHocKy = await gradeModel.getAllSemesters(hkParam);
         
         // Lấy điểm của học sinh
-        const diemRows = await gradeModel.getStudentAllGrades(maHocSinh, maLop, hocky);
+        const diemRows = await gradeModel.getStudentAllGrades(maHocSinh, maLop, hkParam);
         
         // Gom điểm theo môn học và học kỳ
         const resultMap = new Map();

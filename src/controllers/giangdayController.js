@@ -1,4 +1,5 @@
 const giangdayModel = require('../models/giangdayModel');
+const { normalizeHocKy } = require('../utils/semesterUtil');
 
 // ========== LẤY PHÂN CÔNG GIẢNG DẠY CỦA GIÁO VIÊN ==========
 const getByGiaoVien = async (req, res) => {
@@ -8,8 +9,8 @@ const getByGiaoVien = async (req, res) => {
 
         const danhSach = await giangdayModel.getByGiaoVien(
             parseInt(maGiaoVien),
-            maNamHoc ? parseInt(maNamHoc) : null,
-            maHocKy ? parseInt(maHocKy) : null
+            maNamHoc ? maNamHoc : null,
+            maHocKy ? normalizeHocKy(maHocKy) : null
         );
 
         res.json({
@@ -33,9 +34,9 @@ const getByLop = async (req, res) => {
         const { maNamHoc, maHocKy } = req.query;
 
         const danhSach = await giangdayModel.getByLop(
-            parseInt(maLop),
-            maNamHoc ? parseInt(maNamHoc) : null,
-            maHocKy ? parseInt(maHocKy) : null
+            maLop,
+            maNamHoc ? maNamHoc : null,
+            maHocKy ? normalizeHocKy(maHocKy) : null
         );
 
         res.json({
@@ -67,10 +68,10 @@ const checkPermission = async (req, res) => {
 
         const hasPermission = await giangdayModel.checkPermission(
             parseInt(maGiaoVien),
-            parseInt(maLop),
-            parseInt(maMonHoc),
-            parseInt(maHocKy),
-            parseInt(maNamHoc)
+            maLop,
+            maMonHoc,
+            normalizeHocKy(maHocKy),
+            maNamHoc
         );
 
         res.json({
@@ -102,8 +103,8 @@ const create = async (req, res) => {
         const result = await giangdayModel.create(
             maLop,
             maMonHoc,
-            maGiaoVien,
-            maHocKy,
+            parseInt(maGiaoVien),
+            normalizeHocKy(maHocKy),
             maNamHoc
         );
 
@@ -134,7 +135,13 @@ const bulkCreate = async (req, res) => {
             });
         }
 
-        const results = await giangdayModel.bulkCreate(giangDayList);
+        // Ensure maGiaoVien for each assignment is an integer
+        const normalized = giangDayList.map(a => ({
+            ...a,
+            maGiaoVien: parseInt(a.maGiaoVien, 10),
+            maHocKy: normalizeHocKy(a.maHocKy)
+        }));
+        const results = await giangdayModel.bulkCreate(normalized);
 
         res.json({
             success: true,
@@ -165,11 +172,11 @@ const update = async (req, res) => {
         }
 
         const result = await giangdayModel.update(
-            parseInt(maLop),
-            parseInt(maMonHoc),
-            parseInt(maHocKy),
-            parseInt(maNamHoc),
-            maGiaoVienMoi
+            maLop,
+            maMonHoc,
+            parseInt(maGiaoVienMoi, 10),
+            normalizeHocKy(maHocKy),
+            maNamHoc
         );
 
         if (result) {
@@ -207,11 +214,11 @@ const deleteGiangDay = async (req, res) => {
         }
 
         const result = await giangdayModel.delete(
-            parseInt(maLop),
-            parseInt(maMonHoc),
-            parseInt(maGiaoVien),
-            parseInt(maHocKy),
-            parseInt(maNamHoc)
+            maLop,
+            maMonHoc,
+            parseInt(maGiaoVien, 10),
+            normalizeHocKy(maHocKy),
+            maNamHoc
         );
 
         if (result) {
@@ -243,8 +250,8 @@ const getMonHocByGiaoVien = async (req, res) => {
 
         const danhSach = await giangdayModel.getMonHocByGiaoVien(
             parseInt(maGiaoVien),
-            maNamHoc ? parseInt(maNamHoc) : null,
-            maHocKy ? parseInt(maHocKy) : null
+            maNamHoc ? maNamHoc : null,
+            maHocKy ? normalizeHocKy(maHocKy) : null
         );
 
         res.json({
@@ -269,9 +276,9 @@ const getLopByGiaoVienAndMonHoc = async (req, res) => {
 
         const danhSach = await giangdayModel.getLopByGiaoVienAndMonHoc(
             parseInt(maGiaoVien),
-            parseInt(maMonHoc),
-            maNamHoc ? parseInt(maNamHoc) : null,
-            maHocKy ? parseInt(maHocKy) : null
+            maMonHoc,
+            maNamHoc ? maNamHoc : null,
+            maHocKy ? normalizeHocKy(maHocKy) : null
         );
 
         res.json({
@@ -293,9 +300,10 @@ const getAll = async (req, res) => {
     try {
         const { maNamHoc, maHocKy } = req.query;
 
+        const normalizedHK = maHocKy ? normalizeHocKy(maHocKy) : null;
         const danhSach = await giangdayModel.getAll(
-            maNamHoc ? parseInt(maNamHoc) : null,
-            maHocKy ? parseInt(maHocKy) : null
+            maNamHoc ? maNamHoc : null,
+            normalizedHK
         );
 
         res.json({
@@ -311,6 +319,7 @@ const getAll = async (req, res) => {
         });
     }
 };
+
 
 module.exports = {
     getByGiaoVien,

@@ -68,6 +68,34 @@
                 </div>
             </div>
 
+                    <!-- ========== POPUP GÁN GVCN CHO LỚP ========== -->
+                    <div class="modal-overlay" id="assignGvcnModal">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <h2>Gán Giáo viên chủ nhiệm</h2>
+                                <button class="modal-close" id="closeAssignGvcnModalBtn">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="form-group">
+                                    <label>Chọn GVCN</label>
+                                    <select id="assignGvcnSelect">
+                                        <option value="">-- Chọn GVCN --</option>
+                                    </select>
+                                </div>
+                                <div id="assignGvcnInfo" style="margin-top: 12px; padding: 8px; background: #f8f9fa; border-radius: 6px; display: none;">
+                                    <div><strong>Họ tên:</strong> <span id="assignGvcnName"></span></div>
+                                    <div><strong>Email:</strong> <span id="assignGvcnEmail"></span></div>
+                                    <div><strong>Vai trò:</strong> <span id="assignGvcnRole"></span></div>
+                                    <div id="assignGvcnCurrent" style="margin-top: 8px; color: #666;"></div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline" id="cancelAssignGvcnBtn">Hủy</button>
+                                    <button type="button" class="btn btn-primary" id="confirmAssignGvcnBtn">Gán</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
             <!-- THANH SỬA / XÓA – hiện khi bấm Sửa đổi -->
             <div class="edit-actions" id="classEditActions">
                 <button class="btn btn-secondary" id="btnEditClass">Sửa</button>
@@ -87,6 +115,7 @@
                             <th>GVCN</th>
                             <th>Năm học</th>
                             <th>Học sinh</th>
+                            <th>Hành động</th>
                         </tr>
                     </thead>
                     <tbody id="classTableBody">
@@ -146,7 +175,9 @@
 
                         <div class="form-group">
                             <label>Giáo viên chủ nhiệm</label>
-                            <input type="text" id="homeroomTeacherAdd" placeholder="Tên GVCN">
+                            <select id="homeroomTeacherAdd">
+                                <option value="">-- Chọn GVCN --</option>
+                            </select>
                         </div>
 
                         <div class="form-group">
@@ -200,7 +231,9 @@
 
                         <div class="form-group">
                             <label>Giáo viên chủ nhiệm</label>
-                            <input type="text" id="homeroomTeacherEdit">
+                            <select id="homeroomTeacherEdit">
+                                <option value="">-- Chọn GVCN --</option>
+                            </select>
                         </div>
 
                         <div class="form-group">
@@ -449,6 +482,14 @@
         const homeroomTeacherEdit = document.getElementById('homeroomTeacherEdit');
         const schoolYearEdit      = document.getElementById('schoolYearEdit');
 
+        // Assign/Unassign GVCN modal elements
+        const assignGvcnModal = document.getElementById('assignGvcnModal');
+        const closeAssignGvcnModalBtn = document.getElementById('closeAssignGvcnModalBtn');
+        const cancelAssignGvcnBtn = document.getElementById('cancelAssignGvcnBtn');
+        const confirmAssignGvcnBtn = document.getElementById('confirmAssignGvcnBtn');
+        const assignGvcnSelect = document.getElementById('assignGvcnSelect');
+        let assignTargetClass = null;
+
         let classSelectedRow  = null;
         let classSelectModeOn = false;
         let allClasses = []; // Lưu toàn bộ dữ liệu để tìm kiếm
@@ -486,12 +527,12 @@
 
         function renderClassTable(classes) {
             if (classes.length === 0) {
-                classTableBody.innerHTML = '<tr><td colspan="8" style="text-align:center;">Không có dữ liệu</td></tr>';
+                classTableBody.innerHTML = '<tr><td colspan="9" style="text-align:center;">Không có dữ liệu</td></tr>';
                 return;
             }
             
             classTableBody.innerHTML = classes.map(lop => `
-                <tr data-id="${lop.malop}" data-namhoc="${lop.namhoc || ''}" data-siso="${lop.siso || 0}">
+                <tr data-id="${lop.malop}" data-namhoc="${lop.namhoc || ''}" data-siso="${lop.siso || 0}" data-gvcn="${lop.magvcn || ''}">
                     <td class="select-cell">
                         <input type="checkbox" class="row-select-checkbox">
                     </td>
@@ -499,7 +540,7 @@
                     <td>${lop.tenlop}</td>
                     <td>${lop.khoi || ''}</td>
                     <td>${lop.siso || 0}</td>
-                    <td></td>
+                    <td>${lop.tengvcn || 'Chưa phân công'}</td>
                     <td>${lop.namhoc || ''}</td>
                     <td style="white-space: nowrap;">
                         <button class="btn btn-sm btn-outline" onclick="viewClassStudents('${lop.malop}', '${lop.tenlop}')" title="Xem danh sách">
@@ -508,6 +549,14 @@
                         <button class="btn btn-sm btn-primary" onclick="openImportStudentsModal('${lop.malop}', '${lop.tenlop}', '${lop.namhoc || ''}', ${lop.siso || 0}, '${lop.khoi || ''}')" title="Nhập học sinh">
                             📥 Nhập
                         </button>
+                    </td>
+                    <td style="white-space: nowrap;">
+                        ${lop.magvcn ? `
+                            <button class="btn btn-sm btn-warning admin-only" onclick="openAssignGvcnModal('${lop.malop}', '${lop.magvcn || ''}')" title="Thay GVCN">🔁 Gán lại</button>
+                            <button class="btn btn-sm btn-danger admin-only" onclick="removeGvcn('${lop.malop}')" title="Huỷ GVCN">⛔ Huỷ GVCN</button>
+                        ` : `
+                            <button class="btn btn-sm btn-success admin-only" onclick="openAssignGvcnModal('${lop.malop}', '')" title="Gán GVCN">➕ Gán GVCN</button>
+                        `}
                     </td>
                 </tr>
             `).join('');
@@ -534,6 +583,37 @@
                 schoolYearAdd.innerHTML = '<option value="">-- Chọn năm học --</option>';
                 yearList.forEach(y => {
                     schoolYearAdd.innerHTML += `<option value="${y.manamhoc}">${y.tennamhoc}</option>`;
+                });
+
+                // Load homeroom teachers (GVCN)
+                const teachersRes = await fetch('/api/auth/users?role=teacher');
+                const teachers = await teachersRes.json();
+                const homeroomAdd = document.getElementById('homeroomTeacherAdd');
+                const homeroomEdit = document.getElementById('homeroomTeacherEdit');
+                const assignGvcnSelect = document.getElementById('assignGvcnSelect');
+                homeroomAdd.innerHTML = '<option value="">-- Chọn GVCN --</option>';
+                homeroomEdit.innerHTML = '<option value="">-- Chọn GVCN --</option>';
+                if (assignGvcnSelect) assignGvcnSelect.innerHTML = '<option value="">-- Chọn GVCN --</option>';
+                (Array.isArray(teachers) ? teachers : []).forEach(t => {
+                    // Prefer lowercase/uppercase fields returned
+                    const id = t.manguoidung || t.MaNguoiDung || t.MaNguoidung || t.maNguoiDung;
+                    const name = t.hoten || t.HoTen || t.hoTen || '';
+                    const roleName = t.tenvaitro || t.TenVaiTro || '';
+                    const optionAdd = document.createElement('option');
+                    optionAdd.value = id;
+                    optionAdd.textContent = name;
+                    optionAdd.dataset.email = t.email || t.Email || '';
+                    optionAdd.dataset.fullname = name || '';
+                    optionAdd.dataset.role = roleName || '';
+                    homeroomAdd.appendChild(optionAdd);
+                    const optionEdit = document.createElement('option');
+                    optionEdit.value = id;
+                    optionEdit.textContent = name;
+                    optionEdit.dataset.email = t.email || t.Email || '';
+                    optionEdit.dataset.fullname = name || '';
+                    optionEdit.dataset.role = roleName || '';
+                    homeroomEdit.appendChild(optionEdit);
+                    if (assignGvcnSelect) assignGvcnSelect.appendChild(optionEdit.cloneNode(true));
                 });
             } catch (error) {
                 console.error('Lỗi load dropdowns:', error);
@@ -646,6 +726,8 @@
                 MaNamHoc: document.getElementById('schoolYearAdd').value,
                 SiSo: document.getElementById('classSizeAdd').value || 0
             };
+            const maGvcn = document.getElementById('homeroomTeacherAdd').value;
+            if (maGvcn) data.MaGVCN = parseInt(maGvcn, 10);
             
             try {
                 const response = await fetch('/api/classes', {
@@ -689,13 +771,14 @@
             const khoi   = cells[3].textContent.trim();
             const siSo   = cells[4].textContent.trim();
             const gvcn   = cells[5].textContent.trim();
+            const gvcnId = classSelectedRow.dataset.gvcn || '';
             const namHoc = cells[6].textContent.trim();
 
             classCodeEdit.value       = maLop;
             classNameEdit.value       = tenLop;
             gradeLevelEdit.value      = khoi;
             document.getElementById('classSizeEdit').value = siSo;
-            homeroomTeacherEdit.value = gvcn;
+            homeroomTeacherEdit.value = gvcnId;
             schoolYearEdit.value      = namHoc;
 
             editClassModal.classList.add('show');
@@ -725,6 +808,8 @@
                 MaNamHoc: schoolYearEdit.value,
                 SiSo: document.getElementById('classSizeEdit').value || 0
             };
+            const maGvcnEdit = document.getElementById('homeroomTeacherEdit').value;
+            if (maGvcnEdit) data.MaGVCN = parseInt(maGvcnEdit, 10);
             
             try {
                 const response = await fetch(`/api/classes/${maLop}`, {
@@ -806,6 +891,92 @@
                 toastError(error.message);
             }
         });
+
+        // ========== GÁN / HỦY GVCN ==========
+        window.openAssignGvcnModal = function (maLop, currentGvcnId) {
+            assignTargetClass = maLop;
+            if (assignGvcnSelect) assignGvcnSelect.value = currentGvcnId || '';
+            // Update info panel
+            updateAssignGvcnInfo();
+            assignGvcnModal.classList.add('show');
+        };
+
+        function closeAssignGvcnModal() {
+            if (!assignGvcnModal) return;
+            assignGvcnModal.classList.remove('show');
+            if (assignGvcnSelect) assignGvcnSelect.value = '';
+            assignTargetClass = null;
+        }
+
+        closeAssignGvcnModalBtn?.addEventListener('click', closeAssignGvcnModal);
+        cancelAssignGvcnBtn?.addEventListener('click', closeAssignGvcnModal);
+        assignGvcnModal?.addEventListener('click', (e) => { if (e.target === assignGvcnModal) closeAssignGvcnModal(); });
+
+        assignGvcnSelect?.addEventListener('change', () => {
+            updateAssignGvcnInfo();
+        });
+
+        function updateAssignGvcnInfo() {
+            const infoBlock = document.getElementById('assignGvcnInfo');
+            const nameEl = document.getElementById('assignGvcnName');
+            const emailEl = document.getElementById('assignGvcnEmail');
+            const roleEl = document.getElementById('assignGvcnRole');
+            const currentEl = document.getElementById('assignGvcnCurrent');
+            const sel = assignGvcnSelect;
+            if (!sel) return;
+            const opt = sel.options[sel.selectedIndex];
+            if (!opt || !opt.value) {
+                if (infoBlock) infoBlock.style.display = 'none';
+                return;
+            }
+            if (infoBlock) infoBlock.style.display = 'block';
+            nameEl.textContent = opt.dataset.fullname || opt.textContent || '';
+            emailEl.textContent = opt.dataset.email || '';
+            roleEl.textContent = opt.dataset.role || '';
+            // Show previous GVCN if any
+            const prevId = assignTargetClass ? document.querySelector(`tr[data-id="${assignTargetClass}"]`)?.dataset.gvcn : '';
+            if (prevId) {
+                const prevOpt = Array.from(assignGvcnSelect.options).find(o => o.value === prevId);
+                const prevText = prevOpt ? (prevOpt.dataset.fullname || prevOpt.textContent) : 'Chưa phân công';
+                currentEl.textContent = `GVCN hiện tại: ${prevText}`;
+            } else {
+                currentEl.textContent = 'GVCN hiện tại: Chưa phân công';
+            }
+        }
+
+        confirmAssignGvcnBtn?.addEventListener('click', async () => {
+            if (!assignTargetClass) return;
+            const maGvcn = assignGvcnSelect && assignGvcnSelect.value ? parseInt(assignGvcnSelect.value, 10) : null;
+            try {
+                const response = await authFetch(`/api/classes/${assignTargetClass}/gvcn`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ MaGVCN: maGvcn })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Lỗi gán GVCN');
+
+                toastSuccess('Gán GVCN thành công');
+                closeAssignGvcnModal();
+                loadClasses();
+            } catch (err) {
+                toastError(err.message || err);
+            }
+        });
+
+        window.removeGvcn = async function (maLop) {
+            if (!confirm(`Bạn có chắc chắn muốn hủy GVCN của lớp ${maLop}?`)) return;
+            try {
+                const response = await authFetch(`/api/classes/${maLop}/gvcn`, { method: 'DELETE' });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Lỗi hủy GVCN');
+
+                toastSuccess('Đã hủy GVCN');
+                loadClasses();
+            } catch (err) {
+                toastError(err.message || err);
+            }
+        };
 
         // ========== KHỞI TẠO ==========
         document.addEventListener('DOMContentLoaded', () => {

@@ -234,6 +234,17 @@ INSERT INTO THAMSO VALUES ('MaxHocSinhMotKhoa', '999') ON CONFLICT DO NOTHING;
 INSERT INTO THAMSO VALUES ('MaxHocSinhHeThong', '1600') ON CONFLICT DO NOTHING;
 INSERT INTO THAMSO VALUES ('MaxCotThuongXuyen', '4') ON CONFLICT DO NOTHING;
 
+-- ========== BẢNG NHẬT KÝ HỆ THỐNG (Audit log) ==========
+CREATE TABLE IF NOT EXISTS NHATKY (
+    id SERIAL PRIMARY KEY,
+    MaNguoiDung INT REFERENCES NGUOIDUNG(MaNguoiDung),
+    HanhDong VARCHAR(50) NOT NULL,
+    BangMuc VARCHAR(50),
+    MaDoiTuong VARCHAR(50),
+    ChiTiet JSONB,
+    NgayTao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- =============================================
 -- VAI TRÒ VÀ NGƯỜI DÙNG
 -- =============================================
@@ -256,6 +267,177 @@ INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro) VALUES
 ('gvcn1', '123456', 'Nguyễn Văn Thành', 'gvcn01@school.edu.vn', 'GVCN'),
 ('gvbm1', '123456', 'Lê Văn Đức', 'gvbm01@school.edu.vn', 'GVBM')
 ON CONFLICT (TenDangNhap) DO NOTHING;
+
+
+-- Thêm 18 tài khoản GVBM (2 giáo viên mỗi môn)
+INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro)
+VALUES
+  ('gv_toan_1', '123456', 'Trần Minh Toán', 'gv_toan1@school.edu.vn', 'GVBM'),
+  ('gv_toan_2', '123456', 'Phạm Văn Toán', 'gv_toan2@school.edu.vn', 'GVBM'),
+  ('gv_van_1', '123456', 'Lê Thị Văn', 'gv_van1@school.edu.vn', 'GVBM'),
+  ('gv_van_2', '123456', 'Nguyễn Văn Lợi', 'gv_van2@school.edu.vn', 'GVBM'),
+  ('gv_anh_1', '123456', 'Hoàng Anh', 'gv_anh1@school.edu.vn', 'GVBM'),
+  ('gv_anh_2', '123456', 'Đặng Thị Anh Dũng', 'gv_anh2@school.edu.vn', 'GVBM'),
+  ('gv_ly_1', '123456', 'Phan Văn Tuấn', 'gv_ly1@school.edu.vn', 'GVBM'),
+  ('gv_ly_2', '123456', 'Bùi Thị Lý', 'gv_ly2@school.edu.vn', 'GVBM'),
+  ('gv_hoa_1', '123456', 'Trương Hoá', 'gv_hoa1@school.edu.vn', 'GVBM'),
+  ('gv_hoa_2', '123456', 'Ngô Thị Hóa', 'gv_hoa2@school.edu.vn', 'GVBM'),
+  ('gv_sinh_1', '123456', 'Lê Minh Sinh', 'gv_sinh1@school.edu.vn', 'GVBM'),
+  ('gv_sinh_2', '123456', 'Võ Thị Sinh', 'gv_sinh2@school.edu.vn', 'GVBM'),
+  ('gv_su_1', '123456', 'Đỗ Văn Sử', 'gv_su1@school.edu.vn', 'GVBM'),
+  ('gv_su_2', '123456', 'Phùng Thị Sử', 'gv_su2@school.edu.vn', 'GVBM'),
+  ('gv_dia_1', '123456', 'Hà Văn Địa', 'gv_dia1@school.edu.vn', 'GVBM'),
+  ('gv_dia_2', '123456', 'Trần Thị Địa', 'gv_dia2@school.edu.vn', 'GVBM'),
+  ('gv_gdcd_1', '123456', 'Nguyễn Văn Lâm', 'gv_gdcd1@school.edu.vn', 'GVBM'),
+  ('gv_gdcd_2', '123456', 'Lý Thị Tuyết', 'gv_gdcd2@school.edu.vn', 'GVBM')
+ON CONFLICT (TenDangNhap) DO NOTHING;
+
+-- Toán
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '10A1', 'TOAN', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_toan_1'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '10A1')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'TOAN')
+ON CONFLICT DO NOTHING;
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '10A2', 'TOAN', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_toan_2'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '10A2')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'TOAN')
+ON CONFLICT DO NOTHING;
+
+-- Văn
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '10A3', 'VAN', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_van_1'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '10A3')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'VAN')
+ON CONFLICT DO NOTHING;
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '10A4', 'VAN', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_van_2'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '10A4')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'VAN')
+ON CONFLICT DO NOTHING;
+
+-- Tiếng Anh
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '11A1', 'ANH', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_anh_1'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '11A1')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'ANH')
+ON CONFLICT DO NOTHING;
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '11A2', 'ANH', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_anh_2'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '11A2')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'ANH')
+ON CONFLICT DO NOTHING;
+
+-- Vật Lý
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '11A3', 'LY', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_ly_1'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '11A3')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'LY')
+ON CONFLICT DO NOTHING;
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '11A4', 'LY', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_ly_2'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '11A4')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'LY')
+ON CONFLICT DO NOTHING;
+
+-- Hóa Học
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '12A1', 'HOA', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_hoa_1'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '12A1')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'HOA')
+ON CONFLICT DO NOTHING;
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '12A2', 'HOA', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_hoa_2'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '12A2')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'HOA')
+ON CONFLICT DO NOTHING;
+
+-- Sinh Học
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '12A3', 'SINH', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_sinh_1'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '12A3')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'SINH')
+ON CONFLICT DO NOTHING;
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '12A4', 'SINH', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_sinh_2'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '12A4')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'SINH')
+ON CONFLICT DO NOTHING;
+
+-- Lịch Sử
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '10A1', 'SU', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_su_1'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '10A1')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'SU')
+ON CONFLICT DO NOTHING;
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '10A2', 'SU', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_su_2'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '10A2')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'SU')
+ON CONFLICT DO NOTHING;
+
+-- Địa Lý
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '10A3', 'DIA', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_dia_1'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '10A3')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'DIA')
+ON CONFLICT DO NOTHING;
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '10A4', 'DIA', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_dia_2'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '10A4')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'DIA')
+ON CONFLICT DO NOTHING;
+
+-- GDCD
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '11A1', 'GDCD', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_gdcd_1'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '11A1')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'GDCD')
+ON CONFLICT DO NOTHING;
+INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+SELECT '11A2', 'GDCD', MaNguoiDung, 'HK1', '2024-2025'
+FROM NGUOIDUNG
+WHERE TenDangNhap = 'gv_gdcd_2'
+  AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '11A2')
+  AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'GDCD')
+ON CONFLICT DO NOTHING;
+
+COMMIT;
+
 
 -- ========================================
 -- HIỂN THỊ THÔNG BÁO HOÀN TẤT

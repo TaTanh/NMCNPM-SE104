@@ -204,6 +204,10 @@ function applyPermissions() {
                 }
             });
         }
+        // Hides admin-only action buttons if not admin
+        if (!hasRole('ADMIN')) {
+            hideElements(['.admin-only']);
+        }
     }
 
     // ===== TRANG QUẢN LÝ MÔN HỌC =====
