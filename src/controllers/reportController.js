@@ -63,5 +63,33 @@ const getDashboardStats = async (req, res) => {
 module.exports = {
     getSubjectReport,
     getSemesterReport,
-    getDashboardStats
+    getDashboardStats,
+    getClassFinalReport: async (req, res) => {
+        try {
+            const { maLop, namhoc } = req.query;
+            if (!maLop || !namhoc) {
+                return res.status(400).json({ error: 'Thiếu tham số: maLop, namhoc' });
+            }
+
+            const rows = await reportModel.getClassFinalReport(maLop, namhoc);
+            res.json({ success: true, data: rows });
+        } catch (err) {
+            console.error('Lỗi báo cáo tổng kết theo lớp:', err);
+            res.status(500).json({ error: 'Lỗi server' });
+        }
+    },
+    getStudentScoresForHanhKiem: async (req, res) => {
+        try {
+            const { maLop, namhoc, mahocky } = req.query;
+            if (!maLop || !namhoc || !mahocky) {
+                return res.status(400).json({ error: 'Thiếu tham số: maLop, namhoc, mahocky' });
+            }
+
+            const rows = await reportModel.getStudentScoresForHanhKiem(maLop, namhoc, mahocky);
+            res.json({ success: true, data: rows });
+        } catch (err) {
+            console.error('Lỗi lấy điểm TK cho hạnh kiểm:', err);
+            res.status(500).json({ error: 'Lỗi server' });
+        }
+    }
 };

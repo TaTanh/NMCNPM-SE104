@@ -8,13 +8,20 @@ const checkAuth = async (req, res, next) => {
     try {
         const userId = req.headers['x-user-id'];
         
+        console.log('=== checkAuth middleware ===');
+        console.log('x-user-id header:', userId);
+        
         if (!userId) {
+            console.log('ERROR: No x-user-id header');
             return res.status(401).json({ error: 'Chưa đăng nhập' });
         }
         
         const user = await userModel.findById(userId);
         
+        console.log('User from DB:', user);
+        
         if (!user) {
+            console.log('ERROR: User not found in DB');
             return res.status(401).json({ error: 'Phiên đăng nhập không hợp lệ' });
         }
         
@@ -23,10 +30,13 @@ const checkAuth = async (req, res, next) => {
             maNguoiDung: user.manguoidung,
             tenDangNhap: user.tendangnhap,
             hoTen: user.hoten,
-            vaiTro: user.mavaitro,
-            tenVaiTro: user.tenvaitro,
+            // Use role code (MaVaiTro) for authorization checks; fall back to name if needed
+            vaiTro: user.mavaitro || user.MaVaiTro || user.tenvaitro,
+            tenVaiTro: user.tenvaitro || user.TenVaiTro,
             quyen: typeof user.quyen === 'string' ? JSON.parse(user.quyen) : user.quyen
         };
+        
+        console.log('req.user set to:', req.user);
         
         next();
     } catch (err) {
@@ -74,7 +84,7 @@ const optionalAuth = async (req, res, next) => {
                     maNguoiDung: user.manguoidung,
                     tenDangNhap: user.tendangnhap,
                     hoTen: user.hoten,
-                    vaiTro: user.tenvaitro,
+                    vaiTro: user.mavaitro || user.MaVaiTro || user.tenvaitro,
                     quyen: typeof user.quyen === 'string' ? JSON.parse(user.quyen) : user.quyen
                 };
             }
@@ -133,16 +143,30 @@ const isTeacher = (req, res, next) => {
 
 // ========== KIỂM TRA QUYỀN NHẬP HẠNH KIỂM ==========
 const canInputHanhKiem = (req, res, next) => {
+    console.log('=== canInputHanhKiem middleware ===');
+    console.log('Request headers:', req.headers);
+    console.log('req.user:', req.user);
+    
     if (!req.user) {
+        console.log('ERROR: req.user is null/undefined');
         return res.status(401).json({ error: 'Chưa đăng nhập' });
     }
-    
-    // Admin và GVCN có quyền nhập hạnh kiểm
-    if (req.user.vaiTro === 'ADMIN' || req.user.vaiTro === 'GVCN') {
+
+    const roleRaw = (req.user.vaiTro || '').toString().trim();
+    const role = roleRaw.toUpperCase();
+    const roleName = roleRaw.toLowerCase();
+    const quyen = req.user.quyen || {};
+
+    const hasPermission = quyen.all === true || quyen.nhapHanhKiem === true;
+    const isAdmin = role === 'ADMIN' || role === 'ADMINISTRATOR' || role.startsWith('ADMIN') || roleName.includes('quản trị viên');
+    const isGvcn = role === 'GVCN' || role.startsWith('GVCN') || roleName.includes('giáo viên chủ nhiệm');
+
+    if (hasPermission || isAdmin || isGvcn) {
+        console.log('Access granted! Role:', req.user.vaiTro, 'Permission:', quyen);
         return next();
     }
-    
-    // GVBM không có quyền nhập hạnh kiểm
+
+    console.log('Access denied! Role:', req.user.vaiTro, 'Permission:', quyen);
     return res.status(403).json({ 
         error: 'Bạn không có quyền nhập hạnh kiểm. Chỉ GVCN và Admin mới được phép.' 
     });

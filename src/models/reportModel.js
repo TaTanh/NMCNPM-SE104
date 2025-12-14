@@ -108,3 +108,147 @@ module.exports = {
     getSemesterReport,
     getDashboardStats
 };
+
+// ========== BÁO CÁO TỔNG KẾT THEO LỚP (HK1/HK2/CẢ NĂM) ==========
+// Trả về: mỗi hàng là 1 học sinh x 1 môn với điểm TB HK1, HK2, Cả năm
+const getClassFinalReport = async (maLop, maNamHoc, maHocKy = null) => {
+    const query = `
+        SELECT 
+            hs.MaHocSinh, hs.HoTen,
+            mh.MaMonHoc, mh.TenMonHoc,
+            -- Tính điểm TB HK1
+            (
+                SELECT ROUND(CAST(SUM(ct.Diem * lhkt.HeSo) / NULLIF(SUM(lhkt.HeSo), 0) AS NUMERIC), 2)
+                FROM CT_BANGDIEMMON_HOCSINH ct
+                JOIN BANGDIEMMON bdm_hk1 ON ct.MaBangDiem = bdm_hk1.MaBangDiem
+                JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+                WHERE bdm_hk1.MaLop = $1 
+                  AND bdm_hk1.MaMonHoc = mh.MaMonHoc
+                  AND bdm_hk1.MaHocKy = 'HK1'
+                  AND ct.MaHocSinh = hs.MaHocSinh
+            ) AS DiemTBHK1,
+            -- Tính điểm TB HK2
+            (
+                SELECT ROUND(CAST(SUM(ct.Diem * lhkt.HeSo) / NULLIF(SUM(lhkt.HeSo), 0) AS NUMERIC), 2)
+                FROM CT_BANGDIEMMON_HOCSINH ct
+                JOIN BANGDIEMMON bdm_hk2 ON ct.MaBangDiem = bdm_hk2.MaBangDiem
+                JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+                WHERE bdm_hk2.MaLop = $1 
+                  AND bdm_hk2.MaMonHoc = mh.MaMonHoc
+                  AND bdm_hk2.MaHocKy = 'HK2'
+                  AND ct.MaHocSinh = hs.MaHocSinh
+            ) AS DiemTBHK2,
+            -- Tính điểm TB cả năm theo công thức: (HK1 + HK2 * 2) / 3
+            ROUND(CAST(
+                (
+                    COALESCE((
+                        SELECT SUM(ct.Diem * lhkt.HeSo) / NULLIF(SUM(lhkt.HeSo), 0)
+                        FROM CT_BANGDIEMMON_HOCSINH ct
+                        JOIN BANGDIEMMON bdm_hk1 ON ct.MaBangDiem = bdm_hk1.MaBangDiem
+                        JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+                        WHERE bdm_hk1.MaLop = $1 
+                          AND bdm_hk1.MaMonHoc = mh.MaMonHoc
+                          AND bdm_hk1.MaHocKy = 'HK1'
+                          AND ct.MaHocSinh = hs.MaHocSinh
+                    ), 0) + 
+                    COALESCE((
+                        SELECT SUM(ct.Diem * lhkt.HeSo) / NULLIF(SUM(lhkt.HeSo), 0)
+                        FROM CT_BANGDIEMMON_HOCSINH ct
+                        JOIN BANGDIEMMON bdm_hk2 ON ct.MaBangDiem = bdm_hk2.MaBangDiem
+                        JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+                        WHERE bdm_hk2.MaLop = $1 
+                          AND bdm_hk2.MaMonHoc = mh.MaMonHoc
+                          AND bdm_hk2.MaHocKy = 'HK2'
+                          AND ct.MaHocSinh = hs.MaHocSinh
+                    ), 0) * 2.0
+                ) / 3.0 AS NUMERIC), 2) AS DiemTBNam,
+            hk1.XepLoai AS HanhKiemHK1,
+            hk2.XepLoai AS HanhKiemHK2,
+            hkcn.XepLoai AS HanhKiemCN
+        FROM HOCSINH hs
+        JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
+        JOIN LOP l ON qth.MaLop = l.MaLop
+        CROSS JOIN MONHOC mh
+        LEFT JOIN HANHKIEM hk1 ON hk1.MaHocSinh = hs.MaHocSinh 
+            AND hk1.MaNamHoc = $2 
+            AND hk1.MaHocKy = 'HK1'
+        LEFT JOIN HANHKIEM hk2 ON hk2.MaHocSinh = hs.MaHocSinh 
+            AND hk2.MaNamHoc = $2 
+            AND hk2.MaHocKy = 'HK2'
+        LEFT JOIN HANHKIEM hkcn ON hkcn.MaHocSinh = hs.MaHocSinh 
+            AND hkcn.MaNamHoc = $2 
+            AND hkcn.MaHocKy = 'CN'
+        WHERE qth.MaLop = $1 AND l.MaNamHoc = $2
+        ORDER BY hs.HoTen, mh.TenMonHoc
+    `;
+
+    const result = await pool.query(query, [maLop, maNamHoc]);
+    return result.rows;
+};
+
+module.exports.getClassFinalReport = getClassFinalReport;
+
+// ========== LẤY ĐIỂM TK & HỌC LỰC CHO NHẬP HẠNH KIỂM ==========
+const getStudentScoresForHanhKiem = async (maLop, maNamHoc, maHocKy) => {
+    // Tính điểm trung bình theo học kỳ cho từng môn của từng học sinh trong lớp
+    // Hỗ trợ 'HK1', 'HK2' và 'CN' (cả năm theo công thức (HK1 + HK2*2)/3)
+    const query = `
+        SELECT 
+            hs.MaHocSinh, hs.HoTen,
+            mh.MaMonHoc, mh.TenMonHoc,
+            CASE 
+                WHEN $3 = 'HK1' THEN (
+                    SELECT ROUND(CAST(SUM(ct.Diem * lhkt.HeSo) / NULLIF(SUM(lhkt.HeSo), 0) AS NUMERIC), 2)
+                    FROM CT_BANGDIEMMON_HOCSINH ct
+                    JOIN BANGDIEMMON bdm_hk1 ON ct.MaBangDiem = bdm_hk1.MaBangDiem
+                    JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+                    WHERE bdm_hk1.MaLop = $1 
+                      AND bdm_hk1.MaMonHoc = mh.MaMonHoc
+                      AND bdm_hk1.MaHocKy = 'HK1'
+                      AND ct.MaHocSinh = hs.MaHocSinh
+                )
+                WHEN $3 = 'HK2' THEN (
+                    SELECT ROUND(CAST(SUM(ct.Diem * lhkt.HeSo) / NULLIF(SUM(lhkt.HeSo), 0) AS NUMERIC), 2)
+                    FROM CT_BANGDIEMMON_HOCSINH ct
+                    JOIN BANGDIEMMON bdm_hk2 ON ct.MaBangDiem = bdm_hk2.MaBangDiem
+                    JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+                    WHERE bdm_hk2.MaLop = $1 
+                      AND bdm_hk2.MaMonHoc = mh.MaMonHoc
+                      AND bdm_hk2.MaHocKy = 'HK2'
+                      AND ct.MaHocSinh = hs.MaHocSinh
+                )
+                WHEN $3 = 'CN' OR $3 = 'Nam' THEN ROUND(CAST((
+                    COALESCE((
+                        SELECT SUM(ct.Diem * lhkt.HeSo) / NULLIF(SUM(lhkt.HeSo), 0)
+                        FROM CT_BANGDIEMMON_HOCSINH ct
+                        JOIN BANGDIEMMON bdm_hk1 ON ct.MaBangDiem = bdm_hk1.MaBangDiem
+                        JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+                        WHERE bdm_hk1.MaLop = $1 
+                          AND bdm_hk1.MaMonHoc = mh.MaMonHoc
+                          AND bdm_hk1.MaHocKy = 'HK1'
+                          AND ct.MaHocSinh = hs.MaHocSinh
+                    ), 0) + 
+                    COALESCE((
+                        SELECT SUM(ct.Diem * lhkt.HeSo) / NULLIF(SUM(lhkt.HeSo), 0)
+                        FROM CT_BANGDIEMMON_HOCSINH ct
+                        JOIN BANGDIEMMON bdm_hk2 ON ct.MaBangDiem = bdm_hk2.MaBangDiem
+                        JOIN LOAIHINHKIEMTRA lhkt ON ct.MaLHKT = lhkt.MaLHKT
+                        WHERE bdm_hk2.MaLop = $1 
+                          AND bdm_hk2.MaMonHoc = mh.MaMonHoc
+                          AND bdm_hk2.MaHocKy = 'HK2'
+                          AND ct.MaHocSinh = hs.MaHocSinh
+                    ), 0) * 2.0
+                ) / 3.0 AS NUMERIC), 2)
+            END AS DiemMon
+        FROM HOCSINH hs
+        JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
+        CROSS JOIN MONHOC mh
+        WHERE qth.MaLop = $1
+        ORDER BY hs.HoTen, mh.TenMonHoc
+    `;
+
+    const result = await pool.query(query, [maLop, maNamHoc, maHocKy]);
+    return result.rows;
+};
+
+module.exports.getStudentScoresForHanhKiem = getStudentScoresForHanhKiem;

@@ -8,8 +8,8 @@ const getByHocSinh = async (req, res) => {
         const { maNamHoc, maHocKy } = req.query;
 
         const hanhkiem = await hanhkiemModel.getByHocSinh(
-            parseInt(maHocSinh),
-            maNamHoc ? parseInt(maNamHoc) : null,
+            maHocSinh, // Giữ nguyên chuỗi (ví dụ HS010001)
+            maNamHoc || null, // Chuỗi năm học
             maHocKy ? normalizeHocKy(maHocKy) : null
         );
 
@@ -41,8 +41,8 @@ const getByLop = async (req, res) => {
         }
 
         const danhSach = await hanhkiemModel.getByLop(
-            parseInt(maLop),
-            parseInt(maNamHoc),
+            maLop, // Giữ nguyên chuỗi mã lớp (10A1,...)
+            maNamHoc, // Chuỗi năm học
             normalizeHocKy(maHocKy)
         );
 
@@ -129,7 +129,9 @@ const bulkUpsert = async (req, res) => {
 const deleteHanhKiem = async (req, res) => {
     try {
         const { maHocSinh } = req.params;
-        const { maNamHoc, maHocKy } = req.query;
+        // Support both query and headers
+        const maNamHoc = req.query.maNamHoc || req.headers['x-nam-hoc'];
+        const maHocKy = req.query.maHocKy || req.headers['x-hoc-ky'];
 
         if (!maNamHoc || !maHocKy) {
             return res.status(400).json({
@@ -138,9 +140,9 @@ const deleteHanhKiem = async (req, res) => {
             });
         }
 
-            const result = await hanhkiemModel.delete(
-            parseInt(maHocSinh),
-            parseInt(maNamHoc),
+        const result = await hanhkiemModel.delete(
+            maHocSinh, // Giữ nguyên chuỗi mã HS
+            maNamHoc, // Giữ nguyên chuỗi năm học
             normalizeHocKy(maHocKy)
         );
 
@@ -212,8 +214,8 @@ const getHanhKiemNam = async (req, res) => {
         }
 
         const result = await hanhkiemModel.getHanhKiemNam(
-            parseInt(maHocSinh),
-            parseInt(maNamHoc)
+            maHocSinh,
+            maNamHoc
         );
 
         res.json({

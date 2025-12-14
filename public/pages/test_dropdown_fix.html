@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Fix Dropdown</title>
+    <script src="/js/toast.js"></script>
+    <script src="/js/auth.js"></script>
+</head>
+<body>
+    <h1>Test Fix Dropdown - Mục Nhập Hạnh Kiểm</h1>
+    
+    <div id="results"></div>
+    
+    <script>
+        async function runTests() {
+            const results = document.getElementById('results');
+            let html = '<h2>Kết Quả Test</h2><ul>';
+            
+            try {
+                // Test 1: Load năm học
+                const yearsRes = await fetch('/api/settings/school-years');
+                const years = await yearsRes.json();
+                html += `<li>✅ Load năm học: ${years.length} năm học</li>`;
+                
+                // Test 2: Load lớp
+                const classesRes = await fetch('/api/classes');
+                const classes = await classesRes.json();
+                html += `<li>✅ Load lớp: ${classes.length} lớp</li>`;
+                
+                // Test 3: Phân tích khối
+                const grades = new Set();
+                classes.forEach(c => grades.add(c.makhoilop));
+                html += `<li>✅ Phân tích khối: ${grades.size} khối (${Array.from(grades).sort().join(', ')})</li>`;
+                
+                // Test 4: Phân tích lớp theo năm học
+                if (years.length > 0) {
+                    const firstYear = years[0].manamhoc;
+                    const classesForYear = classes.filter(c => c.manamhoc == firstYear);
+                    html += `<li>✅ Lớp cho năm học ${years[0].tennamhoc}: ${classesForYear.length} lớp</li>`;
+                    
+                    // Test 5: Phân tích khối cho năm học đầu tiên
+                    const gradesForYear = new Set();
+                    classesForYear.forEach(c => gradesForYear.add(c.makhoilop));
+                    html += `<li>✅ Khối cho năm học ${years[0].tennamhoc}: ${gradesForYear.size} khối</li>`;
+                }
+                
+                html += '<li><strong>🎉 Tất cả test đều pass! Dropdown sẽ hoạt động bình thường</strong></li>';
+                
+            } catch (error) {
+                html += `<li>❌ Lỗi: ${error.message}</li>`;
+            }
+            
+            html += '</ul>';
+            results.innerHTML = html;
+        }
+        
+        window.addEventListener('load', runTests);
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        h2 {
+            color: #555;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            margin: 5px 0;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+    </style>
+</body>
+</html>

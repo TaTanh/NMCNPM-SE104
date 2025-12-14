@@ -53,30 +53,15 @@
                 
                 <!-- LEFT PANEL: DANH SÁCH HỌC SINH -->
                 <div class="left-panel">
-                    <div class="panel-header">
-                        <h3>📋 Danh sách học sinh</h3>
-                        <button class="btn-refresh" onclick="resetFilters()" title="Làm mới bộ lọc">🔄</button>
+                    <div class="panel-top">
+                        <div class="panel-title">📋 Danh sách học sinh <button class="btn-refresh" onclick="resetFilters()" title="Làm mới">🔄</button></div>
+                        <div class="filter-row">
+                            <select id="yearSelect"><option value="">Năm học</option></select>
+                            <select id="gradeSelect"><option value="">Khối</option></select>
+                            <select id="classSelect"><option value="">Lớp</option></select>
+                        </div>
+                        <input type="text" id="searchStudent" class="search-input" placeholder="🔍 Tìm tên hoặc mã HS...">
                     </div>
-                    
-                    <!-- Bộ lọc -->
-                    <div class="filter-compact">
-                        <select id="yearSelect" title="Năm học">
-                            <option value="">-- Năm học --</option>
-                        </select>
-                        <select id="gradeSelect" title="Khối">
-                            <option value="">-- Khối --</option>
-                        </select>
-                        <select id="classSelect" title="Lớp">
-                            <option value="">-- Lớp --</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Tìm kiếm -->
-                    <div class="search-box">
-                        <input type="text" id="searchStudent" placeholder="🔍 Tìm tên hoặc mã HS...">
-                    </div>
-                    
-                    <!-- Danh sách học sinh -->
                     <div class="student-list" id="studentList">
                         <div class="empty-state">
                             <p>Chọn lớp hoặc tìm kiếm để xem danh sách học sinh</p>
@@ -152,6 +137,10 @@
                             <div class="summary-card purple">
                                 <div class="summary-label">Hạnh kiểm</div>
                                 <div class="summary-value" id="hanhkiem">-</div>
+                            </div>
+                            <div class="summary-card orange">
+                                <div class="summary-label">Danh hiệu</div>
+                                <div class="summary-value" id="danhhieu">-</div>
                             </div>
                         </div>
                     </div>
@@ -240,9 +229,10 @@
             }
             
             try {
+                // KHÔNG gửi keyword lên server - chỉ filter ở frontend để hỗ trợ không dấu
                 let url = '/api/students?';
                 const params = new URLSearchParams();
-                if (keyword) params.append('search', keyword);
+                // Bỏ search param - sẽ filter ở frontend
                 if (classId) params.append('lop', classId);
                 if (gradeLevel) params.append('khoi', gradeLevel);
                 if (namhoc) params.append('namhoc', namhoc);
@@ -253,17 +243,39 @@
                 const students = await response.json();
                 
                 allStudents = students;
-                renderStudentList(students);
+                // Filter ở frontend với hỗ trợ không dấu
+                renderStudentList(students, keyword);
             } catch (error) {
                 console.error('Lỗi tìm kiếm:', error);
                 toastError('Lỗi tìm kiếm học sinh');
             }
         }
 
-        function renderStudentList(students) {
+        // Hàm loại bỏ dấu tiếng Việt để tìm kiếm
+        function removeVietnameseDiacritics(str) {
+            if (!str) return '';
+            return str.normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/đ/g, 'd')
+                .replace(/Đ/g, 'D')
+                .toLowerCase();
+        }
+
+        function renderStudentList(students, filterKeyword = '') {
             const listDiv = document.getElementById('studentList');
             
-            if (students.length === 0) {
+            // Lọc theo keyword (hỗ trợ không dấu)
+            let filteredStudents = students;
+            if (filterKeyword) {
+                const searchNormalized = removeVietnameseDiacritics(filterKeyword);
+                filteredStudents = students.filter(hs => {
+                    const hotenNormalized = removeVietnameseDiacritics(hs.hoten);
+                    const maHsNormalized = (hs.mahocsinh || '').toLowerCase();
+                    return hotenNormalized.includes(searchNormalized) || maHsNormalized.includes(searchNormalized);
+                });
+            }
+            
+            if (filteredStudents.length === 0) {
                 listDiv.innerHTML = `
                     <div class="empty-state">
                         <p>Không tìm thấy học sinh</p>
@@ -273,13 +285,13 @@
             }
             
             // Sắp xếp theo tên (phần cuối cùng của họ tên)
-            students.sort((a, b) => {
+            filteredStudents.sort((a, b) => {
                 const tenA = a.hoten.trim().split(' ').pop().toLowerCase();
                 const tenB = b.hoten.trim().split(' ').pop().toLowerCase();
                 return tenA.localeCompare(tenB, 'vi');
             });
             
-            listDiv.innerHTML = students.map(hs => `
+            listDiv.innerHTML = filteredStudents.map(hs => `
                 <div class="student-item ${selectedStudent?.mahocsinh === hs.mahocsinh ? 'active' : ''}" 
                      onclick="selectStudent('${hs.mahocsinh}')" data-id="${hs.mahocsinh}">
                     <div class="student-item-avatar">${hs.gioitinh === 'Nam' ? '👨' : '👩'}</div>
@@ -289,12 +301,46 @@
                     </div>
                 </div>
             `).join('');
+
+            // Scroll lên đầu danh sách sau mỗi lần render để tránh cảm giác bị đẩy xuống cuối
+            listDiv.scrollTop = 0;
         }
 
         function formatDate(dateStr) {
             if (!dateStr) return '-';
             const date = new Date(dateStr);
             return date.toLocaleDateString('vi-VN');
+        }
+
+        // ========== DI CHUYỂN BẰNG PHÍM LÊN/XUỐNG TRONG DANH SÁCH HS ==========
+        function moveSelection(offset) {
+            if (!allStudents || allStudents.length === 0) return;
+            const currentId = selectedStudent?.mahocsinh;
+            const currentIndex = allStudents.findIndex(s => s.mahocsinh === currentId);
+            let nextIndex = 0;
+            if (currentIndex === -1) {
+                nextIndex = offset > 0 ? 0 : allStudents.length - 1;
+            } else {
+                nextIndex = currentIndex + offset;
+                if (nextIndex < 0) nextIndex = 0;
+                if (nextIndex >= allStudents.length) nextIndex = allStudents.length - 1;
+            }
+            const nextStudent = allStudents[nextIndex];
+            if (nextStudent) {
+                selectStudent(nextStudent.mahocsinh);
+                // Đảm bảo item được scroll vào vùng hiển thị
+                const listDiv = document.getElementById('studentList');
+                const activeEl = listDiv.querySelector('.student-item.active');
+                if (activeEl) {
+                    const rect = activeEl.getBoundingClientRect();
+                    const parentRect = listDiv.getBoundingClientRect();
+                    if (rect.top < parentRect.top) {
+                        listDiv.scrollTop -= (parentRect.top - rect.top) + 8;
+                    } else if (rect.bottom > parentRect.bottom) {
+                        listDiv.scrollTop += (rect.bottom - parentRect.bottom) + 8;
+                    }
+                }
+            }
         }
 
         // ========== CHỌN HỌC SINH ==========
@@ -359,26 +405,63 @@
 
         async function loadHanhKiem(maHocSinh, semester) {
             try {
-                // Get current year from selectedStudent if available
-                const currentYear = selectedStudent?.manamhoc || new Date().getFullYear();
+                // Get year and class from selected student
+                const namHoc = document.getElementById('yearSelect').value;
+                const maLop = selectedStudent?.malop || document.getElementById('classSelect').value;
                 
-                let url = `/api/hanhkiem/hocsinh/${maHocSinh}?maNamHoc=${currentYear}`;
-                if (semester) url += `&maHocKy=${semester}`;
-                
-                const response = await fetch(url);
+                if (!namHoc || !maLop) {
+                    document.getElementById('hanhkiem').textContent = '-';
+                    document.getElementById('danhhieu').textContent = '-';
+                    return;
+                }
+
+                // Map semester filter to column key
+                let hkKey = 'hk1';
+                if (semester === 'HK2') hkKey = 'hk2';
+                else if (semester === 'CANAM') hkKey = 'cn';
+
+                const user = getCurrentUser();
+                const userId = user?.maNguoiDung || user?.manguoidung || user?.MaNguoiDung;
+                const headers = userId ? { 'x-user-id': userId.toString() } : {};
+
+                // Dùng CÙNG API như báo cáo tổng kết - đã hoạt động tốt
+                const url = `/api/reports/class-final?maLop=${maLop}&namhoc=${namHoc}`;
+                const response = await fetch(url, { headers });
                 const result = await response.json();
-                
+
                 if (result.success && result.data && result.data.length > 0) {
-                    // If specific semester, show that grade
-                    // If no semester filter, show the most recent or aggregate
-                    const hanhKiemData = result.data[0];
-                    document.getElementById('hanhkiem').textContent = hanhKiemData.xeploai || '-';
+                    // Tìm hạnh kiểm của học sinh này từ response
+                    const studentRow = result.data.find(r => 
+                        (r.mahocsinh || r.MaHocSinh) === maHocSinh
+                    );
+                    
+                    if (studentRow) {
+                        let xepLoai = '-';
+                        if (hkKey === 'hk1') {
+                            xepLoai = studentRow.hanhkiemhk1 || studentRow.HanhKiemHK1 || '-';
+                        } else if (hkKey === 'hk2') {
+                            xepLoai = studentRow.hanhkiemhk2 || studentRow.HanhKiemHK2 || '-';
+                        } else {
+                            xepLoai = studentRow.hanhkiemcn || studentRow.HanhKiemCN || '-';
+                        }
+                        
+                        document.getElementById('hanhkiem').textContent = xepLoai;
+
+                        // Update danh hiệu sau khi có hạnh kiểm
+                        const ranking = document.getElementById('ranking').textContent;
+                        updateDanhHieu(ranking);
+                    } else {
+                        document.getElementById('hanhkiem').textContent = '-';
+                        document.getElementById('danhhieu').textContent = '-';
+                    }
                 } else {
                     document.getElementById('hanhkiem').textContent = '-';
+                    document.getElementById('danhhieu').textContent = '-';
                 }
             } catch (error) {
                 console.error('Lỗi load hạnh kiểm:', error);
                 document.getElementById('hanhkiem').textContent = '-';
+                document.getElementById('danhhieu').textContent = '-';
             }
         }
 
@@ -442,6 +525,22 @@
         }
         
         function renderSemester(groupedBySubject, hkKey, hkLabel, thead, tbody) {
+            // Define subject order
+            const subjectOrder = ['Toán', 'Vật Lý', 'Hóa Học', 'Sinh Học', 'Ngữ Văn', 'Lịch Sử', 'Địa Lý', 'Tiếng Anh', 'Giáo Dục Công Dân'];
+            
+            // Sort subjects
+            const sortedSubjects = Object.keys(groupedBySubject).sort((a, b) => {
+                const subjectA = groupedBySubject[a].tenMonHoc;
+                const subjectB = groupedBySubject[b].tenMonHoc;
+                const indexA = subjectOrder.indexOf(subjectA);
+                const indexB = subjectOrder.indexOf(subjectB);
+                
+                if (indexA === -1 && indexB === -1) return 0;
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+            
             // Header
             thead.innerHTML = `
                 <th>Môn học</th>
@@ -455,13 +554,13 @@
             
             const rows = [];
             
-            Object.keys(groupedBySubject).forEach(key => {
+            sortedSubjects.forEach(key => {
                 const subject = groupedBySubject[key];
                 
                 if (subject[hkKey]) {
                     const mon = subject[hkKey].data;
                     const avgNum = subject[hkKey].avg;
-                    const avg = avgNum ? avgNum.toFixed(1) : '–';
+                    const avg = avgNum ? avgNum.toFixed(2) : '–';
                     const avgClass = avgNum ? getAvgClass(avgNum) : '';
                     
                     if (avgNum) {
@@ -503,14 +602,34 @@
                 
                 document.getElementById('ranking').textContent = ranking;
                 document.getElementById('passedSubjects').textContent = `${passedCount}/${countAvg}`;
+                
+                // Xét danh hiệu theo TT58
+                updateDanhHieu(ranking);
             } else {
                 document.getElementById('avgScore').textContent = '-';
                 document.getElementById('ranking').textContent = '-';
                 document.getElementById('passedSubjects').textContent = '-';
+                document.getElementById('danhhieu').textContent = '-';
             }
         }
         
         function renderYearSummary(groupedBySubject, thead, tbody) {
+            // Define subject order
+            const subjectOrder = ['Toán', 'Vật Lý', 'Hóa Học', 'Sinh Học', 'Ngữ Văn', 'Lịch Sử', 'Địa Lý', 'Tiếng Anh', 'Giáo Dục Công Dân'];
+            
+            // Sort subjects
+            const sortedSubjects = Object.keys(groupedBySubject).sort((a, b) => {
+                const subjectA = groupedBySubject[a].tenMonHoc;
+                const subjectB = groupedBySubject[b].tenMonHoc;
+                const indexA = subjectOrder.indexOf(subjectA);
+                const indexB = subjectOrder.indexOf(subjectB);
+                
+                if (indexA === -1 && indexB === -1) return 0;
+                if (indexA === -1) return 1;
+                if (indexB === -1) return -1;
+                return indexA - indexB;
+            });
+            
             // Header cho cả năm
             thead.innerHTML = `
                 <th>Môn học</th>
@@ -526,7 +645,7 @@
             
             const rows = [];
             
-            Object.keys(groupedBySubject).forEach(key => {
+            sortedSubjects.forEach(key => {
                 const subject = groupedBySubject[key];
                 
                 if (subject.hk1 && subject.hk2 && subject.hk1.avg !== null && subject.hk2.avg !== null) {
@@ -544,9 +663,9 @@
                     rows.push(`
                         <tr>
                             <td><strong>${subject.tenMonHoc}</strong></td>
-                            <td>${hk1Avg.toFixed(1)}</td>
-                            <td>${hk2Avg.toFixed(1)}</td>
-                            <td class="col-avg"><strong><span class="${avgClass}">${yearAvg.toFixed(1)}</span></strong></td>
+                            <td>${hk1Avg.toFixed(2)}</td>
+                            <td>${hk2Avg.toFixed(2)}</td>
+                            <td class="col-avg"><strong><span class="${avgClass}">${yearAvg.toFixed(2)}</span></strong></td>
                         </tr>
                     `);
                 }
@@ -573,10 +692,14 @@
                 }
                 document.getElementById('ranking').textContent = ranking;
                 document.getElementById('passedSubjects').textContent = `${passedCount}/${countYearAvg}`;
+                
+                // Xét danh hiệu theo TT58
+                updateDanhHieu(ranking.replace(' ⭐', '').replace(' (không đạt HS Giỏi)', ''));
             } else {
                 document.getElementById('avgScore').textContent = '-';
                 document.getElementById('ranking').textContent = '-';
                 document.getElementById('passedSubjects').textContent = '-';
+                document.getElementById('danhhieu').textContent = '-';
             }
         }
         
@@ -585,6 +708,21 @@
             if (avgNum >= 6.5) return 'rate-good';
             if (avgNum >= 5) return 'rate-average';
             return 'rate-low';
+        }
+        
+        function updateDanhHieu(hocLuc) {
+            const hanhKiem = document.getElementById('hanhkiem').textContent.trim();
+            let danhHieu = '-';
+            
+            if (hanhKiem && hanhKiem !== '-') {
+                if (hocLuc === 'Giỏi' && hanhKiem === 'Tốt') {
+                    danhHieu = 'Học sinh giỏi';
+                } else if (hocLuc === 'Khá' && hanhKiem === 'Tốt') {
+                    danhHieu = 'Học sinh tiến tiến';
+                }
+            }
+            
+            document.getElementById('danhhieu').textContent = danhHieu;
         }
 
         // ========== RESET FILTERS ==========
@@ -633,6 +771,17 @@
                 clearTimeout(searchTimeout);
                 searchTimeout = setTimeout(searchStudents, 300);
             });
+
+            // Điều hướng danh sách bằng phím mũi tên
+            document.getElementById('searchStudent').addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    moveSelection(1);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    moveSelection(-1);
+                }
+            });
             
             document.getElementById('semesterFilter').addEventListener('change', () => {
                 if (selectedStudent) {
@@ -663,86 +812,78 @@
             overflow: hidden;
         }
         
-        .panel-header {
-            padding: 16px;
+        .panel-top {
+            padding: 8px 10px;
             border-bottom: 1px solid #e5e7eb;
             background: #f8fafc;
+        }
+        
+        .panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 6px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
-        .panel-header h3 {
-            margin: 0;
-            font-size: 16px;
-            color: #1f2937;
-        }
-        
         .btn-refresh {
-            background: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 6px 10px;
+            background: none;
+            border: none;
             cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-        
-        .btn-refresh:hover {
-            background: #e0e0e0;
-        }
-        
-        .filter-compact {
-            display: flex;
-            gap: 8px;
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .filter-compact select {
-            flex: 1;
-            padding: 8px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
             font-size: 12px;
+            padding: 2px 4px;
+        }
+        
+        .filter-row {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+        
+        .filter-row select {
+            flex: 1;
+            padding: 4px 6px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 11px;
             background: white;
         }
         
-        .search-box {
-            padding: 12px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .search-box input {
+        .search-input {
             width: 100%;
-            padding: 10px 12px;
+            padding: 6px 8px;
             border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 14px;
+            border-radius: 4px;
+            font-size: 12px;
+            box-sizing: border-box;
         }
         
-        .search-box input:focus {
+        .search-input:focus {
             outline: none;
             border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
         }
         
         /* Student List */
         .student-list {
             flex: 1;
             overflow-y: auto;
-            padding: 8px;
+            padding: 4px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            justify-content: flex-start;
         }
         
         .student-item {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 12px;
-            border-radius: 8px;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.15s;
-            margin-bottom: 4px;
         }
         
         .student-item:hover {
@@ -801,7 +942,7 @@
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             overflow-y: auto;
-            padding: 20px;
+            padding: 14px;
         }
         
         .placeholder-state {
@@ -895,8 +1036,8 @@
         
         /* Transcript Table */
         .transcript-table th, .transcript-table td {
-            padding: 10px 8px;
-            font-size: 13px;
+            padding: 8px 6px;
+            font-size: 12px;
         }
         
         .col-avg {
@@ -930,6 +1071,8 @@
         .summary-card.blue { background: #dbeafe; }
         .summary-card.green { background: #d1fae5; }
         .summary-card.yellow { background: #fef3c7; }
+        .summary-card.purple { background: #e9d5ff; }
+        .summary-card.orange { background: #fed7aa; }
         
         .summary-label {
             font-size: 13px;
@@ -945,6 +1088,8 @@
         .summary-card.blue .summary-value { color: #1e40af; }
         .summary-card.green .summary-value { color: #059669; }
         .summary-card.yellow .summary-value { color: #d97706; }
+        .summary-card.purple .summary-value { color: #7c3aed; }
+        .summary-card.orange .summary-value { color: #ea580c; }
         
         /* Print */
         @media print {

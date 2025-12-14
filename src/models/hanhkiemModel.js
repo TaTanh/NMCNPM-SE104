@@ -5,14 +5,20 @@ const HanhKiemModel = {
     getByHocSinh: async (maHocSinh, maNamHoc = null, maHocKy = null) => {
         try {
             let query = `
-                SELECT hk.*, hs.HoTen, nh.TenNamHoc, hky.TenHocKy
+                SELECT hk.*
                 FROM HANHKIEM hk
-                JOIN HOCSINH hs ON hk.MaHocSinh = hs.MaHocSinh
-                JOIN NAMHOC nh ON hk.MaNamHoc = nh.MaNamHoc
-                JOIN HOCKY hky ON hk.MaHocKy = hky.MaHocKy
                 WHERE hk.MaHocSinh = $1
             `;
             const params = [maHocSinh];
+
+            const altHocKy = (() => {
+                if (!maHocKy) return null;
+                const up = String(maHocKy).toUpperCase();
+                if (up === 'HK1') return '1';
+                if (up === 'HK2') return '2';
+                if (up === 'CN' || up === 'NAM') return '0';
+                return null;
+            })();
 
             if (maNamHoc) {
                 query += ` AND hk.MaNamHoc = $${params.length + 1}`;
@@ -20,15 +26,25 @@ const HanhKiemModel = {
             }
 
             if (maHocKy) {
-                query += ` AND hk.MaHocKy = $${params.length + 1}`;
+                query += ` AND (UPPER(hk.MaHocKy) = UPPER($${params.length + 1})`;
                 params.push(maHocKy);
+                if (altHocKy) {
+                    query += ` OR hk.MaHocKy = $${params.length + 1}`;
+                    params.push(altHocKy);
+                }
+                query += ')';
             }
 
             query += ` ORDER BY hk.MaNamHoc DESC, hk.MaHocKy`;
 
+            console.log('getByHocSinh query:', query);
+            console.log('getByHocSinh params:', params);
+
             const result = await pool.query(query, params);
+            console.log('getByHocSinh result:', result.rows);
             return result.rows;
         } catch (error) {
+            console.error('Error in getByHocSinh model:', error);
             throw error;
         }
     },
@@ -36,6 +52,15 @@ const HanhKiemModel = {
     // Lấy hạnh kiểm của cả lớp
     getByLop: async (maLop, maNamHoc, maHocKy) => {
         try {
+            const altHocKy = (() => {
+                if (!maHocKy) return null;
+                const up = String(maHocKy).toUpperCase();
+                if (up === 'HK1') return '1';
+                if (up === 'HK2') return '2';
+                if (up === 'CN' || up === 'NAM') return '0';
+                return null;
+            })();
+
             const query = `
                 SELECT hk.*, hs.HoTen, hs.MaHocSinh
                 FROM HANHKIEM hk
@@ -43,10 +68,11 @@ const HanhKiemModel = {
                 JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
                 WHERE qth.MaLop = $1 
                     AND hk.MaNamHoc = $2 
-                    AND hk.MaHocKy = $3
+                    AND (UPPER(hk.MaHocKy) = UPPER($3) ${altHocKy ? 'OR hk.MaHocKy = $4' : ''})
                 ORDER BY hs.HoTen
             `;
-            const result = await pool.query(query, [maLop, maNamHoc, maHocKy]);
+            const params = altHocKy ? [maLop, maNamHoc, maHocKy, altHocKy] : [maLop, maNamHoc, maHocKy];
+            const result = await pool.query(query, params);
             return result.rows;
         } catch (error) {
             throw error;
@@ -80,6 +106,7 @@ const HanhKiemModel = {
     },
 
     // Nhập hạnh kiểm cho nhiều học sinh cùng lúc (bulk insert)
+    // If xepLoai is null/empty, DELETE the record instead of INSERT/UPDATE
     bulkUpsert: async (hanhKiemList) => {
         const client = await pool.connect();
         try {
@@ -89,18 +116,32 @@ const HanhKiemModel = {
             for (const hk of hanhKiemList) {
                 const { maHocSinh, maNamHoc, maHocKy, diemHanhKiem, xepLoai, ghiChu } = hk;
                 
-                const query = `
-                    INSERT INTO HANHKIEM (MaHocSinh, MaNamHoc, MaHocKy, DiemHanhKiem, XepLoai, GhiChu)
-                    VALUES ($1, $2, $3, $4, $5, $6)
-                    ON CONFLICT (MaHocSinh, MaNamHoc, MaHocKy) 
-                    DO UPDATE SET 
-                        DiemHanhKiem = EXCLUDED.DiemHanhKiem,
-                        XepLoai = EXCLUDED.XepLoai,
-                        GhiChu = EXCLUDED.GhiChu
-                    RETURNING *
-                `;
-                const result = await client.query(query, [maHocSinh, maNamHoc, maHocKy, diemHanhKiem, xepLoai, ghiChu]);
-                results.push(result.rows[0]);
+                // If xepLoai is null/empty, DELETE the record (user cleared it)
+                if (!xepLoai) {
+                    const deleteQuery = `
+                        DELETE FROM HANHKIEM 
+                        WHERE MaHocSinh = $1 AND MaNamHoc = $2 AND MaHocKy = $3
+                        RETURNING *
+                    `;
+                    const result = await client.query(deleteQuery, [maHocSinh, maNamHoc, maHocKy]);
+                    if (result.rows[0]) {
+                        results.push({ ...result.rows[0], _deleted: true });
+                    }
+                } else {
+                    // Otherwise, INSERT/UPDATE the record
+                    const query = `
+                        INSERT INTO HANHKIEM (MaHocSinh, MaNamHoc, MaHocKy, DiemHanhKiem, XepLoai, GhiChu)
+                        VALUES ($1, $2, $3, $4, $5, $6)
+                        ON CONFLICT (MaHocSinh, MaNamHoc, MaHocKy) 
+                        DO UPDATE SET 
+                            DiemHanhKiem = EXCLUDED.DiemHanhKiem,
+                            XepLoai = EXCLUDED.XepLoai,
+                            GhiChu = EXCLUDED.GhiChu
+                        RETURNING *
+                    `;
+                    const result = await client.query(query, [maHocSinh, maNamHoc, maHocKy, diemHanhKiem, xepLoai, ghiChu]);
+                    results.push(result.rows[0]);
+                }
             }
 
             await client.query('COMMIT');
