@@ -8,10 +8,10 @@ const getClassSubjectGrades = async (req, res) => {
         const { hocky, namhoc } = req.query;
         const hk = hocky ? normalizeHocKy(hocky) : null;
 
-        // Nếu là GVBM thì chỉ được xem/sửa môn mình dạy theo phân công
+        // Admin có toàn quyền, GVBM chỉ được xem/sửa môn mình dạy theo phân công
         try {
             const user = req.user;
-            if (user && (user.maVaiTro === 'GVBM' || user.maVaiTro === 'GVCN')) {
+            if (user && (user.vaiTro === 'GVBM' || user.vaiTro === 'GVCN')) {
                 const db = require('../config/db');
                 const permQuery = `
                     SELECT 1 FROM GIANGDAY gd
@@ -27,6 +27,7 @@ const getClassSubjectGrades = async (req, res) => {
                     return res.status(403).json({ error: 'Bạn không có quyền nhập điểm cho môn này trong lớp/học kỳ đã chọn' });
                 }
             }
+            // Admin không cần kiểm tra phân công
         } catch (e) {
             console.warn('Permission check failed:', e.message);
         }
@@ -74,10 +75,10 @@ const getExamTypes = async (req, res) => {
 const updateGrade = async (req, res) => {
     try {
         const { MaBangDiem, MaHocSinh, MaLHKT, Diem } = req.body;
-        // Permission: ensure the requester (GVBM/GVCN) is assigned to this class/subject for the grade sheet
+        // Admin có toàn quyền, GVBM/GVCN phải được phân công
         try {
             const user = req.user;
-            if (user && (user.maVaiTro === 'GVBM' || user.maVaiTro === 'GVCN')) {
+            if (user && (user.vaiTro === 'GVBM' || user.vaiTro === 'GVCN')) {
                 const db = require('../config/db');
                 // Resolve class and subject from MaBangDiem
                 const infoRes = await db.query(
@@ -98,6 +99,7 @@ const updateGrade = async (req, res) => {
                     return res.status(403).json({ error: 'Bạn không có quyền cập nhật điểm cho môn này' });
                 }
             }
+            // Admin không cần kiểm tra phân công
         } catch (e) {
             console.warn('Update permission check failed:', e.message);
         }
@@ -124,10 +126,10 @@ const createGradeSheet = async (req, res) => {
     try {
         const { MaLop, MaMonHoc, MaHocKy, MaNamHoc } = req.body;
         const MaHocKyNormalized = MaHocKy ? normalizeHocKy(MaHocKy) : MaHocKy;
-        // Permission: GVBM/GVCN must be assigned to create/access grade sheet for this class/subject/semester/year
+        // Admin có toàn quyền, GVBM/GVCN phải được phân công
         try {
             const user = req.user;
-            if (user && (user.maVaiTro === 'GVBM' || user.maVaiTro === 'GVCN')) {
+            if (user && (user.vaiTro === 'GVBM' || user.vaiTro === 'GVCN')) {
                 const db = require('../config/db');
                 const permQuery = `
                     SELECT 1 FROM GIANGDAY gd
@@ -140,6 +142,7 @@ const createGradeSheet = async (req, res) => {
                     return res.status(403).json({ error: 'Bạn không có quyền tạo hoặc truy cập bảng điểm môn này' });
                 }
             }
+            // Admin không cần kiểm tra phân công
         } catch (e) {
             console.warn('Create permission check failed:', e.message);
         }

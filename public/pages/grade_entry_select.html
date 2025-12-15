@@ -291,24 +291,41 @@
                     return;
                 }
 
-                // Lấy phân công giảng dạy của lớp theo năm/học kỳ
-                const url = `/api/giangday/lop/${classId}?maNamHoc=${encodeURIComponent(year)}&maHocKy=${encodeURIComponent(semester)}`;
-                const res = await fetch(url, { headers: { 'x-user-id': user.maNguoiDung || user.maNguoidung || '' } });
-                const json = await res.json();
-                const assignments = json && json.data ? json.data : [];
+                let mySubjects;
+                const isAdmin = user.maVaiTro === 'Admin' || user.vaiTro === 'Admin' || 
+                               user.maVaiTro === 'ADMIN' || user.vaiTro === 'ADMIN';
 
-                // Lọc theo giáo viên đăng nhập (GVBM chỉ thấy môn mình dạy)
-                const mySubjects = assignments.filter(a => {
-                    const gvId = a.magiaovien || a.MaGiaoVien;
-                    return String(gvId) === String(user.maNguoiDung || user.maNguoidung);
-                }).map(a => ({
-                    mamonhoc: a.mamonhoc || a.MaMonHoc,
-                    tenmonhoc: a.tenmonhoc || a.TenMonHoc,
-                    heso: a.heso || a.HeSo || 1
-                }));
+                if (isAdmin) {
+                    // Admin: lấy TẤT CẢ môn học (không phụ thuộc vào phân công)
+                    const subjectsRes = await fetch('/api/subjects');
+                    const allSubjects = await subjectsRes.json();
+                    mySubjects = allSubjects.map(s => ({
+                        mamonhoc: s.mamonhoc || s.MaMonHoc,
+                        tenmonhoc: s.tenmonhoc || s.TenMonHoc,
+                        heso: s.heso || s.HeSo || 1
+                    }));
+                } else {
+                    // GVBM: chỉ lấy môn mình được phân công dạy
+                    const url = `/api/giangday/lop/${classId}?maNamHoc=${encodeURIComponent(year)}&maHocKy=${encodeURIComponent(semester)}`;
+                    const res = await fetch(url, { headers: { 'x-user-id': user.maNguoiDung || user.maNguoidung || '' } });
+                    const json = await res.json();
+                    const assignments = json && json.data ? json.data : [];
+                    
+                    mySubjects = assignments.filter(a => {
+                        const gvId = a.magiaovien || a.MaGiaoVien;
+                        return String(gvId) === String(user.maNguoiDung || user.maNguoidung);
+                    }).map(a => ({
+                        mamonhoc: a.mamonhoc || a.MaMonHoc,
+                        tenmonhoc: a.tenmonhoc || a.TenMonHoc,
+                        heso: a.heso || a.HeSo || 1
+                    }));
+                }
 
                 if (mySubjects.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Bạn không có phân công dạy môn nào cho lớp này trong học kỳ/năm học đã chọn</td></tr>';
+                    const message = isAdmin ? 
+                        'Chưa có môn học nào trong hệ thống' : 
+                        'Bạn không có phân công dạy môn nào cho lớp này trong học kỳ/năm học đã chọn';
+                    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">${message}</td></tr>`;
                     return;
                 }
 
