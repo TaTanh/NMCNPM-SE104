@@ -94,12 +94,16 @@ const getDashboardStats = async () => {
     const studentsResult = await pool.query('SELECT COUNT(*) as count FROM HOCSINH');
     const classesResult = await pool.query('SELECT COUNT(*) as count FROM LOP');
     const subjectsResult = await pool.query('SELECT COUNT(*) as count FROM MONHOC');
+    const teachersResult = await pool.query(
+        `SELECT COUNT(*) as count FROM NGUOIDUNG 
+         WHERE MaVaiTro IN ('GVBM', 'GVCN')`
+    );
     
     return {
         students: parseInt(studentsResult.rows[0].count) || 0,
         classes: parseInt(classesResult.rows[0].count) || 0,
         subjects: parseInt(subjectsResult.rows[0].count) || 0,
-        teachers: 0 // Chưa có bảng giáo viên
+        teachers: parseInt(teachersResult.rows[0].count) || 0
     };
 };
 

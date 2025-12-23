@@ -5,6 +5,8 @@
 # Thư mục cài đặt package
 node_modules/
 
+# Thư mục riêng
+claude.md
 # Lock file 
 package-lock.json
 
