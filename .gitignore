@@ -4,7 +4,7 @@
 
 # Thư mục cài đặt package
 node_modules/
-
+server.log
 # Thư mục riêng
 claude.md
 # Lock file 
