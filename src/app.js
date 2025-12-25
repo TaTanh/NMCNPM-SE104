@@ -94,6 +94,9 @@ app.use('/api/teaching-assignments', teachingAssignmentRoutes);
 // ========== DASHBOARD STATS API ==========
 const reportController = require('./controllers/reportController');
 app.get('/api/dashboard/stats', reportController.getDashboardStats);
+app.get('/api/dashboard/stats-by-grade', reportController.getStatsByGrade);
+app.get('/api/dashboard/grade-distribution', reportController.getGradeDistribution);
+app.get('/api/dashboard/recent-activities', reportController.getRecentActivities);
 
 // Trang mặc định: tự mở login
 app.get('/', (req, res) => {

@@ -60,10 +60,47 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+// ========== THỐNG KÊ THEO KHỐI LỚP ==========
+const getStatsByGrade = async (req, res) => {
+    try {
+        const stats = await reportModel.getStatsByGrade();
+        res.json(stats);
+    } catch (err) {
+        console.error('Stats by grade error:', err);
+        res.status(500).json({ error: 'Lỗi lấy thống kê theo khối' });
+    }
+};
+
+// ========== PHÂN BỐ XẾP LOẠI HỌC LỰC ==========
+const getGradeDistribution = async (req, res) => {
+    try {
+        const distribution = await reportModel.getGradeDistribution();
+        res.json(distribution);
+    } catch (err) {
+        console.error('Grade distribution error:', err);
+        res.status(500).json({ error: 'Lỗi lấy phân bố xếp loại' });
+    }
+};
+
+// ========== HOẠT ĐỘNG GẦN ĐÂY ==========
+const getRecentActivities = async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit) || 10;
+        const activities = await reportModel.getRecentActivities(limit);
+        res.json(activities);
+    } catch (err) {
+        console.error('Recent activities error:', err);
+        res.status(500).json({ error: 'Lỗi lấy hoạt động gần đây' });
+    }
+};
+
 module.exports = {
     getSubjectReport,
     getSemesterReport,
     getDashboardStats,
+    getStatsByGrade,
+    getGradeDistribution,
+    getRecentActivities,
     getClassFinalReport: async (req, res) => {
         try {
             const { maLop, namhoc } = req.query;

@@ -80,7 +80,7 @@
                     </select>
                 </div>
 
-                <button class="btn btn-primary" id="btnLoadSummary">📊 Xem tổng kết</button>
+                <button class="btn btn-primary" id="btnLoadSummary">Xem tổng kết</button>
             </div>
 
             <!-- Empty state -->
@@ -105,7 +105,7 @@
 
                 <!-- Quick statistics -->
                 <div class="section-card">
-                    <h4>📊 Thống kê nhanh</h4>
+                    <h4>Thống kê nhanh</h4>
                     <div style="display:flex;gap:1rem;flex-wrap:wrap;">
                         <div class="stat-box">
                             <div class="stat-label">Điểm TB lớp</div>
@@ -159,10 +159,11 @@
                                     <th>ĐTB</th>
                                     <th>Xếp loại</th>
                                     <th>Hạnh kiểm</th>
+                                    <th>Danh hiệu</th>
                                 </tr>
                             </thead>
                             <tbody id="studentRankingBody">
-                                <tr><td colspan="6" class="text-center">Chưa có dữ liệu</td></tr>
+                                <tr><td colspan="7" class="text-center">Chưa có dữ liệu</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -449,6 +450,24 @@
                     }
                 };
 
+                // Fetch hạnh kiểm for all students
+                const hanhkiemMap = {}; // MaHocSinh -> { diemhanhkiem, xeploai }
+                try {
+                    const hkRes = await fetch(`/api/hanhkiem/lop/${classId}?maNamHoc=${yearId}&maHocKy=${semesterId}`);
+                    const hkData = await hkRes.json();
+                    if (hkData.success && hkData.data) {
+                        hkData.data.forEach(row => {
+                            const mhs = row.mahocsinh || row.MaHocSinh;
+                            hanhkiemMap[mhs] = {
+                                diem: row.diemhanhkiem || row.DiemHanhKiem || 0,
+                                xeploai: row.xeploai || row.XepLoai || '-'
+                            };
+                        });
+                    }
+                } catch (err) {
+                    console.error('Error loading hanhkiem:', err);
+                }
+
                 // Nếu chọn cả năm: lấy HK1 + HK2 và gộp
                 const allGrades = await Promise.all(students.map(async (student) => {
                     if (semesterId === 'CN') {
@@ -480,6 +499,7 @@
                     const avgScore = subjectCount ? totalScore / subjectCount : null;
                     const passedCount = subjectAverages.filter(v => v >= 5).length;
 
+                    // Tính học lực (ranking)
                     let ranking = '-';
                     if (avgScore !== null) {
                         if (avgScore >= 8) ranking = 'Giỏi';
@@ -488,11 +508,30 @@
                         else ranking = 'Yếu';
                     }
 
+                    // Lấy hạnh kiểm
+                    const hkInfo = hanhkiemMap[student.mahocsinh] || { diem: 0, xeploai: '-' };
+                    
+                    // Tính danh hiệu = min(học lực, hạnh kiểm)
+                    const rankOrder = { 'Giỏi': 4, 'Khá': 3, 'Trung bình': 2, 'Yếu': 1, 'Kém': 0, '-': -1 };
+                    const hkOrder = { 'Tốt': 4, 'Khá': 3, 'Trung bình': 2, 'Yếu': 1, 'Kém': 0, '-': -1 };
+                    
+                    let danhHieu = '-';
+                    if (ranking !== '-' && hkInfo.xeploai !== '-') {
+                        const minOrder = Math.min(rankOrder[ranking] || 0, hkOrder[hkInfo.xeploai] || 0);
+                        if (minOrder === 4) danhHieu = 'Giỏi';
+                        else if (minOrder === 3) danhHieu = 'Khá';
+                        else if (minOrder === 2) danhHieu = 'Trung bình';
+                        else if (minOrder === 1) danhHieu = 'Yếu';
+                        else danhHieu = 'Kém';
+                    }
+
                     return {
                         mahocsinh: student.mahocsinh,
                         hoten: student.hoten,
                         avgScore,
                         ranking,
+                        hanhkiem: hkInfo.xeploai,
+                        danhHieu,
                         passedCount,
                         totalSubjects: subjectCount
                     };
@@ -522,7 +561,8 @@
                                 <td>${s.hoten}</td>
                                 <td>${s.avgScore !== null ? s.avgScore.toFixed(2) : '-'}</td>
                                 <td>${s.ranking}</td>
-                                <td>-</td>
+                                <td>${s.hanhkiem}</td>
+                                <td><strong>${s.danhHieu}</strong></td>
                             </tr>
                         `)
                         .join('');

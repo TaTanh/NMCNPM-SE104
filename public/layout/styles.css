@@ -169,6 +169,21 @@ body {
     box-shadow: 0 5px 14px rgba(37, 99, 235, 0.55);
 }
 
+.btn-success {
+    background-color: #0f766e;
+    color: #ffffff;
+    box-shadow: 0 10px 24px rgba(15, 118, 110, 0.45);
+}
+
+.btn-success:hover {
+    background-color: #0d615b;
+}
+
+.btn-success:active {
+    transform: translateY(1px);
+    box-shadow: 0 5px 14px rgba(15, 118, 110, 0.45);
+}
+
 /* Nút primary trong card login full width */
 .auth-card .btn-primary {
     width: 100%;

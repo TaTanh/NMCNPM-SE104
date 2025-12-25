@@ -107,10 +107,89 @@ const getDashboardStats = async () => {
     };
 };
 
-module.exports = {
-    getSubjectReport,
-    getSemesterReport,
-    getDashboardStats
+// ========== THỐNG KÊ THEO KHỐI LỚP ==========
+const getStatsByGrade = async () => {
+    const result = await pool.query(`
+        SELECT 
+            kl.MaKhoiLop,
+            kl.TenKhoiLop,
+            COUNT(DISTINCT l.MaLop) as SoLuongLop,
+            COUNT(DISTINCT hs.MaHocSinh) as SoLuongHocSinh,
+            COALESCE(ROUND(AVG(l.SiSo), 0), 0) as SiSoTrungBinh
+        FROM KHOILOP kl
+        LEFT JOIN LOP l ON kl.MaKhoiLop = l.MaKhoiLop
+        LEFT JOIN QUATRINHHOC qth ON l.MaLop = qth.MaLop
+        LEFT JOIN HOCSINH hs ON qth.MaHocSinh = hs.MaHocSinh
+        GROUP BY kl.MaKhoiLop, kl.TenKhoiLop
+        ORDER BY kl.MaKhoiLop
+    `);
+    
+    return result.rows;
+};
+
+// ========== PHÂN BỐ XẾP LOẠI HỌC LỰC (NĂM HỌC HIỆN TẠI) ==========
+const getGradeDistribution = async () => {
+    // ULTRA SIMPLE - Chỉ tính AVG tất cả điểm của học sinh
+    const result = await pool.query(`
+        WITH DiemTrungBinh AS (
+            SELECT 
+                ct.MaHocSinh,
+                AVG(ct.Diem) as DiemTB
+            FROM CT_BANGDIEMMON_HOCSINH ct
+            JOIN BANGDIEMMON bdm ON ct.MaBangDiem = bdm.MaBangDiem
+            JOIN LOP l ON bdm.MaLop = l.MaLop
+            WHERE l.MaNamHoc = '2024-2025'
+            GROUP BY ct.MaHocSinh
+            HAVING COUNT(*) > 0
+        ),
+        XepLoai AS (
+            SELECT 
+                CASE 
+                    WHEN DiemTB >= 8.0 THEN 'Giỏi'
+                    WHEN DiemTB >= 6.5 THEN 'Khá'
+                    WHEN DiemTB >= 5.0 THEN 'Trung bình'
+                    WHEN DiemTB >= 3.5 THEN 'Yếu'
+                    ELSE 'Kém'
+                END as XepLoaiHocLuc
+            FROM DiemTrungBinh
+        )
+        SELECT 
+            XepLoaiHocLuc,
+            COUNT(*) as SoLuong,
+            ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM XepLoai), 1) as TiLe
+        FROM XepLoai
+        GROUP BY XepLoaiHocLuc
+        ORDER BY 
+            CASE XepLoaiHocLuc
+                WHEN 'Giỏi' THEN 1
+                WHEN 'Khá' THEN 2
+                WHEN 'Trung bình' THEN 3
+                WHEN 'Yếu' THEN 4
+                WHEN 'Kém' THEN 5
+            END
+    `);
+    
+    return result.rows;
+};
+
+// ========== HOẠT ĐỘNG GẦN ĐÂY (AUDIT LOG) ==========
+const getRecentActivities = async (limit = 10) => {
+    const result = await pool.query(`
+        SELECT 
+            nk.id,
+            nk.HanhDong,
+            nk.BangMuc,
+            nk.MaDoiTuong,
+            nk.NgayTao,
+            nd.HoTen as NguoiThucHien,
+            nd.MaVaiTro
+        FROM NHATKY nk
+        LEFT JOIN NGUOIDUNG nd ON nk.MaNguoiDung = nd.MaNguoiDung
+        ORDER BY nk.NgayTao DESC
+        LIMIT $1
+    `, [limit]);
+    
+    return result.rows;
 };
 
 // ========== BÁO CÁO TỔNG KẾT THEO LỚP (HK1/HK2/CẢ NĂM) ==========
@@ -166,9 +245,30 @@ const getClassFinalReport = async (maLop, maNamHoc, maHocKy = null) => {
                           AND ct.MaHocSinh = hs.MaHocSinh
                     ), 0) * 2.0
                 ) / 3.0 AS NUMERIC), 2) AS DiemTBNam,
+            hk1.DiemHanhKiem AS DiemHanhKiemHK1,
             hk1.XepLoai AS HanhKiemHK1,
+            hk2.DiemHanhKiem AS DiemHanhKiemHK2,
             hk2.XepLoai AS HanhKiemHK2,
-            hkcn.XepLoai AS HanhKiemCN
+            -- Tính điểm hạnh kiểm cả năm: (HK1 + HK2) / 2
+            ROUND(CAST(
+                (COALESCE(hk1.DiemHanhKiem, 0) + COALESCE(hk2.DiemHanhKiem, 0)) / 2.0 
+                AS NUMERIC), 2) AS DiemHanhKiemCN,
+            -- Xếp loại hạnh kiểm cả năm theo điểm TB
+            CASE
+                WHEN ROUND(CAST(
+                    (COALESCE(hk1.DiemHanhKiem, 0) + COALESCE(hk2.DiemHanhKiem, 0)) / 2.0 
+                    AS NUMERIC), 2) >= 80 THEN N'Tốt'
+                WHEN ROUND(CAST(
+                    (COALESCE(hk1.DiemHanhKiem, 0) + COALESCE(hk2.DiemHanhKiem, 0)) / 2.0 
+                    AS NUMERIC), 2) >= 65 THEN N'Khá'
+                WHEN ROUND(CAST(
+                    (COALESCE(hk1.DiemHanhKiem, 0) + COALESCE(hk2.DiemHanhKiem, 0)) / 2.0 
+                    AS NUMERIC), 2) >= 50 THEN N'Trung bình'
+                WHEN ROUND(CAST(
+                    (COALESCE(hk1.DiemHanhKiem, 0) + COALESCE(hk2.DiemHanhKiem, 0)) / 2.0 
+                    AS NUMERIC), 2) >= 20 THEN N'Yếu'
+                ELSE N'Kém'
+            END AS HanhKiemCN
         FROM HOCSINH hs
         JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
         JOIN LOP l ON qth.MaLop = l.MaLop
@@ -179,9 +279,6 @@ const getClassFinalReport = async (maLop, maNamHoc, maHocKy = null) => {
         LEFT JOIN HANHKIEM hk2 ON hk2.MaHocSinh = hs.MaHocSinh 
             AND hk2.MaNamHoc = $2 
             AND hk2.MaHocKy = 'HK2'
-        LEFT JOIN HANHKIEM hkcn ON hkcn.MaHocSinh = hs.MaHocSinh 
-            AND hkcn.MaNamHoc = $2 
-            AND hkcn.MaHocKy = 'CN'
         WHERE qth.MaLop = $1 AND l.MaNamHoc = $2
         ORDER BY hs.HoTen, mh.TenMonHoc
     `;
@@ -189,8 +286,6 @@ const getClassFinalReport = async (maLop, maNamHoc, maHocKy = null) => {
     const result = await pool.query(query, [maLop, maNamHoc]);
     return result.rows;
 };
-
-module.exports.getClassFinalReport = getClassFinalReport;
 
 // ========== LẤY ĐIỂM TK & HỌC LỰC CHO NHẬP HẠNH KIỂM ==========
 const getStudentScoresForHanhKiem = async (maLop, maNamHoc, maHocKy) => {
@@ -255,4 +350,14 @@ const getStudentScoresForHanhKiem = async (maLop, maNamHoc, maHocKy) => {
     return result.rows;
 };
 
-module.exports.getStudentScoresForHanhKiem = getStudentScoresForHanhKiem;
+// ========== EXPORTS ==========
+module.exports = {
+    getSubjectReport,
+    getSemesterReport,
+    getDashboardStats,
+    getStatsByGrade,
+    getGradeDistribution,
+    getRecentActivities,
+    getClassFinalReport,
+    getStudentScoresForHanhKiem
+};

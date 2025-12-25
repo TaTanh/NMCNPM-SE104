@@ -9,9 +9,9 @@
 -- =====================================================
 
 -- ========== THÊM CỘT ĐIỂM HẠNH KIỂM VÀO BẢNG HANHKIEM ==========
--- Điểm hạnh kiểm: >= 80 => Tốt, >= 65 => Khá, >= 50 => Trung bình, < 50 => Yếu (thang 100)
+-- Điểm hạnh kiểm: >= 80 => Tốt, >= 65 => Khá, >= 50 => Trung bình, < 50 => Yếu (thang 100, số nguyên)
 ALTER TABLE HANHKIEM DROP COLUMN IF EXISTS DiemHanhKiem;
-ALTER TABLE HANHKIEM ADD COLUMN DiemHanhKiem DECIMAL(5,2) CHECK (DiemHanhKiem >= 0 AND DiemHanhKiem <= 100);
+ALTER TABLE HANHKIEM ADD COLUMN DiemHanhKiem INTEGER CHECK (DiemHanhKiem >= 0 AND DiemHanhKiem <= 100);
 
 -- ========== FUNCTION: Generate random họ tên ==========
 CREATE OR REPLACE FUNCTION random_ho() RETURNS TEXT AS $$
@@ -119,29 +119,29 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ========== FUNCTION: Generate random điểm hạnh kiểm (0-100) ==========
-CREATE OR REPLACE FUNCTION random_diem_hanh_kiem() RETURNS DECIMAL AS $$
+CREATE OR REPLACE FUNCTION random_diem_hanh_kiem() RETURNS INTEGER AS $$
 DECLARE
-    diem DECIMAL;
+    diem INTEGER;
     rand_val DECIMAL;
 BEGIN
     -- Phân bố hạnh kiểm: 70% Tốt (>=80), 20% Khá (65-80), 7% TB (50-65), 3% Yếu (<50)
     rand_val := random();
     diem := CASE 
-        WHEN rand_val < 0.70 THEN 80 + (random() * 20)  -- 70% Tốt (80-100)
-        WHEN rand_val < 0.90 THEN 65 + (random() * 15)  -- 20% Khá (65-80)
-        WHEN rand_val < 0.97 THEN 50 + (random() * 15)  -- 7% TB (50-65)
-        ELSE 30 + (random() * 20)                       -- 3% Yếu (30-50)
+        WHEN rand_val < 0.70 THEN 80 + floor(random() * 21)::INTEGER  -- 70% Tốt (80-100)
+        WHEN rand_val < 0.90 THEN 65 + floor(random() * 16)::INTEGER  -- 20% Khá (65-80)
+        WHEN rand_val < 0.97 THEN 50 + floor(random() * 16)::INTEGER  -- 7% TB (50-65)
+        ELSE 30 + floor(random() * 21)::INTEGER                       -- 3% Yếu (30-50)
     END;
     -- Đảm bảo điểm không vượt quá 100
     IF diem > 100 THEN
         diem := 100;
     END IF;
-    RETURN ROUND(diem::NUMERIC, 2);
+    RETURN diem;
 END;
 $$ LANGUAGE plpgsql;
 
 -- ========== FUNCTION: Tính xếp loại hạnh kiểm từ điểm ==========
-CREATE OR REPLACE FUNCTION tinh_xep_loai_hanh_kiem(diem DECIMAL) RETURNS TEXT AS $$
+CREATE OR REPLACE FUNCTION tinh_xep_loai_hanh_kiem(diem INTEGER) RETURNS TEXT AS $$
 BEGIN
     RETURN CASE 
         WHEN diem >= 80 THEN 'Tốt'
@@ -350,7 +350,7 @@ DECLARE
     so_cot_tx INT;
     mon_list TEXT[] := ARRAY['TOAN', 'VAN', 'ANH', 'LY', 'HOA', 'SINH', 'SU', 'DIA', 'GDCD'];
     hocky_list TEXT[] := ARRAY['HK1', 'HK2'];
-    diem_hk DECIMAL;
+    diem_hk INTEGER;
     xep_loai_hk TEXT;
     count_hs INT := 0;
     i INT;
@@ -450,7 +450,7 @@ DROP FUNCTION IF EXISTS random_dia_chi();
 DROP FUNCTION IF EXISTS random_sdt();
 DROP FUNCTION IF EXISTS random_diem();
 DROP FUNCTION IF EXISTS random_diem_hanh_kiem();
-DROP FUNCTION IF EXISTS tinh_xep_loai_hanh_kiem(DECIMAL);
+DROP FUNCTION IF EXISTS tinh_xep_loai_hanh_kiem(INTEGER);
 
 -- ========== THỐNG KÊ ==========
 SELECT 'Tổng số học sinh: ' || COUNT(*) as ThongKe FROM HOCSINH WHERE MaHocSinh LIKE 'HS01%';
