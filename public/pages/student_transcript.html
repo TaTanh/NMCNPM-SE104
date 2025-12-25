@@ -391,11 +391,11 @@
                 const response = await fetch(url);
                 const allGrades = await response.json();
                 
-                // Load hạnh kiểm
-                await loadHanhKiem(maHocSinh, semester);
-                
-                // Render theo học kỳ được chọn
+                // Render điểm TRƯỚC (để hiển thị xếp loại học lực)
                 renderTranscript(allGrades, semester);
+                
+                // Load hạnh kiểm SAU và tính lại danh hiệu
+                await loadHanhKiem(maHocSinh, semester);
             } catch (error) {
                 console.error('Lỗi load điểm:', error);
                 document.getElementById('transcriptBody').innerHTML = 
@@ -603,8 +603,7 @@
                 document.getElementById('ranking').textContent = ranking;
                 document.getElementById('passedSubjects').textContent = `${passedCount}/${countAvg}`;
                 
-                // Xét danh hiệu theo TT58
-                updateDanhHieu(ranking);
+                // KHÔNG gọi updateDanhHieu() ở đây - sẽ gọi sau khi load xong hạnh kiểm
             } else {
                 document.getElementById('avgScore').textContent = '-';
                 document.getElementById('ranking').textContent = '-';
@@ -693,8 +692,7 @@
                 document.getElementById('ranking').textContent = ranking;
                 document.getElementById('passedSubjects').textContent = `${passedCount}/${countYearAvg}`;
                 
-                // Xét danh hiệu theo TT58
-                updateDanhHieu(ranking.replace(' ⭐', '').replace(' (không đạt HS Giỏi)', ''));
+                // KHÔNG gọi updateDanhHieu() ở đây - sẽ gọi sau khi load xong hạnh kiểm
             } else {
                 document.getElementById('avgScore').textContent = '-';
                 document.getElementById('ranking').textContent = '-';
@@ -710,16 +708,55 @@
             return 'rate-low';
         }
         
+        /**
+         * Tính danh hiệu theo quy định TT 58/2011/TT-BGDĐT (NGHIÊM NGẶT)
+         * 
+         * Học sinh Giỏi: 
+         *   - Học lực Giỏi + Hạnh kiểm Tốt (CHẶT CHẼ - CHỈ Tốt mới được)
+         * 
+         * Học sinh Khá:
+         *   - Học lực Giỏi + Hạnh kiểm Khá (không đạt HS Giỏi vì HK không Tốt)
+         *   - Học lực Khá + Hạnh kiểm Tốt
+         *   - Học lực Khá + Hạnh kiểm Khá
+         * 
+         * Học sinh Trung bình:
+         *   - Học lực TB + Hạnh kiểm Tốt
+         *   - Học lực TB + Hạnh kiểm Khá
+         * 
+         * Học sinh Yếu: Các trường hợp còn lại
+         */
         function updateDanhHieu(hocLuc) {
             const hanhKiem = document.getElementById('hanhkiem').textContent.trim();
             let danhHieu = '-';
             
-            if (hanhKiem && hanhKiem !== '-') {
-                if (hocLuc === 'Giỏi' && hanhKiem === 'Tốt') {
-                    danhHieu = 'Học sinh giỏi';
-                } else if (hocLuc === 'Khá' && hanhKiem === 'Tốt') {
-                    danhHieu = 'Học sinh tiến tiến';
-                }
+            // Nếu không có hạnh kiểm hoặc học lực, không tính danh hiệu
+            if (!hanhKiem || hanhKiem === '-' || !hocLuc || hocLuc === '-') {
+                document.getElementById('danhhieu').textContent = danhHieu;
+                return;
+            }
+            
+            // Chuẩn hóa xếp loại (bỏ các ký tự đặc biệt)
+            const hl = hocLuc.replace(' ⭐', '').replace(' (không đạt HS Giỏi)', '').trim();
+            const hk = hanhKiem.trim();
+            
+            // Xét danh hiệu theo quy định TT 58/2011 (NGHIÊM NGẶT)
+            if (hl === 'Giỏi' && hk === 'Tốt') {
+                // CHỈ Giỏi + Tốt mới được HS Giỏi
+                danhHieu = 'Học sinh giỏi';
+            } else if (
+                (hl === 'Giỏi' && hk === 'Khá') ||  // Giỏi + Khá → Khá (do HK không Tốt)
+                (hl === 'Khá' && hk === 'Tốt') ||   // Khá + Tốt → Khá
+                (hl === 'Khá' && hk === 'Khá')      // Khá + Khá → Khá
+            ) {
+                danhHieu = 'Học sinh khá';
+            } else if (
+                (hl === 'TB' && hk === 'Tốt') ||    // TB + Tốt → TB
+                (hl === 'TB' && hk === 'Khá')       // TB + Khá → TB
+            ) {
+                danhHieu = 'Học sinh trung bình';
+            } else {
+                // Các trường hợp còn lại: Yếu + bất kỳ, hoặc bất kỳ + TB/Yếu/Kém
+                danhHieu = 'Học sinh yếu';
             }
             
             document.getElementById('danhhieu').textContent = danhHieu;

@@ -290,9 +290,9 @@
         async function loadFilters() {
             try {
                 const [yearsRes, semestersRes, gradesRes] = await Promise.all([
-                    fetch('/api/settings/school-years'),
-                    fetch('/api/settings/semesters'),
-                    fetch('/api/settings/grade-levels')
+                    authFetch('/api/settings/school-years'),
+                    authFetch('/api/settings/semesters'),
+                    authFetch('/api/settings/grade-levels')
                 ]);
                 
                 const years = await yearsRes.json();
@@ -312,8 +312,6 @@
                     const option = new Option(sem.tenhocky, sem.mahocky);
                     semSelect.appendChild(option);
                 });
-                // Thêm lựa chọn cả năm
-                semSelect.appendChild(new Option('Cả năm (HK1 + HK2)', 'CN'));
                 
                 // Populate grade filter
                 const gradeSelect = document.getElementById('gradeFilter');
@@ -341,7 +339,7 @@
             }
             
             try {
-                const res = await fetch(`/api/classes?khoi=${gradeId}`);
+                const res = await authFetch(`/api/classes?khoi=${gradeId}`);
                 const classList = await res.json();
                 
                 classList.forEach(cls => {
@@ -372,8 +370,8 @@
                 
                 // Fetch class data and student list
                 const [classRes, studentsRes] = await Promise.all([
-                    fetch(`/api/classes/${classId}`),
-                    fetch(`/api/classes/${classId}/students`)
+                    authFetch(`/api/classes/${classId}`),
+                    authFetch(`/api/classes/${classId}/students`)
                 ]);
                 
                 const classData = await classRes.json();
@@ -385,8 +383,7 @@
                 document.getElementById('homeRoomTeacher').textContent = classData.tengvcn || 'Chưa có';
                 document.getElementById('totalStudents').textContent = students.length;
                 
-                // Load behavior stats and academic performance
-                await loadBehaviorStats(classId, year, semester);
+                // Load academic performance (will also calculate behavior stats from hanhkiemMap)
                 await loadAcademicPerformance(classId, year, semester, students);
                 
             } catch (err) {
@@ -400,34 +397,26 @@
         // Load behavior statistics for class
         async function loadBehaviorStats(classId, yearId, semesterId) {
             try {
-                // Nếu chọn cả năm: lấy HK1 + HK2 rồi gộp
+                // Nếu chọn cả năm: tính dựa trên dữ liệu đã gộp trong loadAcademicPerformance
                 if (semesterId === 'CN') {
-                    const [hk1Res, hk2Res] = await Promise.all([
-                        fetch(`/api/hanhkiem/thongke/lop/${classId}?maNamHoc=${yearId}&maHocKy=HK1`),
-                        fetch(`/api/hanhkiem/thongke/lop/${classId}?maNamHoc=${yearId}&maHocKy=HK2`)
-                    ]);
-                    const hk1 = await hk1Res.json();
-                    const hk2 = await hk2Res.json();
-
-                    const good1 = hk1?.data?.tot || 0;
-                    const good2 = hk2?.data?.tot || 0;
-                    const total1 = hk1?.data?.tongSoHocSinh || 0;
-                    const total2 = hk2?.data?.tongSoHocSinh || 0;
-
-                    const totalStudents = Math.max(total1, total2);
-                    const goodAvg = Math.round((good1 + good2) / ( (total1?1:0) + (total2?1:0) || 1));
-                    document.getElementById('goodBehaviorCount').textContent = `${goodAvg}/${totalStudents}`;
+                    // Tạm thời hiển thị placeholder, sẽ được cập nhật sau
+                    document.getElementById('goodBehaviorCount').textContent = '-';
                     return;
                 }
 
-                const res = await fetch(`/api/hanhkiem/thongke/lop/${classId}?maNamHoc=${yearId}&maHocKy=${semesterId}`);
+                const res = await authFetch(`/api/hanhkiem/thongke/lop/${classId}?maNamHoc=${yearId}&maHocKy=${semesterId}`);
                 const result = await res.json();
+                
+                console.log('🔍 DEBUG Hạnh kiểm thống kê API response:', result);
+                console.log('🔍 DEBUG result.data:', result.data);
                 
                 if (result.data) {
                     const goodCount = result.data.tot || 0;
                     const totalStudents = result.data.tongSoHocSinh || 0;
+                    console.log('🔍 DEBUG goodCount:', goodCount, 'totalStudents:', totalStudents);
                     document.getElementById('goodBehaviorCount').textContent = `${goodCount}/${totalStudents}`;
                 } else {
+                    console.log('⚠️ DEBUG result.data is falsy, setting 0/0');
                     document.getElementById('goodBehaviorCount').textContent = '0/0';
                 }
             } catch (err) {
@@ -443,7 +432,7 @@
                 const fetchStudentGrades = async (studentId, semId) => {
                     const url = semId ? `/api/grades/student/${studentId}?hocky=${semId}` : `/api/grades/student/${studentId}`;
                     try {
-                        const res = await fetch(url);
+                        const res = await authFetch(url);
                         return await res.json();
                     } catch {
                         return [];
@@ -453,20 +442,93 @@
                 // Fetch hạnh kiểm for all students
                 const hanhkiemMap = {}; // MaHocSinh -> { diemhanhkiem, xeploai }
                 try {
-                    const hkRes = await fetch(`/api/hanhkiem/lop/${classId}?maNamHoc=${yearId}&maHocKy=${semesterId}`);
-                    const hkData = await hkRes.json();
-                    if (hkData.success && hkData.data) {
-                        hkData.data.forEach(row => {
-                            const mhs = row.mahocsinh || row.MaHocSinh;
-                            hanhkiemMap[mhs] = {
-                                diem: row.diemhanhkiem || row.DiemHanhKiem || 0,
-                                xeploai: row.xeploai || row.XepLoai || '-'
-                            };
+                    if (semesterId === 'CN') {
+                        // Cả năm: lấy cả HK1 và HK2, chọn xếp loại thấp hơn
+                        const [hk1Res, hk2Res] = await Promise.all([
+                            authFetch(`/api/hanhkiem/lop/${classId}?maNamHoc=${yearId}&maHocKy=HK1`),
+                            authFetch(`/api/hanhkiem/lop/${classId}?maNamHoc=${yearId}&maHocKy=HK2`)
+                        ]);
+                        const hk1Data = await hk1Res.json();
+                        const hk2Data = await hk2Res.json();
+                        console.log('🔍 DEBUG HK1 Data:', hk1Data);
+                        console.log('🔍 DEBUG HK2 Data:', hk2Data);
+                        
+                        // Map HK1
+                        const hk1Map = {};
+                        if (hk1Data.success && hk1Data.data) {
+                            hk1Data.data.forEach(row => {
+                                const mhs = row.mahocsinh || row.MaHocSinh;
+                                hk1Map[mhs] = {
+                                    diem: row.diemhanhkiem || row.DiemHanhKiem || 0,
+                                    xeploai: row.xeploai || row.XepLoai || '-'
+                                };
+                            });
+                        }
+                        
+                        // Map HK2
+                        const hk2Map = {};
+                        if (hk2Data.success && hk2Data.data) {
+                            hk2Data.data.forEach(row => {
+                                const mhs = row.mahocsinh || row.MaHocSinh;
+                                hk2Map[mhs] = {
+                                    diem: row.diemhanhkiem || row.DiemHanhKiem || 0,
+                                    xeploai: row.xeploai || row.XepLoai || '-'
+                                };
+                            });
+                        }
+                        
+                        // Gộp: Chọn xếp loại thấp hơn (theo TT 58/2011)
+                        const xepLoaiOrder = { 'Tốt': 4, 'Khá': 3, 'Trung bình': 2, 'Yếu': 1, '-': 0 };
+                        students.forEach(student => {
+                            const mhs = student.mahocsinh;
+                            const hk1Info = hk1Map[mhs];
+                            const hk2Info = hk2Map[mhs];
+                            
+                            if (hk1Info && hk2Info) {
+                                // Chọn xếp loại thấp hơn
+                                const minOrder = Math.min(xepLoaiOrder[hk1Info.xeploai] || 0, xepLoaiOrder[hk2Info.xeploai] || 0);
+                                let xeploaiCN = '-';
+                                if (minOrder === 4) xeploaiCN = 'Tốt';
+                                else if (minOrder === 3) xeploaiCN = 'Khá';
+                                else if (minOrder === 2) xeploaiCN = 'Trung bình';
+                                else if (minOrder === 1) xeploaiCN = 'Yếu';
+                                
+                                hanhkiemMap[mhs] = {
+                                    diem: Math.round((hk1Info.diem + hk2Info.diem) / 2),
+                                    xeploai: xeploaiCN
+                                };
+                            } else if (hk1Info) {
+                                hanhkiemMap[mhs] = hk1Info;
+                            } else if (hk2Info) {
+                                hanhkiemMap[mhs] = hk2Info;
+                            }
                         });
+                    } else {
+                        // Chỉ 1 học kỳ
+                        const hkRes = await authFetch(`/api/hanhkiem/lop/${classId}?maNamHoc=${yearId}&maHocKy=${semesterId}`);
+                        const hkData = await hkRes.json();
+                        console.log('🔍 DEBUG Single Semester HK Data:', hkData);
+                        if (hkData.success && hkData.data) {
+                            hkData.data.forEach(row => {
+                                const mhs = row.mahocsinh || row.MaHocSinh;
+                                hanhkiemMap[mhs] = {
+                                    diem: row.diemhanhkiem || row.DiemHanhKiem || 0,
+                                    xeploai: row.xeploai || row.XepLoai || '-'
+                                };
+                            });
+                        }
                     }
                 } catch (err) {
                     console.error('Error loading hanhkiem:', err);
                 }
+                
+                console.log('🔍 DEBUG Final hanhkiemMap:', hanhkiemMap);
+                console.log('🔍 DEBUG Students sample:', students.slice(0, 3).map(s => s.mahocsinh));
+                
+                // Tính thống kê hạnh kiểm tốt từ hanhkiemMap (cho cả HK1, HK2, và CN)
+                const goodCount = Object.values(hanhkiemMap).filter(hk => hk.xeploai === 'Tốt').length;
+                document.getElementById('goodBehaviorCount').textContent = `${goodCount}/${students.length}`;
+                console.log('✅ DEBUG Hạnh kiểm tốt:', goodCount, '/', students.length);
 
                 // Nếu chọn cả năm: lấy HK1 + HK2 và gộp
                 const allGrades = await Promise.all(students.map(async (student) => {
@@ -511,18 +573,31 @@
                     // Lấy hạnh kiểm
                     const hkInfo = hanhkiemMap[student.mahocsinh] || { diem: 0, xeploai: '-' };
                     
-                    // Tính danh hiệu = min(học lực, hạnh kiểm)
-                    const rankOrder = { 'Giỏi': 4, 'Khá': 3, 'Trung bình': 2, 'Yếu': 1, 'Kém': 0, '-': -1 };
-                    const hkOrder = { 'Tốt': 4, 'Khá': 3, 'Trung bình': 2, 'Yếu': 1, 'Kém': 0, '-': -1 };
-                    
+                    // Tính danh hiệu theo TT 58/2011 (logic từ reportModel.js)
                     let danhHieu = '-';
                     if (ranking !== '-' && hkInfo.xeploai !== '-') {
-                        const minOrder = Math.min(rankOrder[ranking] || 0, hkOrder[hkInfo.xeploai] || 0);
-                        if (minOrder === 4) danhHieu = 'Giỏi';
-                        else if (minOrder === 3) danhHieu = 'Khá';
-                        else if (minOrder === 2) danhHieu = 'Trung bình';
-                        else if (minOrder === 1) danhHieu = 'Yếu';
-                        else danhHieu = 'Kém';
+                        // Học sinh Giỏi: CHÍNH XÁC Giỏi (>=8.0) + Hạnh kiểm Tốt
+                        if (ranking === 'Giỏi' && hkInfo.xeploai === 'Tốt') {
+                            danhHieu = 'Học sinh Giỏi';
+                        }
+                        // Học sinh Khá: (Giỏi + Khá) OR (Khá + Tốt) OR (Khá + Khá)
+                        else if (
+                            (ranking === 'Giỏi' && hkInfo.xeploai === 'Khá') ||
+                            (ranking === 'Khá' && (hkInfo.xeploai === 'Tốt' || hkInfo.xeploai === 'Khá'))
+                        ) {
+                            danhHieu = 'Học sinh Khá';
+                        }
+                        // Học sinh Trung bình: (Giỏi + TB) OR (TB + Tốt) OR (TB + Khá)
+                        else if (
+                            (ranking === 'Giỏi' && hkInfo.xeploai === 'Trung bình') ||
+                            (ranking === 'Trung bình' && (hkInfo.xeploai === 'Tốt' || hkInfo.xeploai === 'Khá'))
+                        ) {
+                            danhHieu = 'Học sinh Trung bình';
+                        }
+                        // Tất cả trường hợp còn lại
+                        else {
+                            danhHieu = 'Học sinh Yếu';
+                        }
                     }
 
                     return {
@@ -533,7 +608,8 @@
                         hanhkiem: hkInfo.xeploai,
                         danhHieu,
                         passedCount,
-                        totalSubjects: subjectCount
+                        totalSubjects: subjectCount,
+                        isPassed: subjectCount > 0 && passedCount === subjectCount // Đạt khi không có môn nào dưới 5
                     };
                 });
 
@@ -547,7 +623,7 @@
                 document.getElementById('excellentCount').textContent = 
                     `${validScores.filter(s => s.avgScore >= 8).length}/${students.length}`;
                 document.getElementById('passedCount').textContent =
-                    `${validScores.filter(s => s.avgScore >= 5).length}/${students.length}`;
+                    `${studentStats.filter(s => s.isPassed).length}/${students.length}`;
 
                 // Render bảng xếp hạng HS
                 const tbody = document.getElementById('studentRankingBody');

@@ -1,5 +1,59 @@
 const pool = require('../config/db');
 
+// ========== HELPER: TÍNH DANH HIỆU THEO TT 58/2011 ==========
+/**
+ * Tính danh hiệu học sinh dựa vào học lực và hạnh kiểm
+ * 
+ * Quy định TT 58/2011 (áp dụng nghiêm):
+ * - Học sinh Giỏi: Học lực Giỏi + Hạnh kiểm Tốt (CHẶT CHẼ)
+ * - Học sinh Khá: 
+ *     + Học lực Giỏi + Hạnh kiểm Khá (không đạt HS Giỏi do HK không Tốt)
+ *     + Học lực Khá + Hạnh kiểm Tốt
+ *     + Học lực Khá + Hạnh kiểm Khá
+ * - Học sinh Trung bình:
+ *     + Học lực TB + Hạnh kiểm Tốt
+ *     + Học lực TB + Hạnh kiểm Khá
+ * - Học sinh Yếu: Các trường hợp còn lại
+ * 
+ * @param {number} diemTB - Điểm trung bình học lực
+ * @param {string} xepLoaiHK - Xếp loại hạnh kiểm (Tốt, Khá, TB, Yếu, Kém)
+ * @returns {string} Danh hiệu học sinh
+ */
+function tinhDanhHieu(diemTB, xepLoaiHK) {
+    if (!diemTB || !xepLoaiHK) return null;
+    
+    // Xác định xếp loại học lực
+    let hocLuc = '';
+    if (diemTB >= 8) hocLuc = 'Giỏi';
+    else if (diemTB >= 6.5) hocLuc = 'Khá';
+    else if (diemTB >= 5) hocLuc = 'TB';
+    else hocLuc = 'Yếu';
+    
+    // Chuẩn hóa xếp loại hạnh kiểm
+    const hk = (xepLoaiHK || '').trim();
+    
+    // Xét danh hiệu theo quy định TT 58/2011 (nghiêm ngặt)
+    if (hocLuc === 'Giỏi' && hk === 'Tốt') {
+        // CHỈ Giỏi + Tốt mới được HS Giỏi
+        return 'Học sinh giỏi';
+    } else if (
+        (hocLuc === 'Giỏi' && hk === 'Khá') ||  // Giỏi + Khá → Khá (do HK không Tốt)
+        (hocLuc === 'Khá' && hk === 'Tốt') ||   // Khá + Tốt → Khá
+        (hocLuc === 'Khá' && hk === 'Khá')      // Khá + Khá → Khá
+    ) {
+        return 'Học sinh khá';
+    } else if (
+        (hocLuc === 'Giỏi' && hk === 'Trung bình') ||  // Giỏi + TB → TB
+        (hocLuc === 'TB' && hk === 'Tốt') ||    // TB + Tốt → TB
+        (hocLuc === 'TB' && hk === 'Khá')       // TB + Khá → TB
+    ) {
+        return 'Học sinh trung bình';
+    } else {
+        // Tất cả còn lại
+        return 'Học sinh yếu';
+    }
+}
+
 // ========== BÁO CÁO TỔNG KẾT MÔN ==========
 const getSubjectReport = async (namhoc, hocky, monhoc) => {
     // Lấy báo cáo từ bảng BAOCAOTONGKETMON nếu đã có
@@ -284,7 +338,67 @@ const getClassFinalReport = async (maLop, maNamHoc, maHocKy = null) => {
     `;
 
     const result = await pool.query(query, [maLop, maNamHoc]);
-    return result.rows;
+    
+    // Tính điểm TB và danh hiệu cho từng học sinh
+    const studentMap = {};
+    result.rows.forEach(row => {
+        const key = row.mahocsinh;
+        if (!studentMap[key]) {
+            studentMap[key] = {
+                mahocsinh: row.mahocsinh,
+                hoten: row.hoten,
+                subjects: [],
+                hanhkiemhk1: row.hanhkiemhk1,
+                hanhkiemhk2: row.hanhkiemhk2,
+                hanhkiemcn: row.hanhkiemcn
+            };
+        }
+        studentMap[key].subjects.push({
+            mamonhoc: row.mamonhoc,
+            tenmonhoc: row.tenmonhoc,
+            diemtbhk1: row.diemtbhk1,
+            diemtbhk2: row.diemtbhk2,
+            diemtbnam: row.diemtbnam
+        });
+    });
+    
+    // Tính điểm TB tất cả môn và danh hiệu cho từng học sinh
+    const finalData = Object.values(studentMap).map(student => {
+        // Tính điểm TB HK1
+        const validHK1 = student.subjects.filter(s => s.diemtbhk1 !== null);
+        const avgHK1 = validHK1.length > 0 
+            ? validHK1.reduce((sum, s) => sum + parseFloat(s.diemtbhk1), 0) / validHK1.length 
+            : null;
+        
+        // Tính điểm TB HK2
+        const validHK2 = student.subjects.filter(s => s.diemtbhk2 !== null);
+        const avgHK2 = validHK2.length > 0 
+            ? validHK2.reduce((sum, s) => sum + parseFloat(s.diemtbhk2), 0) / validHK2.length 
+            : null;
+        
+        // Tính điểm TB cả năm
+        const validCN = student.subjects.filter(s => s.diemtbnam !== null);
+        const avgCN = validCN.length > 0 
+            ? validCN.reduce((sum, s) => sum + parseFloat(s.diemtbnam), 0) / validCN.length 
+            : null;
+        
+        // Tính danh hiệu cho từng học kỳ và cả năm
+        const danhhieuHK1 = avgHK1 ? tinhDanhHieu(avgHK1, student.hanhkiemhk1) : null;
+        const danhhieuHK2 = avgHK2 ? tinhDanhHieu(avgHK2, student.hanhkiemhk2) : null;
+        const danhhieuCN = avgCN ? tinhDanhHieu(avgCN, student.hanhkiemcn) : null;
+        
+        return {
+            ...student,
+            diemtbhk1: avgHK1 ? parseFloat(avgHK1.toFixed(2)) : null,
+            diemtbhk2: avgHK2 ? parseFloat(avgHK2.toFixed(2)) : null,
+            diemtbcn: avgCN ? parseFloat(avgCN.toFixed(2)) : null,
+            danhhieuhk1: danhhieuHK1,
+            danhhieuhk2: danhhieuHK2,
+            danhhieucn: danhhieuCN
+        };
+    });
+    
+    return finalData;
 };
 
 // ========== LẤY ĐIỂM TK & HỌC LỰC CHO NHẬP HẠNH KIỂM ==========

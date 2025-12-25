@@ -1,6 +1,12 @@
 /**
  * Teaching Assignment Management Controller
- * Handles fetching and updating teaching assignments across classes and subjects
+ * UI LAYER - Aggregated data for frontend management interface
+ * 
+ * Purpose: Provide consolidated data (classes + subjects + teachers) for batch assignment UI
+ * Uses: giangdayModel for actual database operations
+ * 
+ * Note: For simple CRUD operations, use giangdayController directly
+ * This controller is specifically for the management UI that needs aggregated data
  */
 
 const giangdayModel = require('../models/giangdayModel');
@@ -148,67 +154,40 @@ const TeachingAssignmentController = {
                 }
             }
 
-            // Update/insert subject teacher assignments
+            // Update/insert subject teacher assignments using giangdayModel
+            // This avoids duplicating INSERT/UPDATE logic
             for (const assign of assignments) {
                 const { maMonHoc, maGiaoVien } = assign;
 
                 if (!maMonHoc || !maGiaoVien) continue;
 
-                // Check if assignment exists
-                const existsQuery = `
-                    SELECT * FROM GIANGDAY
-                    WHERE MaLop = $1 AND MaMonHoc = $2 AND MaHocKy = $3 AND MaNamHoc = $4
-                `;
-                const existsResult = await client.query(existsQuery, [
-                    maLop,
-                    maMonHoc,
-                    normalizedHK,
-                    maNamHoc
-                ]);
-
-                if (existsResult.rows.length > 0) {
-                    // Update existing
-                    const updateQuery = `
-                        UPDATE GIANGDAY
-                        SET MaGiaoVien = $1
-                        WHERE MaLop = $2 AND MaMonHoc = $3 AND MaHocKy = $4 AND MaNamHoc = $5
-                    `;
-                    await client.query(updateQuery, [
-                        parseInt(maGiaoVien),
-                        maLop,
-                        maMonHoc,
-                        normalizedHK,
-                        maNamHoc
-                    ]);
-                } else {
-                    // Insert new
-                    const insertQuery = `
-                        INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
-                        VALUES ($1, $2, $3, $4, $5)
-                        ON CONFLICT (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc) DO NOTHING
-                    `;
-                    await client.query(insertQuery, [
+                try {
+                    // Use giangdayModel.create() which handles ON CONFLICT (upsert)
+                    await giangdayModel.create(
                         maLop,
                         maMonHoc,
                         parseInt(maGiaoVien),
                         normalizedHK,
                         maNamHoc
-                    ]);
-                }
+                    );
 
-                // Log assignment change
-                if (userId) {
-                    try {
-                        await auditModel.createLog({
-                            MaNguoiDung: parseInt(userId),
-                            HanhDong: 'UPDATE_GIANGDAY',
-                            BangMuc: 'GIANGDAY',
-                            MaDoiTuong: `${maLop}|${maMonHoc}`,
-                            ChiTiet: { maGiaoVien: parseInt(maGiaoVien), maMonHoc, maLop }
-                        });
-                    } catch (auditErr) {
-                        console.error('Audit log error:', auditErr);
+                    // Log assignment change
+                    if (userId) {
+                        try {
+                            await auditModel.createLog({
+                                MaNguoiDung: parseInt(userId),
+                                HanhDong: 'UPDATE_GIANGDAY',
+                                BangMuc: 'GIANGDAY',
+                                MaDoiTuong: `${maLop}|${maMonHoc}`,
+                                ChiTiet: { maGiaoVien: parseInt(maGiaoVien), maMonHoc, maLop }
+                            });
+                        } catch (auditErr) {
+                            console.error('Audit log error:', auditErr);
+                        }
                     }
+                } catch (assignErr) {
+                    console.error('Error assigning teacher:', assignErr);
+                    // Continue with other assignments even if one fails
                 }
             }
 

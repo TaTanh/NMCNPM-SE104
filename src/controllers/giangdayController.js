@@ -1,3 +1,14 @@
+/**
+ * Giảng Dạy Controller
+ * API LAYER - Direct data operations for GIANGDAY table
+ * 
+ * Purpose: Provide detailed CRUD operations for teaching assignments
+ * Uses: giangdayModel for all database operations
+ * 
+ * Note: For batch UI operations with aggregated data, see teachingAssignmentController
+ * This controller provides granular control over individual assignments
+ */
+
 const giangdayModel = require('../models/giangdayModel');
 const { normalizeHocKy } = require('../utils/semesterUtil');
 

@@ -181,8 +181,8 @@ const getThongKeLop = async (req, res) => {
         }
 
         const thongKe = await hanhkiemModel.getThongKeLop(
-            parseInt(maLop),
-            parseInt(maNamHoc),
+            maLop, // Giữ nguyên chuỗi mã lớp (10A1,...)
+            maNamHoc, // Giữ nguyên chuỗi năm học (2024-2025)
             normalizeHocKy(maHocKy)
         );
 
