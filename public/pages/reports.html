@@ -223,8 +223,8 @@
                     'Giáo Dục Công Dân': 9
                 };
                 
-                // Get all unique subjects from data
-                const allSubjects = Array.from(new Set(rows.map(r => r.tenmonhoc)));
+                // Get all unique subjects from data, filter out null/undefined
+                const allSubjects = Array.from(new Set(rows.map(r => r.tenmonhoc).filter(name => name)));
                 
                 // Sort subjects according to priority, unknown subjects go to end
                 const subjects = allSubjects.sort((a, b) => {

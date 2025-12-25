@@ -333,72 +333,16 @@ const getClassFinalReport = async (maLop, maNamHoc, maHocKy = null) => {
         LEFT JOIN HANHKIEM hk2 ON hk2.MaHocSinh = hs.MaHocSinh 
             AND hk2.MaNamHoc = $2 
             AND hk2.MaHocKy = 'HK2'
-        WHERE qth.MaLop = $1 AND l.MaNamHoc = $2
+        WHERE qth.MaLop = $1 
+          AND l.MaNamHoc = $2
+          AND mh.TenMonHoc IS NOT NULL
         ORDER BY hs.HoTen, mh.TenMonHoc
     `;
 
     const result = await pool.query(query, [maLop, maNamHoc]);
     
-    // Tính điểm TB và danh hiệu cho từng học sinh
-    const studentMap = {};
-    result.rows.forEach(row => {
-        const key = row.mahocsinh;
-        if (!studentMap[key]) {
-            studentMap[key] = {
-                mahocsinh: row.mahocsinh,
-                hoten: row.hoten,
-                subjects: [],
-                hanhkiemhk1: row.hanhkiemhk1,
-                hanhkiemhk2: row.hanhkiemhk2,
-                hanhkiemcn: row.hanhkiemcn
-            };
-        }
-        studentMap[key].subjects.push({
-            mamonhoc: row.mamonhoc,
-            tenmonhoc: row.tenmonhoc,
-            diemtbhk1: row.diemtbhk1,
-            diemtbhk2: row.diemtbhk2,
-            diemtbnam: row.diemtbnam
-        });
-    });
-    
-    // Tính điểm TB tất cả môn và danh hiệu cho từng học sinh
-    const finalData = Object.values(studentMap).map(student => {
-        // Tính điểm TB HK1
-        const validHK1 = student.subjects.filter(s => s.diemtbhk1 !== null);
-        const avgHK1 = validHK1.length > 0 
-            ? validHK1.reduce((sum, s) => sum + parseFloat(s.diemtbhk1), 0) / validHK1.length 
-            : null;
-        
-        // Tính điểm TB HK2
-        const validHK2 = student.subjects.filter(s => s.diemtbhk2 !== null);
-        const avgHK2 = validHK2.length > 0 
-            ? validHK2.reduce((sum, s) => sum + parseFloat(s.diemtbhk2), 0) / validHK2.length 
-            : null;
-        
-        // Tính điểm TB cả năm
-        const validCN = student.subjects.filter(s => s.diemtbnam !== null);
-        const avgCN = validCN.length > 0 
-            ? validCN.reduce((sum, s) => sum + parseFloat(s.diemtbnam), 0) / validCN.length 
-            : null;
-        
-        // Tính danh hiệu cho từng học kỳ và cả năm
-        const danhhieuHK1 = avgHK1 ? tinhDanhHieu(avgHK1, student.hanhkiemhk1) : null;
-        const danhhieuHK2 = avgHK2 ? tinhDanhHieu(avgHK2, student.hanhkiemhk2) : null;
-        const danhhieuCN = avgCN ? tinhDanhHieu(avgCN, student.hanhkiemcn) : null;
-        
-        return {
-            ...student,
-            diemtbhk1: avgHK1 ? parseFloat(avgHK1.toFixed(2)) : null,
-            diemtbhk2: avgHK2 ? parseFloat(avgHK2.toFixed(2)) : null,
-            diemtbcn: avgCN ? parseFloat(avgCN.toFixed(2)) : null,
-            danhhieuhk1: danhhieuHK1,
-            danhhieuhk2: danhhieuHK2,
-            danhhieucn: danhhieuCN
-        };
-    });
-    
-    return finalData;
+    // Trả về raw data để frontend xử lý
+    return result.rows;
 };
 
 // ========== LẤY ĐIỂM TK & HỌC LỰC CHO NHẬP HẠNH KIỂM ==========
