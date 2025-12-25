@@ -98,6 +98,15 @@
                 <button class="btn btn-print" id="btnPrintReport" style="padding: 8px 20px; display: none;">In</button>
             </div>
 
+            <!-- Sắp xếp -->
+            <div style="margin-bottom: 10px; display: none;" id="sortOptions">
+                <label style="font-weight: 500; margin-right: 8px;">Sắp xếp theo:</label>
+                <select id="sortSelect" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="name">Tên học sinh (A-Z)</option>
+                    <option value="rank">Xếp hạng (Cao → Thấp)</option>
+                </select>
+            </div>
+
             <div class="table-wrapper" id="reportWrapper" style="display:none; overflow-x:auto;">
                 <table class="data-table" id="reportTable">
                     <thead id="reportHead"></thead>
@@ -349,12 +358,32 @@
                                    : semester === 'HK2' ? st.hanhkiemhk2
                                    : st.hanhkiemcn;
 
-                    // Xét danh hiệu theo TT58
+                    // Xét danh hiệu theo TT58 đầy đủ
                     const getDanhHieu = () => {
                         if (!hanhKiem || hocLuc === '-') return '-';
-                        if (hocLuc === 'Giỏi' && hanhKiem === 'Tốt') return 'Học sinh giỏi';
-                        if (hocLuc === 'Khá' && hanhKiem === 'Tốt') return 'Học sinh tiến tiến';
-                        return '-';
+                        
+                        // Học sinh Giỏi: Giỏi + Tốt
+                        if (hocLuc === 'Giỏi' && hanhKiem === 'Tốt') {
+                            return 'Học sinh giỏi';
+                        }
+                        // Học sinh Khá: (Giỏi + Khá) OR (Khá + Tốt) OR (Khá + Khá)
+                        else if (
+                            (hocLuc === 'Giỏi' && hanhKiem === 'Khá') ||
+                            (hocLuc === 'Khá' && (hanhKiem === 'Tốt' || hanhKiem === 'Khá'))
+                        ) {
+                            return 'Học sinh khá';
+                        }
+                        // Học sinh Trung bình: (Giỏi + TB) OR (TB + Tốt) OR (TB + Khá)
+                        else if (
+                            (hocLuc === 'Giỏi' && hanhKiem === 'Trung bình') ||
+                            (hocLuc === 'Trung bình' && (hanhKiem === 'Tốt' || hanhKiem === 'Khá'))
+                        ) {
+                            return 'Học sinh trung bình';
+                        }
+                        // Các trường hợp còn lại
+                        else {
+                            return 'Học sinh yếu';
+                        }
                     };
                     const danhHieu = getDanhHieu();
 
@@ -373,7 +402,7 @@
 
                 // Calculate ranking without sorting the original list
                 const hanhKiemOrder = { 'Tốt': 4, 'Khá': 3, 'Trung bình': 2, 'Yếu': 1 };
-                const danhHieuOrder = { 'Học sinh giỏi': 3, 'Học sinh tiến tiến': 2 };
+                const danhHieuOrder = { 'Học sinh giỏi': 4, 'Học sinh khá': 3, 'Học sinh trung bình': 2, 'Học sinh yếu': 1 };
                 
                 // Create a sorted copy for ranking calculation
                 const sortedForRank = [...studentsData].sort((a, b) => {
@@ -428,23 +457,15 @@
                     rankMap.set(st.mahocsinh, currentRank);
                 });
 
-                // Render in original order
-                body.innerHTML = studentsData.map((st, idx) => {
-                    const displayRank = rankMap.get(st.mahocsinh) || '-';
-                    return `
-                        <tr>
-                            <td style="text-align: center;">${idx + 1}</td>
-                            <td style="text-align: center;">${st.mahocsinh}</td>
-                            <td class="col-name">${st.hoten}</td>
-                            ${st.subjectCells}
-                            <td style="text-align: center;"><strong>${st.avgScore}</strong></td>
-                            <td style="text-align: center;">${st.hocLuc}</td>
-                            <td style="text-align: center;">${st.hanhKiem || '-'}</td>
-                            <td style="text-align: center;">${st.danhHieu}</td>
-                            <td style="text-align: center;"><strong>${displayRank}</strong></td>
-                        </tr>
-                    `;
-                }).join('');
+                // Lưu dữ liệu vào biến global để dùng cho sorting
+                window.currentStudentsData = studentsData;
+                window.currentRankMap = rankMap;
+                
+                // Hiển thị dropdown sắp xếp
+                document.getElementById('sortOptions').style.display = 'block';
+                
+                // Render bảng
+                renderTable();
 
                 document.getElementById('reportWrapper').style.display = 'block';
                 document.getElementById('btnPrintReport').style.display = 'block';
@@ -459,6 +480,55 @@
         document.getElementById('btnPrintReport').addEventListener('click', () => {
             window.print();
         });
+
+        // ========== RENDER TABLE ==========
+        function renderTable() {
+            const sortBy = document.getElementById('sortSelect').value;
+            const studentsData = window.currentStudentsData || [];
+            const rankMap = window.currentRankMap || new Map();
+            
+            if (studentsData.length === 0) return;
+            
+            // Sắp xếp dữ liệu
+            let dataToRender = [...studentsData];
+            if (sortBy === 'rank') {
+                // Sắp xếp theo xếp hạng (thấp -> cao, rank 1 lên đầu)
+                dataToRender.sort((a, b) => {
+                    const rankA = rankMap.get(a.mahocsinh);
+                    const rankB = rankMap.get(b.mahocsinh);
+                    
+                    // Học sinh không có rank (-) xuống cuối
+                    if (rankA === '-' && rankB !== '-') return 1;
+                    if (rankA !== '-' && rankB === '-') return -1;
+                    if (rankA === '-' && rankB === '-') return 0;
+                    
+                    return rankA - rankB;
+                });
+            }
+            // else: giữ nguyên thứ tự theo tên (đã sort sẵn từ backend)
+            
+            // Render bảng
+            const body = document.getElementById('reportBody');
+            body.innerHTML = dataToRender.map((st, idx) => {
+                const displayRank = rankMap.get(st.mahocsinh) || '-';
+                return `
+                    <tr>
+                        <td style="text-align: center;">${idx + 1}</td>
+                        <td style="text-align: center;">${st.mahocsinh}</td>
+                        <td class="col-name">${st.hoten}</td>
+                        ${st.subjectCells}
+                        <td style="text-align: center;"><strong>${st.avgScore}</strong></td>
+                        <td style="text-align: center;">${st.hocLuc}</td>
+                        <td style="text-align: center;">${st.hanhKiem || '-'}</td>
+                        <td style="text-align: center;">${st.danhHieu}</td>
+                        <td style="text-align: center;"><strong>${displayRank}</strong></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Sort dropdown change event
+        document.getElementById('sortSelect').addEventListener('change', renderTable);
     </script>
 
 </body>
