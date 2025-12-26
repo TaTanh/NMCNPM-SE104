@@ -284,6 +284,27 @@ const getAvailableStudentsFromClass = async (sourceMaLop, targetNamHoc) => {
     return result.rows;
 };
 
+// ========== KIỂM TRA GVCN ĐÃ PHỤ TRÁCH LỚP KHÁC TRONG NĂM HỌC ==========
+const checkGvcnConflict = async (maGiaoVien, maNamHoc, excludeMaLop = null) => {
+    let query = `
+        SELECT l.MaLop, l.TenLop, l.MaNamHoc, nh.TenNamHoc
+        FROM LOP l
+        JOIN NAMHOC nh ON l.MaNamHoc = nh.MaNamHoc
+        WHERE l.MaGVCN = $1 AND l.MaNamHoc = $2
+    `;
+    const params = [maGiaoVien, maNamHoc];
+    
+    if (excludeMaLop) {
+        query += ` AND l.MaLop != $3`;
+        params.push(excludeMaLop);
+    }
+    
+    query += ` LIMIT 1`;
+    
+    const result = await pool.query(query, params);
+    return result.rows[0] || null;
+};
+
 module.exports = {
     findAll,
     findById,
@@ -299,5 +320,6 @@ module.exports = {
     checkStudentInYearClass,
     bulkAddStudents,
     getUnassignedStudents,
-    getAvailableStudentsFromClass
+    getAvailableStudentsFromClass,
+    checkGvcnConflict
 };

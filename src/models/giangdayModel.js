@@ -233,10 +233,12 @@ const GiangDayModel = {
                 SELECT 
                     gd.*,
                     l.TenLop,
+                    l.MaGVCN,
                     mh.TenMonHoc,
                     nd.HoTen as TenGiaoVien,
                     vt.TenVaiTro,
-                    hk.TenHocKy AS TenHocKyDisplay
+                    hk.TenHocKy AS TenHocKyDisplay,
+                    CASE WHEN l.MaGVCN = gd.MaGiaoVien THEN true ELSE false END as IsGVCN
                 FROM GIANGDAY gd
                 JOIN LOP l ON gd.MaLop = l.MaLop
                 JOIN MONHOC mh ON gd.MaMonHoc = mh.MaMonHoc

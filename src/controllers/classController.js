@@ -43,6 +43,20 @@ const createClass = async (req, res) => {
             if (!isTeacher) {
                 return res.status(400).json({ error: 'Người được chọn không phải giáo viên hợp lệ hoặc sai ID' });
             }
+            
+            // Kiểm tra GVCN đã phụ trách lớp khác trong cùng năm học chưa
+            const conflict = await classModel.checkGvcnConflict(mg, MaNamHoc);
+            if (conflict) {
+                return res.status(400).json({ 
+                    error: `Giáo viên này đã là GVCN của lớp ${conflict.tenlop} trong năm học ${conflict.tennamhoc}. Một GVCN chỉ có thể phụ trách một lớp trong cùng năm học.`,
+                    conflict: {
+                        maLop: conflict.malop,
+                        tenLop: conflict.tenlop,
+                        tenNamHoc: conflict.tennamhoc
+                    }
+                });
+            }
+            
             // Auto-switch role to GVCN if needed
             await userModel.setRole(mg, 'GVCN');
         }
@@ -87,6 +101,20 @@ const updateClass = async (req, res) => {
             if (!isTeacher) {
                 return res.status(400).json({ error: 'Người được chọn không phải giáo viên hợp lệ hoặc sai ID' });
             }
+            
+            // Kiểm tra GVCN đã phụ trách lớp khác trong cùng năm học chưa
+            const conflict = await classModel.checkGvcnConflict(mg, MaNamHoc, id);
+            if (conflict) {
+                return res.status(400).json({ 
+                    error: `Giáo viên này đã là GVCN của lớp ${conflict.tenlop} trong năm học ${conflict.tennamhoc}. Một GVCN chỉ có thể phụ trách một lớp trong cùng năm học.`,
+                    conflict: {
+                        maLop: conflict.malop,
+                        tenLop: conflict.tenlop,
+                        tenNamHoc: conflict.tennamhoc
+                    }
+                });
+            }
+            
             // Auto-switch role to GVCN if needed
             await userModel.setRole(mg, 'GVCN');
         }
@@ -348,12 +376,27 @@ const assignGvcnToClass = async (req, res) => {
         if (!isTeacher) {
             return res.status(400).json({ error: 'Người được chọn không phải giáo viên hợp lệ hoặc sai ID' });
         }
-        // Auto-switch role to GVCN if needed
-        await userModel.setRole(mg, 'GVCN');
 
         // Kiểm tra lớp tồn tại
         const lop = await classModel.findById(id);
         if (!lop) return res.status(404).json({ error: 'Không tìm thấy lớp' });
+
+        // Kiểm tra GVCN đã phụ trách lớp khác trong cùng năm học chưa
+        const conflict = await classModel.checkGvcnConflict(mg, lop.manamhoc, id);
+        if (conflict) {
+            return res.status(400).json({ 
+                error: `Giáo viên này đã là GVCN của lớp ${conflict.tenlop} trong năm học ${conflict.tennamhoc}. Một GVCN chỉ có thể phụ trách một lớp trong cùng năm học.`,
+                conflict: {
+                    maLop: conflict.malop,
+                    tenLop: conflict.tenlop,
+                    tenNamHoc: conflict.tennamhoc
+                }
+            });
+        }
+
+        // Auto-switch role to GVCN if needed
+        await userModel.setRole(mg, 'GVCN');
+
         const previousGvcn = lop.magvcn || lop.magvcn === 0 ? lop.magvcn : null;
         const updated = await classModel.updateGvcn(id, mg);
 

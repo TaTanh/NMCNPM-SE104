@@ -366,6 +366,16 @@
 
                 const tdGV = document.createElement('td');
                 tdGV.textContent = item.tengiaovien || '';
+                
+                // Thêm badge GVCN nếu giáo viên này là GVCN của lớp
+                if (item.isgvcn === true || item.isgvcn === 't') {
+                    const gvcnBadge = document.createElement('span');
+                    gvcnBadge.className = 'badge-gvcn';
+                    gvcnBadge.textContent = 'GVCN';
+                    gvcnBadge.style.marginLeft = '8px';
+                    tdGV.appendChild(gvcnBadge);
+                }
+                
                 tr.appendChild(tdGV);
 
                 const tdLop = document.createElement('td');
@@ -419,9 +429,16 @@
                         tengiaovien: item.tengiaovien,
                         email: item.email || item.emailgiaovien || '',
                         role: item.tenvaitro || '',
-                        subjects: {}
+                        subjects: {},
+                        gvcnClasses: [] // Lưu các lớp mà giáo viên là GVCN
                     };
                 }
+                
+                // Lưu lại lớp nếu giáo viên là GVCN
+                if ((item.isgvcn === true || item.isgvcn === 't') && !grouped[teacherId].gvcnClasses.find(c => c === item.tenlop)) {
+                    grouped[teacherId].gvcnClasses.push(item.tenlop);
+                }
+                
                 const subjId = item.mamonhoc;
                 if (!grouped[teacherId].subjects[subjId]) {
                     grouped[teacherId].subjects[subjId] = {
@@ -453,7 +470,14 @@
                 header.style.alignItems = 'center';
 
                 const info = document.createElement('div');
-                info.innerHTML = `<strong>${teacher.tengiaovien}</strong> <span style="margin-left:8px; color:#6b7280;">${teacher.role}</span>`;
+                let teacherLabel = `<strong>${teacher.tengiaovien}</strong> <span style="margin-left:8px; color:#6b7280;">${teacher.role}</span>`;
+                
+                // Hiển thị badge GVCN nếu có
+                if (teacher.gvcnClasses.length > 0) {
+                    teacherLabel += ` <span class="badge-gvcn" style="margin-left:8px;">GVCN: ${teacher.gvcnClasses.join(', ')}</span>`;
+                }
+                
+                info.innerHTML = teacherLabel;
                 header.appendChild(info);
 
                 const email = document.createElement('div');
@@ -693,6 +717,19 @@
         .teacher-card .badge { display: inline-block; padding: 4px 8px; border-radius: 8px; background: #e5e7eb; color: #374151; margin-right:6px; }
         .teacher-card .badge + .badge { margin-left: 6px; }
         .teacher-card { background: #ffffff; }
+        
+        .badge-gvcn {
+            display: inline-block;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+        }
     </style>
 
 </body>
