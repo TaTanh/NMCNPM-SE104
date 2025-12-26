@@ -208,8 +208,8 @@
 
         async function loadDropdowns() {
             try {
-                const userId = getUserIdOrThrow();
-                const authHeaders = { 'x-user-id': userId };
+                const token = getAuthToken();
+                const authHeaders = { 'Authorization': `Bearer ${token}` };
 
                 const [yRes, sRes, gRes] = await Promise.all([
                     fetch('/api/settings/school-years', { headers: authHeaders }),
@@ -283,10 +283,10 @@
             if (!year || !grade) return;
 
             try {
-                const userId = getUserIdOrThrow();
+                const token = getAuthToken();
                 const params = new URLSearchParams({ khoi: grade, namhoc: year });
                 const res = await fetch('/api/classes?' + params.toString(), {
-                    headers: { 'x-user-id': userId }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) throw new Error('Cannot load classes');
                 const classes = await res.json();
@@ -336,8 +336,8 @@
             window.currentSemesterRaw = semRaw;
 
             try {
-                const userId = getUserIdOrThrow();
-                const authHeaders = { 'x-user-id': userId };
+                const token = getAuthToken();
+                const authHeaders = { 'Authorization': `Bearer ${token}` };
 
                 // Load students
                 const sRes = await fetch(`/api/classes/${cls}/students`, { headers: authHeaders });
@@ -678,7 +678,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'x-user-id': userId.toString()
+                        'Authorization': `Bearer ${getAuthToken()}`
                     },
                     body: JSON.stringify(payload)
                 });

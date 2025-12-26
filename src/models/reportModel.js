@@ -32,7 +32,7 @@ function tinhDanhHieu(diemTB, xepLoaiHK) {
     // Chuẩn hóa xếp loại hạnh kiểm
     const hk = (xepLoaiHK || '').trim();
     
-    // Xét danh hiệu theo quy định TT 58/2011 (nghiêm ngặt)
+    // Xét danh hiệu theo quy định TT 58/2011
     if (hocLuc === 'Giỏi' && hk === 'Tốt') {
         // CHỈ Giỏi + Tốt mới được HS Giỏi
         return 'Học sinh giỏi';

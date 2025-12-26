@@ -422,7 +422,8 @@
 
                 const user = getCurrentUser();
                 const userId = user?.maNguoiDung || user?.manguoidung || user?.MaNguoiDung;
-                const headers = userId ? { 'x-user-id': userId.toString() } : {};
+                const token = getAuthToken();
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
                 // Dùng CÙNG API như báo cáo tổng kết - đã hoạt động tốt
                 const url = `/api/reports/class-final?maLop=${maLop}&namhoc=${namHoc}`;
@@ -750,6 +751,7 @@
             ) {
                 danhHieu = 'Học sinh khá';
             } else if (
+                (hl === 'Giỏi' && hk === 'Trung bình') ||  // Giỏi + TB → TB
                 (hl === 'TB' && hk === 'Tốt') ||    // TB + Tốt → TB
                 (hl === 'TB' && hk === 'Khá')       // TB + Khá → TB
             ) {

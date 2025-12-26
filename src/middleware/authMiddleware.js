@@ -1,28 +1,45 @@
 // ========== MIDDLEWARE PHÂN QUYỀN ==========
 
 const userModel = require('../models/userModel');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../config/jwt');
 
-// Middleware kiểm tra đăng nhập (dựa vào header x-user-id)
-// Lưu ý: Đây là cách đơn giản cho đồ án, production nên dùng JWT
+// Middleware kiểm tra đăng nhập (verify JWT token)
 const checkAuth = async (req, res, next) => {
     try {
-        const userId = req.headers['x-user-id'];
+        // Lấy token từ header Authorization
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.startsWith('Bearer ') 
+            ? authHeader.substring(7) 
+            : null;
         
         console.log('=== checkAuth middleware ===');
-        console.log('x-user-id header:', userId);
+        console.log('Authorization header:', authHeader);
+        console.log('Token:', token ? token.substring(0, 20) + '...' : 'null');
         
-        if (!userId) {
-            console.log('ERROR: No x-user-id header');
+        if (!token) {
+            console.log('ERROR: No token provided');
             return res.status(401).json({ error: 'Chưa đăng nhập' });
         }
         
-        const user = await userModel.findById(userId);
+        // Verify JWT token
+        let decoded;
+        try {
+            decoded = jwt.verify(token, JWT_SECRET);
+            console.log('Token decoded:', decoded);
+        } catch (jwtError) {
+            console.log('ERROR: JWT verification failed:', jwtError.message);
+            return res.status(401).json({ error: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn' });
+        }
+        
+        // Lấy thông tin user từ database
+        const user = await userModel.findById(decoded.maNguoiDung);
         
         console.log('User from DB:', user);
         
         if (!user) {
             console.log('ERROR: User not found in DB');
-            return res.status(401).json({ error: 'Phiên đăng nhập không hợp lệ' });
+            return res.status(401).json({ error: 'Người dùng không tồn tại' });
         }
         
         // Gắn thông tin user vào request
@@ -30,7 +47,6 @@ const checkAuth = async (req, res, next) => {
             maNguoiDung: user.manguoidung,
             tenDangNhap: user.tendangnhap,
             hoTen: user.hoten,
-            // Use role code (MaVaiTro) for authorization checks; fall back to name if needed
             vaiTro: user.mavaitro || user.MaVaiTro || user.tenvaitro,
             tenVaiTro: user.tenvaitro || user.TenVaiTro,
             quyen: typeof user.quyen === 'string' ? JSON.parse(user.quyen) : user.quyen
@@ -71,22 +87,30 @@ const checkPermission = (permission) => {
     };
 };
 
-// Middleware tùy chọn - chỉ gắn user info nếu có, không bắt buộc đăng nhập
+// Middleware tùy chọn - chỉ gắn user info nếu có token, không bắt buộc đăng nhập
 const optionalAuth = async (req, res, next) => {
     try {
-        const userId = req.headers['x-user-id'];
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.startsWith('Bearer ') 
+            ? authHeader.substring(7) 
+            : null;
         
-        if (userId) {
-            const user = await userModel.findById(userId);
-            
-            if (user) {
-                req.user = {
-                    maNguoiDung: user.manguoidung,
-                    tenDangNhap: user.tendangnhap,
-                    hoTen: user.hoten,
-                    vaiTro: user.mavaitro || user.MaVaiTro || user.tenvaitro,
-                    quyen: typeof user.quyen === 'string' ? JSON.parse(user.quyen) : user.quyen
-                };
+        if (token) {
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                const user = await userModel.findById(decoded.maNguoiDung);
+                
+                if (user) {
+                    req.user = {
+                        maNguoiDung: user.manguoidung,
+                        tenDangNhap: user.tendangnhap,
+                        hoTen: user.hoten,
+                        vaiTro: user.mavaitro || user.MaVaiTro || user.tenvaitro,
+                        quyen: typeof user.quyen === 'string' ? JSON.parse(user.quyen) : user.quyen
+                    };
+                }
+            } catch (jwtError) {
+                // Token không hợp lệ, bỏ qua
             }
         }
         

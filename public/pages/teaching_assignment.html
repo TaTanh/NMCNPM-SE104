@@ -216,13 +216,18 @@
         // ========== KIỂM TRA QUYỀN ==========
         document.addEventListener('DOMContentLoaded', () => {
             const user = getCurrentUser();
-            if (!user) {
+            console.log('Current user:', user);
+            console.log('User vaiTro:', user?.vaiTro);
+            
+            if (!user || !user.maNguoiDung) {
+                console.error('No user info found, redirecting to login');
                 window.location.href = '/pages/login.html';
                 return;
             }
 
             // Chỉ ADMIN mới được quản lý phân công
             if (user.vaiTro !== 'ADMIN') {
+                console.error('Access denied. User role:', user.vaiTro);
                 toastError('Bạn không có quyền truy cập trang này');
                 setTimeout(() => {
                     window.location.href = '/pages/dashboard.html';
@@ -230,6 +235,7 @@
                 return;
             }
 
+            console.log('Access granted, loading page...');
             document.getElementById('userGreeting').textContent = `Xin chào, ${user.hoTen}`;
             loadFilters();
             loadAssignments();
@@ -309,22 +315,31 @@
                 if (maHocKy) params.append('maHocKy', maHocKy);
                 if (params.toString()) url += '?' + params.toString();
 
-                const user = getCurrentUser();
+                console.log('Loading assignments from:', url);
+                const token = getAuthToken();
+                console.log('Using token:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
+                
                 const response = await fetch(url, {
-                    headers: { 'x-user-id': user.maNguoiDung }
+                    headers: { 
+                        'Authorization': `Bearer ${token}`
+                    }
                 });
 
+                console.log('Response status:', response.status);
                 const result = await response.json();
+                console.log('Response data:', result);
                 
                 if (!response.ok) {
-                    throw new Error(result.message || 'Lỗi tải dữ liệu');
+                    console.error('API error:', response.status, result);
+                    throw new Error(result.error || result.message || 'Lỗi tải dữ liệu');
                 }
 
                 allAssignments = result.data || [];
+                console.log('Loaded assignments:', allAssignments.length);
                 renderAssignments(allAssignments);
 
             } catch (error) {
-                console.error('Lỗi:', error);
+                console.error('Lỗi load assignments:', error);
                 document.getElementById('assignmentTableBody').innerHTML = 
                     `<tr><td colspan="7" style="text-align:center;color:red;">Lỗi: ${error.message}</td></tr>`;
             }
@@ -594,12 +609,12 @@
             };
 
             try {
-                const user = getCurrentUser();
+                const token = getAuthToken();
                 const response = await fetch('/api/giangday', {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
-                        'x-user-id': user.maNguoiDung
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify(data)
                 });
@@ -649,11 +664,11 @@
 
             try {
                 const { maLop, maMonHoc, maGiaoVien, maHocKy, maNamHoc } = currentDeleteItem;
-                const user = getCurrentUser();
+                const token = getAuthToken();
 
                 const response = await fetch(`/api/giangday?maLop=${maLop}&maMonHoc=${maMonHoc}&maGiaoVien=${maGiaoVien}&maHocKy=${maHocKy}&maNamHoc=${maNamHoc}`, {
                     method: 'DELETE',
-                    headers: { 'x-user-id': user.maNguoiDung }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
 
                 const result = await response.json();

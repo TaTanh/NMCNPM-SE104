@@ -212,9 +212,9 @@ BEGIN
         VALUES (ma_hs, ho_ten, gioi_tinh, ngay_sinh, dia_chi, email, ho_ten_ph, sdt_ph, khoi_lop)
         ON CONFLICT (MaHocSinh) DO NOTHING;
         
-        -- Tạo tài khoản học sinh (mật khẩu mặc định: 123456)
+        -- Tạo tài khoản học sinh (mật khẩu mặc định: 123456, đã hash với bcrypt)
         INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro, TrangThai)
-        VALUES (ma_hs, '123456', ho_ten, email, 'STUDENT', true)
+        VALUES (ma_hs, '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', ho_ten, email, 'STUDENT', true)
         ON CONFLICT (TenDangNhap) DO NOTHING;
         
         -- In tiến trình mỗi 100 bản ghi
@@ -474,6 +474,72 @@ ORDER BY
         WHEN 'Trung bình' THEN 3
         WHEN 'Yếu' THEN 4
     END;
+
+-- =====================================================
+-- TẠO DỮ LIỆU GIANGDAY (PHÂN CÔNG GIẢNG DẠY)
+-- =====================================================
+-- Phân công: mỗi lớp có 9 môn, mỗi môn 1 giáo viên
+-- 12 lớp x 9 môn = 108 phân công cho HK1 và HK2
+
+DO $$
+DECLARE
+    ma_lop TEXT;
+    ma_mon TEXT;
+    ma_gv INTEGER;
+    count_pc INT := 0;
+    teachers INTEGER[];
+    teacher_idx INT;
+    lop_list TEXT[] := ARRAY['10A1', '10A2', '10A3', '10A4', '11A1', '11A2', '11A3', '11A4', '12A1', '12A2', '12A3', '12A4'];
+    mon_list TEXT[] := ARRAY['ANH', 'DIA', 'GDCD', 'HOA', 'LY', 'SINH', 'SU', 'TOAN', 'VAN'];
+    hk_list TEXT[] := ARRAY['HK1', 'HK2'];
+    ma_hocky TEXT;
+BEGIN
+    -- Lấy danh sách ID giáo viên
+    SELECT ARRAY_AGG(MaNguoiDung ORDER BY MaNguoiDung) 
+    INTO teachers
+    FROM NGUOIDUNG 
+    WHERE MaVaiTro IN ('GVBM', 'GVCN');
+    
+    IF array_length(teachers, 1) IS NULL OR array_length(teachers, 1) = 0 THEN
+        RAISE NOTICE 'Không có giáo viên trong hệ thống!';
+        RETURN;
+    END IF;
+    
+    RAISE NOTICE 'Bắt đầu tạo phân công giảng dạy...';
+    RAISE NOTICE '  - Số lượng giáo viên: %', array_length(teachers, 1);
+    RAISE NOTICE '  - Số lượng lớp: %', array_length(lop_list, 1);
+    RAISE NOTICE '  - Số lượng môn: %', array_length(mon_list, 1);
+    RAISE NOTICE '';
+    
+    teacher_idx := 1;
+    
+    -- Tạo phân công cho cả HK1 và HK2
+    FOREACH ma_hocky IN ARRAY hk_list LOOP
+        FOREACH ma_lop IN ARRAY lop_list LOOP
+            FOREACH ma_mon IN ARRAY mon_list LOOP
+                -- Lấy giáo viên theo vòng tròn
+                ma_gv := teachers[teacher_idx];
+                teacher_idx := teacher_idx + 1;
+                IF teacher_idx > array_length(teachers, 1) THEN
+                    teacher_idx := 1;
+                END IF;
+                
+                -- Insert phân công
+                INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+                VALUES (ma_lop, ma_mon, ma_gv, ma_hocky, '2024-2025')
+                ON CONFLICT (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc) DO NOTHING;
+                
+                count_pc := count_pc + 1;
+            END LOOP;
+        END LOOP;
+    END LOOP;
+    
+    RAISE NOTICE 'Đã tạo % phân công giảng dạy (12 lớp x 9 môn x 2 học kỳ)', count_pc;
+END $$;
+
+-- Thống kê phân công giảng dạy
+SELECT 'Tổng số phân công giảng dạy: ' || COUNT(*) as ThongKe FROM GIANGDAY;
+SELECT MaHocKy, COUNT(*) as SoLuongPhanCong FROM GIANGDAY GROUP BY MaHocKy ORDER BY MaHocKy;
 
 SELECT '✓ Generate dữ liệu thành công!' as Status;
 

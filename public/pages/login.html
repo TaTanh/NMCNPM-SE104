@@ -121,7 +121,8 @@
                     throw new Error(result.error || 'Đăng nhập thất bại');
                 }
                 
-                // Lưu thông tin user vào localStorage
+                // Lưu JWT token và thông tin user vào localStorage
+                localStorage.setItem('authToken', result.token);
                 localStorage.setItem('userInfo', JSON.stringify(result.user));
                 localStorage.setItem('isLoggedIn', 'true');
                 

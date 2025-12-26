@@ -7,6 +7,8 @@ node_modules/
 server.log
 # Thư mục riêng
 claude.md
+IMPLEMENTATION_REPORT.md
+SECURITY_AND_TESTING.md
 # Lock file 
 package-lock.json
 
@@ -37,6 +39,14 @@ dist/
 build/
 tmp/
 temp/
+
+# ============================
+# Testing
+# ============================
+
+# Jest coverage reports (auto-generated)
+coverage/
+*.lcov
 
 # ============================
 # Hệ điều hành

@@ -1,4 +1,6 @@
 const userModel = require('../models/userModel');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/jwt');
 
 // ========== ĐĂNG NHẬP ==========
 const login = async (req, res) => {
@@ -25,9 +27,21 @@ const login = async (req, res) => {
             }
         }
         
-        // Trả về thông tin user (không bao gồm mật khẩu)
+        // Tạo JWT token
+        const token = jwt.sign(
+            {
+                maNguoiDung: user.manguoidung,
+                tenDangNhap: user.tendangnhap,
+                vaiTro: user.mavaitro
+            },
+            JWT_SECRET,
+            { expiresIn: JWT_EXPIRES_IN }
+        );
+        
+        // Trả về thông tin user và token
         res.json({
             success: true,
+            token,
             user: {
                 maNguoiDung: user.manguoidung,
                 tenDangNhap: user.tendangnhap,

@@ -1,5 +1,20 @@
 // ========== API HELPER - XỬ LÝ XÁC THỰC VÀ PHÂN QUYỀN ==========
 
+// Lấy JWT token từ localStorage
+function getAuthToken() {
+    return localStorage.getItem('authToken');
+}
+
+// Lưu JWT token vào localStorage
+function setAuthToken(token) {
+    localStorage.setItem('authToken', token);
+}
+
+// Xóa JWT token
+function removeAuthToken() {
+    localStorage.removeItem('authToken');
+}
+
 // Lấy thông tin user từ localStorage
 function getCurrentUser() {
     try {
@@ -11,7 +26,7 @@ function getCurrentUser() {
 
 // Kiểm tra đã đăng nhập chưa
 function isLoggedIn() {
-    return localStorage.getItem('isLoggedIn') === 'true' && getCurrentUser().maNguoiDung;
+    return getAuthToken() && getCurrentUser().maNguoiDung;
 }
 
 // Chuyển hướng đến trang login nếu chưa đăng nhập
@@ -25,6 +40,7 @@ function requireLogin() {
 
 // Đăng xuất
 function logout() {
+    removeAuthToken();
     localStorage.removeItem('userInfo');
     localStorage.removeItem('isLoggedIn');
     window.location.href = '/pages/login.html';
@@ -49,18 +65,18 @@ function hasRole(role) {
     return user.vaiTro === role;
 }
 
-// Fetch API với header xác thực
+// Fetch API với header xác thực (JWT token)
 async function authFetch(url, options = {}) {
-    const user = getCurrentUser();
+    const token = getAuthToken();
     
     const headers = {
         'Content-Type': 'application/json',
         ...options.headers
     };
     
-    // Thêm header user ID nếu đã đăng nhập
-    if (user.maNguoiDung) {
-        headers['X-User-Id'] = user.maNguoiDung;
+    // Thêm JWT token vào Authorization header
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
     }
     
     const response = await fetch(url, {
@@ -68,7 +84,7 @@ async function authFetch(url, options = {}) {
         headers
     });
     
-    // Nếu bị từ chối quyền, thông báo
+    // Nếu bị từ chối quyền, logout và chuyển về trang login
     if (response.status === 401) {
         logout();
         throw new Error('Phiên đăng nhập hết hạn');

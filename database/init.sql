@@ -259,32 +259,32 @@ INSERT INTO VAITRO (MaVaiTro, TenVaiTro, Quyen, MoTa) VALUES
 ('STUDENT', 'Học sinh', '{"xemDiem": true}', 'Chỉ xem điểm của mình')
 ON CONFLICT (MaVaiTro) DO UPDATE SET TenVaiTro = EXCLUDED.TenVaiTro, Quyen = EXCLUDED.Quyen, MoTa = EXCLUDED.MoTa;
 
--- Tài khoản admin mặc định
+-- Tài khoản admin mặc định (password: 123456, đã hash với bcrypt)
 INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro) VALUES 
-('admin', 'admin123', 'Quản trị viên', 'admin@school.edu.vn', 'ADMIN')
+('admin', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Quản trị viên', 'admin@school.edu.vn', 'ADMIN')
 ON CONFLICT (TenDangNhap) DO NOTHING;
 
--- Thêm 18 tài khoản GVBM (2 giáo viên mỗi môn)
+-- Thêm 18 tài khoản GVBM (2 giáo viên mỗi môn) - password: 123456 (đã hash)
 INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro)
 VALUES
-  ('gv_toan_1', '123456', 'Trần Minh Toán', 'gv_toan1@school.edu.vn', 'GVBM'),
-  ('gv_toan_2', '123456', 'Phạm Văn Toán', 'gv_toan2@school.edu.vn', 'GVBM'),
-  ('gv_van_1', '123456', 'Lê Thị Văn', 'gv_van1@school.edu.vn', 'GVBM'),
-  ('gv_van_2', '123456', 'Nguyễn Văn Lợi', 'gv_van2@school.edu.vn', 'GVBM'),
-  ('gv_anh_1', '123456', 'Hoàng Anh', 'gv_anh1@school.edu.vn', 'GVBM'),
-  ('gv_anh_2', '123456', 'Đặng Thị Anh Dũng', 'gv_anh2@school.edu.vn', 'GVBM'),
-  ('gv_ly_1', '123456', 'Phan Văn Tuấn', 'gv_ly1@school.edu.vn', 'GVBM'),
-  ('gv_ly_2', '123456', 'Bùi Thị Lý', 'gv_ly2@school.edu.vn', 'GVBM'),
-  ('gv_hoa_1', '123456', 'Trương Hoá', 'gv_hoa1@school.edu.vn', 'GVBM'),
-  ('gv_hoa_2', '123456', 'Ngô Thị Hóa', 'gv_hoa2@school.edu.vn', 'GVBM'),
-  ('gv_sinh_1', '123456', 'Lê Minh Sinh', 'gv_sinh1@school.edu.vn', 'GVBM'),
-  ('gv_sinh_2', '123456', 'Võ Thị Sinh', 'gv_sinh2@school.edu.vn', 'GVBM'),
-  ('gv_su_1', '123456', 'Đỗ Văn Sử', 'gv_su1@school.edu.vn', 'GVBM'),
-  ('gv_su_2', '123456', 'Phùng Thị Sử', 'gv_su2@school.edu.vn', 'GVBM'),
-  ('gv_dia_1', '123456', 'Hà Văn Địa', 'gv_dia1@school.edu.vn', 'GVBM'),
-  ('gv_dia_2', '123456', 'Trần Thị Địa', 'gv_dia2@school.edu.vn', 'GVBM'),
-  ('gv_gdcd_1', '123456', 'Nguyễn Văn Lâm', 'gv_gdcd1@school.edu.vn', 'GVBM'),
-  ('gv_gdcd_2', '123456', 'Lý Thị Tuyết', 'gv_gdcd2@school.edu.vn', 'GVBM')
+  ('gv_toan_1', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Trần Minh Toán', 'gv_toan1@school.edu.vn', 'GVBM'),
+  ('gv_toan_2', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Phạm Văn Toán', 'gv_toan2@school.edu.vn', 'GVBM'),
+  ('gv_van_1', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Lê Thị Văn', 'gv_van1@school.edu.vn', 'GVBM'),
+  ('gv_van_2', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Nguyễn Văn Lợi', 'gv_van2@school.edu.vn', 'GVBM'),
+  ('gv_anh_1', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Hoàng Anh', 'gv_anh1@school.edu.vn', 'GVBM'),
+  ('gv_anh_2', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Đặng Thị Anh Dũng', 'gv_anh2@school.edu.vn', 'GVBM'),
+  ('gv_ly_1', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Phan Văn Tuấn', 'gv_ly1@school.edu.vn', 'GVBM'),
+  ('gv_ly_2', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Bùi Thị Lý', 'gv_ly2@school.edu.vn', 'GVBM'),
+  ('gv_hoa_1', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Trương Hoá', 'gv_hoa1@school.edu.vn', 'GVBM'),
+  ('gv_hoa_2', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Ngô Thị Hóa', 'gv_hoa2@school.edu.vn', 'GVBM'),
+  ('gv_sinh_1', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Lê Minh Sinh', 'gv_sinh1@school.edu.vn', 'GVBM'),
+  ('gv_sinh_2', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Võ Thị Sinh', 'gv_sinh2@school.edu.vn', 'GVBM'),
+  ('gv_su_1', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Đỗ Văn Sử', 'gv_su1@school.edu.vn', 'GVBM'),
+  ('gv_su_2', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Phùng Thị Sử', 'gv_su2@school.edu.vn', 'GVBM'),
+  ('gv_dia_1', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Hà Văn Địa', 'gv_dia1@school.edu.vn', 'GVBM'),
+  ('gv_dia_2', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Trần Thị Địa', 'gv_dia2@school.edu.vn', 'GVBM'),
+  ('gv_gdcd_1', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Nguyễn Văn Lâm', 'gv_gdcd1@school.edu.vn', 'GVBM'),
+  ('gv_gdcd_2', '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', 'Lý Thị Tuyết', 'gv_gdcd2@school.edu.vn', 'GVBM')
 ON CONFLICT (TenDangNhap) DO NOTHING;
 
 -- Toán

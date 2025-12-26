@@ -1,15 +1,25 @@
 const pool = require('../config/db');
+const bcrypt = require('bcrypt');
 
 // ========== LẤY USER THEO CREDENTIALS ==========
 const findByCredentials = async (username, password) => {
+    // Bước 1: Lấy user theo username
     const result = await pool.query(
         `SELECT u.*, r.TenVaiTro, r.Quyen
          FROM NGUOIDUNG u
          JOIN VAITRO r ON u.MaVaiTro = r.MaVaiTro
-         WHERE u.TenDangNhap = $1 AND u.MatKhau = $2 AND u.TrangThai = true`,
-        [username, password]
+         WHERE u.TenDangNhap = $1 AND u.TrangThai = true`,
+        [username]
     );
-    return result.rows[0] || null;
+    
+    const user = result.rows[0];
+    if (!user) return null;
+    
+    // Bước 2: Verify password với bcrypt
+    const isPasswordValid = await bcrypt.compare(password, user.matkhau);
+    if (!isPasswordValid) return null;
+    
+    return user;
 };
 
 // ========== LẤY USER THEO ID ==========
@@ -48,11 +58,15 @@ const existsByUsername = async (username) => {
 // ========== TẠO USER MỚI ==========
 const create = async (userData) => {
     const { TenDangNhap, MatKhau, HoTen, Email, MaVaiTro } = userData;
+    
+    // Hash password trước khi lưu vào database
+    const hashedPassword = await bcrypt.hash(MatKhau, 10);
+    
     const result = await pool.query(
         `INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro, TrangThai)
          VALUES ($1, $2, $3, $4, $5, true)
          RETURNING *`,
-        [TenDangNhap, MatKhau, HoTen, Email, MaVaiTro]
+        [TenDangNhap, hashedPassword, HoTen, Email, MaVaiTro]
     );
     return result.rows[0];
 };
@@ -73,17 +87,24 @@ const update = async (id, userData) => {
 // ========== KIỂM TRA MẬT KHẨU ==========
 const checkPassword = async (id, password) => {
     const result = await pool.query(
-        'SELECT 1 FROM NGUOIDUNG WHERE MaNguoiDung = $1 AND MatKhau = $2',
-        [id, password]
+        'SELECT MatKhau FROM NGUOIDUNG WHERE MaNguoiDung = $1',
+        [id]
     );
-    return result.rows.length > 0;
+    
+    if (result.rows.length === 0) return false;
+    
+    // So sánh password với bcrypt
+    return await bcrypt.compare(password, result.rows[0].matkhau);
 };
 
 // ========== ĐỔI MẬT KHẨU ==========
 const changePassword = async (id, newPassword) => {
+    // Hash password mới trước khi lưu
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
     await pool.query(
         'UPDATE NGUOIDUNG SET MatKhau = $1 WHERE MaNguoiDung = $2',
-        [newPassword, id]
+        [hashedPassword, id]
     );
     return true;
 };
