@@ -118,12 +118,15 @@
                     yearSelect.innerHTML += `<option value="${y.manamhoc}">${y.tennamhoc}</option>`;
                 });
 
-                // Load học kỳ
+                // Load học kỳ (CHỈ HK1 và HK2 - Cả năm xem ở trang Báo cáo tổng kết)
                 const semRes = await fetch('/api/settings/semesters');
                 const semesters = await semRes.json();
                 const semesterSelect = document.getElementById('semesterSelect');
                 semesters.forEach(s => {
-                    semesterSelect.innerHTML += `<option value="${s.mahocky}">${s.tenhocky}</option>`;
+                    // Chỉ hiển thị HK1 và HK2, bỏ qua "Cả năm"
+                    if (s.mahocky === 'HK1' || s.mahocky === 'HK2') {
+                        semesterSelect.innerHTML += `<option value="${s.mahocky}">${s.tenhocky}</option>`;
+                    }
                 });
 
                 // Load khối

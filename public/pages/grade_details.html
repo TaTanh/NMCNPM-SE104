@@ -171,9 +171,29 @@
             }
 
             tbody.innerHTML = students.map(hs => {
+                // Determine data format: new format (HK1, HK2, CN objects) or old format (array)
+                const isNewFormat = hs.Diem && Object.keys(hs.Diem).length > 0 && 
+                                   Object.values(hs.Diem)[0] && 
+                                   typeof Object.values(hs.Diem)[0] === 'object' && 
+                                   'HK1' in Object.values(hs.Diem)[0];
+                
                 // Hiển thị điểm dạng text (chỉ xem, không nhập)
                 const gradeDisplay = examTypes.map(et => {
-                    const diem = hs.Diem && hs.Diem[et.tenlhkt] ? hs.Diem[et.tenlhkt][0] : '–';
+                    let diem = '–';
+                    
+                    if (isNewFormat) {
+                        // New format: { TenLHKT: { HK1: x, HK2: y, CN: z } }
+                        const semesterKey = semester === 'HK1' ? 'HK1' : semester === 'HK2' ? 'HK2' : 'CN';
+                        diem = hs.Diem && hs.Diem[et.tenlhkt] && hs.Diem[et.tenlhkt][semesterKey] !== null
+                            ? hs.Diem[et.tenlhkt][semesterKey]
+                            : '–';
+                    } else {
+                        // Old format: { TenLHKT: [array of scores] }
+                        diem = hs.Diem && hs.Diem[et.tenlhkt] && hs.Diem[et.tenlhkt][0] !== undefined
+                            ? hs.Diem[et.tenlhkt][0]
+                            : '–';
+                    }
+                    
                     return `<td>${diem}</td>`;
                 }).join('');
 
@@ -182,12 +202,27 @@
                 if (hs.Diem && Object.keys(hs.Diem).length > 0) {
                     let totalWeight = 0;
                     let totalScore = 0;
+                    
                     examTypes.forEach(et => {
-                        if (hs.Diem[et.tenlhkt] && hs.Diem[et.tenlhkt].length > 0) {
-                            totalScore += hs.Diem[et.tenlhkt][0] * et.heso;
+                        let score = null;
+                        
+                        if (isNewFormat) {
+                            const semesterKey = semester === 'HK1' ? 'HK1' : semester === 'HK2' ? 'HK2' : 'CN';
+                            score = hs.Diem[et.tenlhkt] && hs.Diem[et.tenlhkt][semesterKey] !== null
+                                ? hs.Diem[et.tenlhkt][semesterKey]
+                                : null;
+                        } else {
+                            score = hs.Diem[et.tenlhkt] && hs.Diem[et.tenlhkt][0] !== undefined
+                                ? hs.Diem[et.tenlhkt][0]
+                                : null;
+                        }
+                        
+                        if (score !== null) {
+                            totalScore += score * et.heso;
                             totalWeight += et.heso;
                         }
                     });
+                    
                     if (totalWeight > 0) {
                         avg = (totalScore / totalWeight).toFixed(1);
                     }

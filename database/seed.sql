@@ -95,26 +95,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ========== FUNCTION: Generate random điểm (0-10) ==========
+-- ========== FUNCTION: Generate random điểm (0-10) với bội số 0.25 ==========
 CREATE OR REPLACE FUNCTION random_diem() RETURNS DECIMAL AS $$
 DECLARE
     diem DECIMAL;
     rand_val DECIMAL;
+    base_score DECIMAL;
 BEGIN
-    -- Tạo điểm từ 0-10 với phân bố mới
+    -- Tạo điểm từ 0-10 với phân bố thực tế
     -- Phân bố: 60% điểm giỏi (8.5-10), 25% điểm khá (7-8.5), 10% điểm TB (5-7), 5% điểm yếu (2-5)
     rand_val := random();
-    diem := CASE 
+    base_score := CASE 
         WHEN rand_val < 0.60 THEN 8.5 + (random() * 1.5)  -- 60% điểm giỏi (8.5-10)
         WHEN rand_val < 0.85 THEN 7.0 + (random() * 1.5)  -- 25% điểm khá (7-8.5)
         WHEN rand_val < 0.95 THEN 5.0 + (random() * 2.0)  -- 10% điểm TB (5-7)
         ELSE 2.0 + (random() * 3.0)                       -- 5% điểm yếu (2-5)
     END;
+    
     -- Đảm bảo điểm không vượt quá 10
-    IF diem > 10 THEN
-        diem := 10;
+    IF base_score > 10 THEN
+        base_score := 10;
     END IF;
-    RETURN ROUND(diem::NUMERIC, 2);
+    
+    -- Làm tròn theo bội số 0.25 (giống cách giáo viên chấm thực tế: 7.0, 7.25, 7.5, 7.75, 8.0...)
+    diem := ROUND(base_score * 4) / 4;
+    
+    RETURN diem;
 END;
 $$ LANGUAGE plpgsql;
 

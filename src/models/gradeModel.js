@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-// ========== LẤY BẢNG ĐIỂM MÔN CỦA LỚP ==========
+// ========== LẤY BẢNG ĐIỂM MÔN CỦA LỚP (CỦ - GIỮ LẠI CHO TƯƠNG THÍCH) ==========
 const getClassSubjectGrades = async (maLop, maMonHoc, hocky = null) => {
     let query = `
         SELECT 
@@ -26,6 +26,45 @@ const getClassSubjectGrades = async (maLop, maMonHoc, hocky = null) => {
     query += ' ORDER BY hs.HoTen, lhkt.HeSo';
     
     const result = await pool.query(query, params);
+    return result.rows;
+};
+
+// ========== LẤY BẢNG ĐIỂM MÔN CỦA LỚP - CẢ 3 HỌC KỲ (MỚI) ==========
+const getClassSubjectGradesAllSemesters = async (maLop, maMonHoc) => {
+    const query = `
+        SELECT 
+            hs.MaHocSinh, hs.HoTen,
+            lhkt.TenLHKT, lhkt.HeSo,
+            -- Điểm HK1
+            (
+                SELECT ct.Diem
+                FROM CT_BANGDIEMMON_HOCSINH ct
+                JOIN BANGDIEMMON bdm ON ct.MaBangDiem = bdm.MaBangDiem
+                WHERE bdm.MaLop = $1 
+                  AND bdm.MaMonHoc = $2
+                  AND bdm.MaHocKy = 'HK1'
+                  AND ct.MaHocSinh = hs.MaHocSinh
+                  AND ct.MaLHKT = lhkt.MaLHKT
+            ) AS DiemHK1,
+            -- Điểm HK2
+            (
+                SELECT ct.Diem
+                FROM CT_BANGDIEMMON_HOCSINH ct
+                JOIN BANGDIEMMON bdm ON ct.MaBangDiem = bdm.MaBangDiem
+                WHERE bdm.MaLop = $1 
+                  AND bdm.MaMonHoc = $2
+                  AND bdm.MaHocKy = 'HK2'
+                  AND ct.MaHocSinh = hs.MaHocSinh
+                  AND ct.MaLHKT = lhkt.MaLHKT
+            ) AS DiemHK2
+        FROM HOCSINH hs
+        JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
+        CROSS JOIN LOAIHINHKIEMTRA lhkt
+        WHERE qth.MaLop = $1
+        ORDER BY hs.HoTen, lhkt.HeSo
+    `;
+    
+    const result = await pool.query(query, [maLop, maMonHoc]);
     return result.rows;
 };
 
@@ -249,5 +288,6 @@ module.exports = {
     calculateSemesterAverage,
     calculateYearAverage,
     getStudentSemesterSummary,
-    getStudentYearSummary
+    getStudentYearSummary,
+    getClassSubjectGradesAllSemesters
 };
