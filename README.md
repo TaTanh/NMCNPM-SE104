@@ -1,5 +1,10 @@
 # Hệ thống Quản lý Học sinh – SE104
 
+![Tests](https://github.com/YOURNAME/YOURREPO/workflows/Run%20Tests/badge.svg)
+[![Coverage](https://img.shields.io/badge/coverage-70%25-yellowgreen)](./coverage)
+[![Node.js](https://img.shields.io/badge/node.js-18.x-green)](https://nodejs.org/)
+[![PostgreSQL](https://img.shields.io/badge/postgresql-14-blue)](https://www.postgresql.org/)
+
 Dự án phục vụ môn học Nhập môn Công nghệ Phần mềm (SE104).  
 Ứng dụng web quản lý học sinh được xây dựng bằng **Node.js**, **Express** và **PostgreSQL**, với giao diện sử dụng HTML, CSS và JavaScript.
 
@@ -163,7 +168,63 @@ Khi chạy thành công, terminal sẽ hiển thị:
 Server đang chạy tại http://localhost:3000/pages/login.html
 ```
 
-## 🌐 6. Truy cập hệ thống
+## 🧪 6. Chạy Tests
+
+### Chạy tất cả tests
+```bash
+npm test
+```
+
+### Chạy tests với coverage report
+```bash
+npm run test:coverage
+```
+
+### Chạy test cho file cụ thể
+```bash
+npm test auth.test.js
+npm test class.test.js
+npm test grade.test.js
+```
+
+### Xem coverage report
+```bash
+# Mở file trong browser
+open coverage/lcov-report/index.html
+```
+
+**Test files:**
+- `__tests__/auth.test.js` - Authentication tests
+- `__tests__/student.test.js` - Student management tests
+- `__tests__/class.test.js` - Class management tests
+- `__tests__/gvcn.test.js` - GVCN assignment tests
+- `__tests__/grade.test.js` - Grade management tests
+- `__tests__/teaching.test.js` - Teaching assignment tests
+
+**Coverage target:** ≥ 70%
+
+## 🔄 7. CI/CD
+
+Project sử dụng **GitHub Actions** để tự động chạy tests mỗi khi push code.
+
+### Workflow
+- **Trigger:** Push hoặc Pull Request vào branch `main`, `master`, `develop`
+- **Jobs:** 
+  - Setup Node.js 18
+  - Setup PostgreSQL test database
+  - Install dependencies
+  - Run tests
+  - Generate coverage report
+
+### Status Badge
+![Tests](https://github.com/TaTanh/NMCNPM-SE104/workflows/Run%20Tests/badge.svg)
+
+### Xem kết quả CI
+1. Vào repository trên GitHub
+2. Click tab "Actions"
+3. Xem kết quả từng lần chạy tests
+
+## 🌐 8. Truy cập hệ thống
 
 Mở trình duyệt và truy cập:
 ```
@@ -190,7 +251,7 @@ Trang mặc định là trang đăng nhập (`login.html`).
 
 **CTRL + C** để đóng server
 
-## 📡 7. API Endpoints
+## 📡 9. API Endpoints
 
 | Method | Endpoint | Mô tả |
 |--------|----------|-------|
@@ -203,7 +264,7 @@ Trang mặc định là trang đăng nhập (`login.html`).
 | - | `/api/settings/*` | Cài đặt quy định |
 | GET | `/api/dashboard/stats` | Thống kê dashboard |
 
-## ⚠️ 8. Lưu ý khi phát triển
+## ⚠️ 10. Lưu ý khi phát triển
 
 - **Không mở tệp HTML trực tiếp** bằng đường dẫn dạng `file:///`  
   Toàn bộ hệ thống cần chạy thông qua Express để xử lý đúng các đường dẫn tài nguyên và API.
@@ -221,7 +282,14 @@ Trang mặc định là trang đăng nhập (`login.html`).
 
 **Nếu đã có dữ liệu duplicate**: Xem phần "Fix dữ liệu duplicate" trong `DATABASE_GUIDE.md`
 
-## 👥 9. Thành viên thực hiện
+## � 11. Tài liệu tham khảo
+
+- [TESTING_PLAN.md](TESTING_PLAN.md) - Kế hoạch kiểm thử chi tiết
+- [SECURITY_AND_TESTING.md](SECURITY_AND_TESTING.md) - Bảo mật và kiểm thử
+- [DATABASE_GUIDE.md](DATABASE_GUIDE.md) - Hướng dẫn database
+- [IMPLEMENTATION_REPORT.md](IMPLEMENTATION_REPORT.md) - Báo cáo triển khai
+
+## 👥 12. Thành viên thực hiện
 
 **Project:** Quản lý học sinh – SE104
 
