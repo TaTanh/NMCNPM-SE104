@@ -32,6 +32,54 @@ const getClassSubjectGrades = async (req, res) => {
             console.warn('Permission check failed:', e.message);
         }
         
+        // Nếu chọn "Cả năm" hoặc không chọn học kỳ, trả về cả 3 học kỳ
+        if (!hk || hk === 'CN' || hk === 0 || hk === '0') {
+            const rows = await gradeModel.getClassSubjectGradesAllSemesters(maLop, maMonHoc);
+            
+            // Format data giống như reports: group by student với cả 3 học kỳ
+            const studentsMap = new Map();
+            rows.forEach(row => {
+                if (!studentsMap.has(row.mahocsinh)) {
+                    studentsMap.set(row.mahocsinh, {
+                        MaHocSinh: row.mahocsinh,
+                        HoTen: row.hoten,
+                        Diem: {}
+                    });
+                }
+                
+                const student = studentsMap.get(row.mahocsinh);
+                if (!student.Diem[row.tenlhkt]) {
+                    student.Diem[row.tenlhkt] = {
+                        HK1: row.diemhk1 || null,
+                        HK2: row.diemhk2 || null,
+                        CN: null // Sẽ tính sau nếu cần
+                    };
+                } else {
+                    // Merge nếu có nhiều điểm cùng loại (không nên xảy ra với query hiện tại)
+                    if (row.diemhk1 !== null) student.Diem[row.tenlhkt].HK1 = row.diemhk1;
+                    if (row.diemhk2 !== null) student.Diem[row.tenlhkt].HK2 = row.diemhk2;
+                }
+            });
+            
+            // Tính điểm cả năm cho mỗi loại kiểm tra: (HK1 + HK2*2) / 3
+            studentsMap.forEach(student => {
+                Object.keys(student.Diem).forEach(tenlhkt => {
+                    const hk1 = student.Diem[tenlhkt].HK1;
+                    const hk2 = student.Diem[tenlhkt].HK2;
+                    if (hk1 !== null && hk2 !== null) {
+                        student.Diem[tenlhkt].CN = parseFloat(((hk1 + hk2 * 2) / 3).toFixed(2));
+                    } else if (hk1 !== null) {
+                        student.Diem[tenlhkt].CN = hk1;
+                    } else if (hk2 !== null) {
+                        student.Diem[tenlhkt].CN = hk2;
+                    }
+                });
+            });
+            
+            return res.json(Array.from(studentsMap.values()));
+        }
+        
+        // Trường hợp chọn HK1 hoặc HK2 cụ thể - giữ nguyên logic cũ
         const rows = await gradeModel.getClassSubjectGrades(maLop, maMonHoc, hk);
         
         // Gom điểm theo học sinh

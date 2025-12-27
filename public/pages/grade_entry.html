@@ -61,10 +61,15 @@
                 <a href="/pages/grade_entry_select.html" class="btn btn-outline">← Quay lại</a>
             </div>
 
-            <!-- THANH TÌM KIẾM HỌC SINH -->
-            <div class="toolbar" style="margin-bottom: 16px;">
-                <div class="search-box">
+            <!-- THANH TÌM KIẾM HỌC SINH VÀ CÁC NÚT THAO TÁC -->
+            <div class="toolbar" style="margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                <div class="search-box" style="flex: 1;">
                     <input type="text" id="searchStudent" placeholder="Tìm theo mã hoặc tên học sinh...">
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-print" onclick="window.print()">In</button>
+                    <button class="btn btn-outline">Xuất Excel</button>
+                    <button class="btn btn-primary" id="btnSaveGrades">Lưu điểm</button>
                 </div>
             </div>
 
@@ -82,12 +87,6 @@
                         <tr><td colspan="3" style="text-align:center;">Đang tải dữ liệu...</td></tr>
                     </tbody>
                 </table>
-            </div>
-
-            <div class="modal-footer" style="margin-top: 14px;">
-                <button class="btn btn-print" onclick="window.print()">In</button>
-                <button class="btn btn-outline">Xuất Excel</button>
-                <button class="btn btn-primary" id="btnSaveGrades">Lưu điểm</button>
             </div>
 
         </div><!-- content -->
