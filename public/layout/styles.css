@@ -234,18 +234,21 @@ body {
     /* thêm cho hiệu ứng nền ảnh */
     background: transparent;
     position: relative;
-    overflow: hidden;
+    overflow-y: auto;
 
     /* FIX: luôn cao = chiều cao màn hình để background không zoom khác giữa các trang */
     height: 100vh;
     flex-shrink: 0;
 }
 
-/* Nền ảnh tĩnh cho sidebar */
+/* Nền ảnh tĩnh cho sidebar - FIXED để luôn full màn hình */
 .sidebar::before {
     content: "";
-    position: absolute;
-    inset: 0;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 240px;
+    height: 100vh;
     z-index: -1;
 
     background-image: url("/assets/a4.jpg"); 
