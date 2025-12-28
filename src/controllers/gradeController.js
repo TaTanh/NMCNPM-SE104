@@ -152,15 +152,18 @@ const updateGrade = async (req, res) => {
             console.warn('Update permission check failed:', e.message);
         }
         
-        // QĐ6: Lấy giới hạn điểm từ THAMSO
-        const { diemMin, diemMax } = await gradeModel.getGradeLimits();
-        
-        // Kiểm tra điểm hợp lệ
-        if (Diem < diemMin || Diem > diemMax) {
-            return res.status(400).json({ error: `Điểm phải từ ${diemMin} đến ${diemMax}` });
+        // Nếu điểm null/undefined/empty → cho phép xóa (không validate)
+        if (Diem !== null && Diem !== undefined && Diem !== '') {
+            // QĐ6: Lấy giới hạn điểm từ THAMSO
+            const { diemMin, diemMax } = await gradeModel.getGradeLimits();
+            
+            // Kiểm tra điểm hợp lệ
+            if (Diem < diemMin || Diem > diemMax) {
+                return res.status(400).json({ error: `Điểm phải từ ${diemMin} đến ${diemMax}` });
+            }
         }
         
-        // Upsert điểm
+        // Upsert hoặc xóa điểm
         const grade = await gradeModel.upsertGrade({ MaBangDiem, MaHocSinh, MaLHKT, Diem });
         res.json(grade);
     } catch (err) {

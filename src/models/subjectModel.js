@@ -44,17 +44,53 @@ const update = async (id, subjectData) => {
 
 // ========== XÓA MÔN HỌC ==========
 const remove = async (id) => {
-    const result = await pool.query(
-        'DELETE FROM MONHOC WHERE MaMonHoc = $1 RETURNING *',
-        [id]
-    );
-    return result.rows[0] || null;
+    // Xóa CASCADE: xóa tất cả dữ liệu liên quan trước
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        // 1. Xóa báo cáo tổng kết môn (bảng con xóa tự động do ON DELETE CASCADE)
+        await client.query(
+            'DELETE FROM BAOCAOTONGKETMON WHERE MaMonHoc = $1',
+            [id]
+        );
+        
+        // 2. Xóa bảng điểm môn (các bảng con xóa tự động do ON DELETE CASCADE)
+        await client.query(
+            'DELETE FROM BANGDIEMMON WHERE MaMonHoc = $1',
+            [id]
+        );
+        
+        // 3. Xóa phân công giảng dạy
+        await client.query(
+            'DELETE FROM GIANGDAY WHERE MaMonHoc = $1',
+            [id]
+        );
+        
+        // 4. Cuối cùng xóa môn học
+        const result = await client.query(
+            'DELETE FROM MONHOC WHERE MaMonHoc = $1 RETURNING *',
+            [id]
+        );
+        
+        await client.query('COMMIT');
+        return result.rows[0] || null;
+    } catch (err) {
+        await client.query('ROLLBACK');
+        throw err;
+    } finally {
+        client.release();
+    }
 };
 
 // ========== KIỂM TRA MÔN HỌC CÓ ĐIỂM KHÔNG ==========
 const hasGrades = async (id) => {
+    // Kiểm tra có điểm thực tế (không phải NULL) trong CT_BANGDIEMMON_HOCSINH
     const result = await pool.query(
-        'SELECT 1 FROM BANGDIEMMON WHERE MaMonHoc = $1 LIMIT 1',
+        `SELECT 1 FROM CT_BANGDIEMMON_HOCSINH ct
+         JOIN BANGDIEMMON bdm ON ct.MaBangDiem = bdm.MaBangDiem
+         WHERE bdm.MaMonHoc = $1 AND ct.Diem IS NOT NULL
+         LIMIT 1`,
         [id]
     );
     return result.rows.length > 0;

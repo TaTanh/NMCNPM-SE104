@@ -551,23 +551,48 @@
                     grades.forEach(g => {
                         const avg = calculateSubjectAverage(g);
                         if (avg === null) return;
-                        if (!subjectMap[g.MaMonHoc]) subjectMap[g.MaMonHoc] = [];
-                        subjectMap[g.MaMonHoc].push(avg);
+                        if (!subjectMap[g.MaMonHoc]) subjectMap[g.MaMonHoc] = { scores: [], name: g.TenMonHoc };
+                        subjectMap[g.MaMonHoc].scores.push(avg);
                     });
 
-                    const subjectAverages = Object.values(subjectMap).map(arr => arr.reduce((a,b)=>a+b,0)/arr.length);
+                    const subjectAverages = Object.values(subjectMap).map(s => s.scores.reduce((a,b)=>a+b,0)/s.scores.length);
                     const totalScore = subjectAverages.reduce((a,b)=>a+b,0);
                     const subjectCount = subjectAverages.length;
                     const avgScore = subjectCount ? totalScore / subjectCount : null;
                     const passedCount = subjectAverages.filter(v => v >= 5).length;
 
-                    // Tính học lực (ranking)
+                    // Tính học lực theo TT58/2011
                     let ranking = '-';
-                    if (avgScore !== null) {
-                        if (avgScore >= 8) ranking = 'Giỏi';
-                        else if (avgScore >= 6.5) ranking = 'Khá';
-                        else if (avgScore >= 5) ranking = 'Trung bình';
-                        else ranking = 'Yếu';
+                    if (avgScore !== null && subjectAverages.length > 0) {
+                        // Lấy điểm Toán và Văn (nếu có)
+                        const toanScore = Object.entries(subjectMap).find(([k, v]) => v.name === 'Toán')?.[1]?.scores;
+                        const vanScore = Object.entries(subjectMap).find(([k, v]) => v.name === 'Ngữ Văn')?.[1]?.scores;
+                        const toan = toanScore ? toanScore.reduce((a,b)=>a+b,0)/toanScore.length : undefined;
+                        const van = vanScore ? vanScore.reduce((a,b)=>a+b,0)/vanScore.length : undefined;
+                        
+                        const minScore = Math.min(...subjectAverages);
+                        const anyGE = (score, thr) => (score !== undefined && !isNaN(score) && score >= thr);
+                        
+                        // Giỏi: ĐTB >= 8.0 && (Toán hoặc Văn >= 8.0) && không có môn < 6.5
+                        if (avgScore >= 8.0 && (anyGE(toan, 8.0) || anyGE(van, 8.0)) && minScore >= 6.5) {
+                            ranking = 'Giỏi';
+                        }
+                        // Khá: ĐTB >= 6.5 && (Toán hoặc Văn >= 6.5) && không có môn < 5.0
+                        else if (avgScore >= 6.5 && (anyGE(toan, 6.5) || anyGE(van, 6.5)) && minScore >= 5.0) {
+                            ranking = 'Khá';
+                        }
+                        // Trung bình: ĐTB >= 5.0 && (Toán hoặc Văn >= 5.0) && không có môn < 3.5
+                        else if (avgScore >= 5.0 && (anyGE(toan, 5.0) || anyGE(van, 5.0)) && minScore >= 3.5) {
+                            ranking = 'Trung bình';
+                        }
+                        // Yếu: ĐTB >= 3.5 && không có môn < 2.0
+                        else if (avgScore >= 3.5 && minScore >= 2.0) {
+                            ranking = 'Yếu';
+                        }
+                        // Kém: còn lại
+                        else {
+                            ranking = 'Kém';
+                        }
                     }
 
                     // Lấy hạnh kiểm

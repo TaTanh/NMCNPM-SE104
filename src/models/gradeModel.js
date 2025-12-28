@@ -94,6 +94,19 @@ const getGradeLimits = async () => {
 // ========== CẬP NHẬT ĐIỂM ==========
 const upsertGrade = async (gradeData) => {
     const { MaBangDiem, MaHocSinh, MaLHKT, Diem } = gradeData;
+    
+    // Nếu điểm rỗng/null → XÓA record thay vì lưu NULL
+    if (Diem === null || Diem === undefined || Diem === '') {
+        const result = await pool.query(
+            `DELETE FROM CT_BANGDIEMMON_HOCSINH 
+             WHERE MaBangDiem = $1 AND MaHocSinh = $2 AND MaLHKT = $3
+             RETURNING *`,
+            [MaBangDiem, MaHocSinh, MaLHKT]
+        );
+        return result.rows[0] || { deleted: true };
+    }
+    
+    // Nếu có điểm hợp lệ → INSERT hoặc UPDATE
     const result = await pool.query(
         `INSERT INTO CT_BANGDIEMMON_HOCSINH (MaBangDiem, MaHocSinh, MaLHKT, Diem)
          VALUES ($1, $2, $3, $4)

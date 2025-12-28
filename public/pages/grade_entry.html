@@ -67,6 +67,7 @@
                     <input type="text" id="searchStudent" placeholder="Tìm theo mã hoặc tên học sinh...">
                 </div>
                 <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-danger" id="btnDeleteSelected" style="background: #dc2626; display: none;">Xóa đã chọn</button>
                     <button class="btn btn-print" onclick="window.print()">In</button>
                     <button class="btn btn-outline">Xuất Excel</button>
                     <button class="btn btn-primary" id="btnSaveGrades">Lưu điểm</button>
@@ -78,6 +79,7 @@
                 <table class="data-table">
                     <thead>
                         <tr id="gradeTableHead">
+                            <th style="width: 40px;"><input type="checkbox" id="checkAll"></th>
                             <th>Mã HS</th>
                             <th>Họ tên</th>
                             <th>Điểm TB Môn</th>
@@ -161,11 +163,19 @@
                 // Cập nhật header bảng
                 const thead = document.getElementById('gradeTableHead');
                 thead.innerHTML = `
+                    <th style="width: 40px;"><input type="checkbox" id="checkAll"></th>
                     <th>Mã HS</th>
                     <th>Họ tên</th>
                     ${examTypes.map(et => `<th>${et.tenlhkt} (x${et.heso})</th>`).join('')}
                     <th>Điểm TB Môn</th>
                 `;
+                
+                // Thêm event listener cho checkbox chọn tất cả
+                document.getElementById('checkAll').addEventListener('change', function() {
+                    const checkboxes = document.querySelectorAll('.student-checkbox');
+                    checkboxes.forEach(cb => cb.checked = this.checked);
+                    updateDeleteButtonVisibility();
+                });
 
                 // Lấy học sinh và điểm
                 const gradesRes = await fetch(`/api/grades/class/${classId}/subject/${subjectId}?hocky=${semester}`);
@@ -227,6 +237,7 @@
 
                 return `
                     <tr data-student="${hs.MaHocSinh}">
+                        <td><input type="checkbox" class="student-checkbox" data-student="${hs.MaHocSinh}"></td>
                         <td>${hs.MaHocSinh}</td>
                         <td>${hs.HoTen}</td>
                         ${gradeInputs}
@@ -234,9 +245,21 @@
                     </tr>
                 `;
             }).join('');
+            
+            // Thêm event listeners cho checkboxes
+            document.querySelectorAll('.student-checkbox').forEach(cb => {
+                cb.addEventListener('change', updateDeleteButtonVisibility);
+            });
+        }
+        
+        // ========== CẬP NHẬT HIỂN THỊ NÚT XÓA ==========
+        function updateDeleteButtonVisibility() {
+            const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+            const btnDeleteSelected = document.getElementById('btnDeleteSelected');
+            btnDeleteSelected.style.display = checkedBoxes.length > 0 ? 'inline-block' : 'none';
         }
 
-        // ========== VALIDATION ĐIỂM ==========
+        // ========== VALIDATION ĐIỂM ===========
         function validateGradeInput(input) {
             let value = parseFloat(input.value);
             
@@ -285,21 +308,66 @@
             }
         }
 
+        // ========== XÓA ĐIỂM ĐÃ CHỌN ==========
+        document.getElementById('btnDeleteSelected').addEventListener('click', async () => {
+            const checkedBoxes = document.querySelectorAll('.student-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                toastWarning('Vui lòng chọn học sinh cần xóa điểm');
+                return;
+            }
+            
+            const count = checkedBoxes.length;
+            if (!confirm(`Bạn có chắc muốn xóa điểm của ${count} học sinh đã chọn?\n\nHành động này không thể hoàn tác!`)) {
+                return;
+            }
+            
+            try {
+                const studentIds = Array.from(checkedBoxes).map(cb => cb.dataset.student);
+                
+                // Xóa điểm cho từng học sinh đã chọn
+                for (const studentId of studentIds) {
+                    for (const examType of examTypes) {
+                        await fetch('/api/grades/update', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                MaBangDiem: maBangDiem,
+                                MaHocSinh: studentId,
+                                MaLHKT: examType.malhkt,
+                                Diem: null
+                            })
+                        });
+                    }
+                }
+                
+                toastSuccess(`Đã xóa điểm của ${count} học sinh`);
+                
+                // Reload dữ liệu
+                await loadGradeData();
+                
+                // Uncheck tất cả
+                document.getElementById('checkAll').checked = false;
+                updateDeleteButtonVisibility();
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi xóa điểm!');
+            }
+        });
+
         // ========== LƯU ĐIỂM ==========
         document.getElementById('btnSaveGrades').addEventListener('click', async () => {
             const inputs = document.querySelectorAll('#gradeTableBody input[type="number"]');
             const updates = [];
 
             inputs.forEach(input => {
-                const value = parseFloat(input.value);
-                if (!isNaN(value)) {
-                    updates.push({
-                        MaBangDiem: maBangDiem,
-                        MaHocSinh: input.dataset.student,
-                        MaLHKT: input.dataset.examtype,
-                        Diem: value
-                    });
-                }
+                const value = input.value.trim();
+                // Gửi cả input trống để xóa điểm
+                updates.push({
+                    MaBangDiem: maBangDiem,
+                    MaHocSinh: input.dataset.student,
+                    MaLHKT: input.dataset.examtype,
+                    Diem: value === '' ? null : parseFloat(value)
+                });
             });
 
             try {
