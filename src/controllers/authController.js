@@ -1,4 +1,5 @@
 const userModel = require('../models/userModel');
+const classModel = require('../models/classModel');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/jwt');
 
@@ -105,12 +106,46 @@ const updateUser = async (req, res) => {
         const { id } = req.params;
         const { HoTen, Email, MaVaiTro, TrangThai } = req.body;
         
-        const user = await userModel.update(id, { HoTen, Email, MaVaiTro, TrangThai });
-        
-        if (!user) {
+        // BẢO VỆ 1: Không được sửa super admin (ID = 1 hoặc username = 'admin')
+        const targetUser = await userModel.findById(id);
+        if (!targetUser) {
             return res.status(404).json({ error: 'Không tìm thấy người dùng' });
         }
         
+        if (targetUser.manguoidung === 1 || targetUser.tendangnhap === 'admin') {
+            return res.status(403).json({ error: 'Không thể thay đổi thông tin super admin!' });
+        }
+        
+        // BẢO VỆ 2: Admin không được tự demote chính mình
+        if (req.user && req.user.maNguoiDung) {
+            const currentUserId = req.user.maNguoiDung;
+            if (parseInt(id) === currentUserId && targetUser.mavaitro === 'ADMIN' && MaVaiTro !== 'ADMIN') {
+                return res.status(403).json({ error: 'Bạn không thể hạ quyền chính mình!' });
+            }
+        }
+        
+        // BẢO VỆ 3: Nếu demote admin, phải còn ít nhất 1 admin khác
+        if (targetUser.mavaitro === 'ADMIN' && MaVaiTro !== 'ADMIN') {
+            const adminCount = await userModel.countAdmins();
+            if (adminCount <= 1) {
+                return res.status(403).json({ error: 'Phải có ít nhất 1 admin trong hệ thống!' });
+            }
+        }
+        
+        // 🔒 BẢO VỆ 4: Không cho demote GVCN về GVBM nếu đang chủ nhiệm lớp
+        if (targetUser.mavaitro === 'GVCN' && MaVaiTro === 'GVBM') {
+            const classInfo = await classModel.countClassesByGvcn(id);
+            if (classInfo.total > 0) {
+                const danhSachLop = classInfo.classes.join(', ');
+                return res.status(403).json({ 
+                    error: `Giáo viên này đang chủ nhiệm ${classInfo.total} lớp: ${danhSachLop}. Vui lòng gỡ chủ nhiệm trước khi thay đổi vai trò về Giáo viên Bộ môn.`,
+                    classes: classInfo.classes,
+                    total: classInfo.total
+                });
+            }
+        }
+        
+        const user = await userModel.update(id, { HoTen, Email, MaVaiTro, TrangThai });
         res.json(user);
     } catch (err) {
         console.error('Lỗi cập nhật người dùng:', err);
@@ -143,12 +178,31 @@ const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
         
-        const user = await userModel.remove(id);
-        
-        if (!user) {
+        // 🔒 BẢO VỆ 1: Không được xóa super admin
+        const targetUser = await userModel.findById(id);
+        if (!targetUser) {
             return res.status(404).json({ error: 'Không tìm thấy người dùng' });
         }
         
+        if (targetUser.manguoidung === 1 || targetUser.tendangnhap === 'admin') {
+            return res.status(403).json({ error: 'Không thể xóa super admin!' });
+        }
+        
+        // 🔒 BẢO VỆ 2: Không cho admin tự xóa chính mình
+        const currentUserId = req.user.maNguoiDung;
+        if (parseInt(id) === currentUserId) {
+            return res.status(403).json({ error: 'Bạn không thể xóa chính mình!' });
+        }
+        
+        // 🔒 BẢO VỆ 3: Nếu xóa admin, phải còn ít nhất 1 admin khác
+        if (targetUser.mavaitro === 'ADMIN') {
+            const adminCount = await userModel.countAdmins();
+            if (adminCount <= 1) {
+                return res.status(403).json({ error: 'Phải có ít nhất 1 admin trong hệ thống!' });
+            }
+        }
+        
+        const user = await userModel.remove(id);
         res.json({ success: true, message: 'Đã xóa người dùng' });
     } catch (err) {
         console.error('Lỗi xóa người dùng:', err);

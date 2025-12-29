@@ -206,6 +206,14 @@ const isAdmin = async (userId) => {
     return result.rows.length > 0;
 };
 
+// ========== ĐẾM SỐ LƯỢNG ADMIN TRONG HỆ THỐNG ==========
+const countAdmins = async () => {
+    const result = await pool.query(
+        `SELECT COUNT(*) as total FROM NGUOIDUNG WHERE MaVaiTro = 'ADMIN' AND TrangThai = true`
+    );
+    return parseInt(result.rows[0].total);
+};
+
 module.exports = {
     findByCredentials,
     findById,
@@ -225,6 +233,7 @@ module.exports = {
     isGVCN,
     isGVBM,
     isAdmin,
+    countAdmins,
     setRole: async (userId, role) => {
         const result = await pool.query(
             `UPDATE NGUOIDUNG SET MaVaiTro = $1 WHERE MaNguoiDung = $2 RETURNING *`,

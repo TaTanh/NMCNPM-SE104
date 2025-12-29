@@ -242,20 +242,34 @@
                     return;
                 }
                 
-                tbody.innerHTML = users.map((u, index) => `
-                    <tr data-id="${u.manguoidung}">
-                        <td>${index + 1}</td>
-                        <td>${u.tendangnhap}</td>
-                        <td>${u.hoten || ''}</td>
-                        <td>${u.email || ''}</td>
-                        <td><span class="badge badge-${u.mavaitro?.toLowerCase()}">${u.tenvaitro}</span></td>
-                        <td>${u.trangthai ? '<span class="rate-good">Hoạt động</span>' : '<span class="rate-low">Đã khóa</span>'}</td>
-                        <td>
-                            <button class="btn btn-sm btn-secondary" onclick="editUser(${u.manguoidung})">Sửa</button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.manguoidung}, '${u.tendangnhap}')">Xóa</button>
-                        </td>
-                    </tr>
-                `).join('');
+                // Lấy thông tin user hiện tại
+                const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                const currentUserId = currentUser.maNguoiDung;
+                
+                tbody.innerHTML = users.map((u, index) => {
+                    // 🔒 Kiểm tra xem có phải super admin không (ID=1 hoặc username='admin')
+                    const isSuperAdmin = (u.manguoidung === 1 || u.tendangnhap === 'admin');
+                    const isCurrentUser = (u.manguoidung === currentUserId);
+                    
+                    // Disable nút sửa/xóa nếu là super admin hoặc chính mình
+                    const disableEdit = isSuperAdmin ? 'disabled title="Không thể sửa super admin"' : '';
+                    const disableDelete = (isSuperAdmin || isCurrentUser) ? 'disabled title="' + (isSuperAdmin ? 'Không thể xóa super admin' : 'Không thể xóa chính mình') + '"' : '';
+                    
+                    return `
+                        <tr data-id="${u.manguoidung}">
+                            <td>${index + 1}${isSuperAdmin ? ' 🔒' : ''}</td>
+                            <td>${u.tendangnhap}</td>
+                            <td>${u.hoten || ''}</td>
+                            <td>${u.email || ''}</td>
+                            <td><span class="badge badge-${u.mavaitro?.toLowerCase()}">${u.tenvaitro}</span></td>
+                            <td>${u.trangthai ? '<span class="rate-good">Hoạt động</span>' : '<span class="rate-low">Đã khóa</span>'}</td>
+                            <td>
+                                <button class="btn btn-sm btn-secondary" onclick="editUser(${u.manguoidung})" ${disableEdit}>Sửa</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.manguoidung}, '${u.tendangnhap}')" ${disableDelete}>Xóa</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             } catch (error) {
                 console.error('Lỗi:', error);
             }
@@ -275,20 +289,28 @@
                         .filter(([k, v]) => v === true)
                         .map(([k]) => `<span class="badge">${k}</span>`)
                         .join(' ');
+                    
+                    // Thêm ghi chú cho GVCN
+                    const note = r.mavaitro === 'GVCN' ? '<br><small style="color: #6b7280;">⚠️ Vai trò này được gán tự động từ trang Quản lý Lớp</small>' : '';
+                    
                     return `
                         <tr>
                             <td>${r.mavaitro}</td>
-                            <td>${r.tenvaitro}</td>
+                            <td>${r.tenvaitro}${note}</td>
                             <td>${r.mota || ''}</td>
                             <td>${quyenList || 'Không có'}</td>
                         </tr>
                     `;
                 }).join('');
                 
-                // Render dropdown vai trò
+                // Render dropdown vai trò (loại bỏ GVCN vì được phân ở quản lý lớp)
                 const select = document.getElementById('userRole');
                 select.innerHTML = '<option value="">-- Chọn vai trò --</option>';
                 roles.forEach(r => {
+                    // 🚫 Không cho phép gán GVCN thủ công - phải được phân công từ trang Quản lý Lớp
+                    if (r.mavaitro === 'GVCN') {
+                        return; // Skip GVCN role
+                    }
                     select.innerHTML += `<option value="${r.mavaitro}">${r.tenvaitro}</option>`;
                 });
             } catch (error) {
@@ -335,6 +357,12 @@
                 const user = users.find(u => u.manguoidung === id);
                 
                 if (user) {
+                    // 🔒 Kiểm tra super admin
+                    if (user.manguoidung === 1 || user.tendangnhap === 'admin') {
+                        toastError('Không thể sửa thông tin super admin!');
+                        return;
+                    }
+                    
                     isEditMode = true;
                     document.getElementById('userModalTitle').textContent = 'Sửa người dùng';
                     document.getElementById('passwordGroup').style.display = 'none';
@@ -345,6 +373,18 @@
                     document.getElementById('userEmail').value = user.email || '';
                     document.getElementById('userRole').value = user.mavaitro;
                     document.getElementById('userStatus').value = user.trangthai.toString();
+                    
+                    // 🔒 Kiểm tra nếu đang sửa chính mình và là admin thì disable dropdown vai trò
+                    const currentUser = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                    const roleSelect = document.getElementById('userRole');
+                    if (user.manguoidung === currentUser.maNguoiDung && user.mavaitro === 'ADMIN') {
+                        roleSelect.disabled = true;
+                        roleSelect.title = 'Bạn không thể hạ quyền chính mình';
+                    } else {
+                        roleSelect.disabled = false;
+                        roleSelect.title = '';
+                    }
+                    
                     userModal.classList.add('show');
                 }
             } catch (error) {

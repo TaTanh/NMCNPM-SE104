@@ -300,6 +300,21 @@ const checkGvcnConflict = async (maGiaoVien, maNamHoc, excludeMaLop = null) => {
     return result.rows[0] || null;
 };
 
+// ========== ĐẾM SỐ LỚP GVCN ĐANG CHỦ NHIỆM ==========
+const countClassesByGvcn = async (maGiaoVien) => {
+    const result = await pool.query(
+        `SELECT COUNT(*) as total, 
+                ARRAY_AGG(l.TenLop) as danh_sach_lop
+         FROM LOP l
+         WHERE l.MaGVCN = $1`,
+        [maGiaoVien]
+    );
+    return {
+        total: parseInt(result.rows[0].total),
+        classes: result.rows[0].danh_sach_lop || []
+    };
+};
+
 // ========== LẤY LỚP CỦA HỌC SINH ==========
 const getClassesByStudent = async (maHocSinh) => {
     const query = `
@@ -342,5 +357,6 @@ module.exports = {
     getUnassignedStudents,
     getAvailableStudentsFromClass,
     checkGvcnConflict,
+    countClassesByGvcn,
     getClassesByStudent
 };
