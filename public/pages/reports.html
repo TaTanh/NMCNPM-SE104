@@ -13,8 +13,27 @@
         .filters-row { gap: 10px; align-items: center; }
         .filters-row .btn { padding: 8px 14px; box-shadow: 0 8px 18px rgba(37,99,235,0.25); }
         .filters-row .btn-print { box-shadow: none; }
-        .data-table th.col-name { width: 320px; }
+        .data-table th.col-name { width: 280px; }
         .data-table td.col-name { white-space: nowrap; }
+        
+        /* Giảm khoảng cách giữa các cột */
+        .data-table th, .data-table td { 
+            vertical-align: middle; 
+            padding: 8px 6px;
+        }
+        .data-table th {
+            text-align: center;
+        }
+        .data-table td {
+            text-align: center;
+        }
+        .data-table td.col-name {
+            text-align: left;
+        }
+        .data-table td.col-hanhkiem,
+        .data-table td.col-danhhieu {
+            white-space: nowrap;
+        }
     </style>
 </head>
 
@@ -62,7 +81,7 @@
             <!-- TỔNG KẾT ĐIỂM THEO LỚP -->
             <h3 class="section-title">Bảng tổng kết điểm theo lớp</h3>
 
-            <div class="filters-row" style="gap: 10px; align-items: center;">
+            <div class="filters-row">
                 <div class="filter-item">
                     <label class="filter-label" for="yearSelect">Năm học</label>
                     <select id="yearSelect">
@@ -94,8 +113,8 @@
                     </select>
                 </div>
 
-                <button class="btn btn-primary" id="btnLoadReport" style="padding: 8px 20px;">Xem bảng</button>
-                <button class="btn btn-print" id="btnPrintReport" style="padding: 8px 20px; display: none;">In</button>
+                <button class="btn btn-primary" id="btnLoadReport">Xem bảng</button>
+                <button class="btn btn-print" id="btnPrintReport" style="display: none;">In</button>
             </div>
 
             <!-- Sắp xếp -->
@@ -260,11 +279,11 @@
                     headRow.innerHTML += `<th style="width: 70px;">${label}</th>`;
                 });
                 headRow.innerHTML += `
-                    <th style="width: 100px;">Điểm TK</th>
-                    <th style="width: 110px;">Học lực</th>
-                    <th style="width: 80px;">Hạnh kiểm</th>
+                    <th style="width: 80px;">Điểm TK</th>
+                    <th style="width: 95px;">Học lực</th>
+                    <th style="width: 90px;">Hạnh kiểm</th>
                     <th style="width: 140px;">Danh hiệu</th>
-                    <th style="width: 80px;">Xếp hạng</th>
+                    <th style="width: 75px;">Xếp hạng</th>
                 `;
 
                 head.innerHTML = '';
@@ -513,15 +532,15 @@
                 const displayRank = rankMap.get(st.mahocsinh) || '-';
                 return `
                     <tr>
-                        <td style="text-align: center;">${idx + 1}</td>
-                        <td style="text-align: center;">${st.mahocsinh}</td>
+                        <td>${idx + 1}</td>
+                        <td>${st.mahocsinh}</td>
                         <td class="col-name">${st.hoten}</td>
                         ${st.subjectCells}
-                        <td style="text-align: center;"><strong>${st.avgScore}</strong></td>
-                        <td style="text-align: center;">${st.hocLuc}</td>
-                        <td style="text-align: center;">${st.hanhKiem || '-'}</td>
-                        <td style="text-align: center;">${st.danhHieu}</td>
-                        <td style="text-align: center;"><strong>${displayRank}</strong></td>
+                        <td><strong>${st.avgScore}</strong></td>
+                        <td>${st.hocLuc}</td>
+                        <td class="col-hanhkiem">${st.hanhKiem || '-'}</td>
+                        <td class="col-danhhieu">${st.danhHieu}</td>
+                        <td><strong>${displayRank}</strong></td>
                     </tr>
                 `;
             }).join('');

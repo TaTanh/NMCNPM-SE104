@@ -1047,6 +1047,30 @@ body.select-mode .edit-actions {
     color: #4b5563;
 }
 
+/* Dropdown select trong filter */
+.filter-item select,
+select {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #d1d5db;
+    font-size: 14px;
+    outline: none;
+    background-color: #ffffff;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.filter-item select:focus,
+select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.filter-item select:hover,
+select:hover {
+    border-color: #9ca3af;
+}
+
 /* Input điểm trong bảng */
 .data-table input[type="number"] {
     width: 72px;
