@@ -14,7 +14,7 @@ async function loadStudents() {
         if (classFilter) params.append('lop', classFilter);
         if (params.toString()) url += '?' + params.toString();
         
-        const response = await fetch(url);
+        const response = await authenticatedFetch(url);
         if (!response.ok) throw new Error('Lỗi tải dữ liệu');
         
         const students = await response.json();
@@ -68,7 +68,7 @@ function formatDate(dateStr) {
 // ========== THÊM HỌC SINH ==========
 async function addStudent(formData) {
     try {
-        const response = await fetch(API_URL, {
+        const response = await authenticatedFetch(API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -102,7 +102,7 @@ async function addStudent(formData) {
 // ========== CẬP NHẬT HỌC SINH ==========
 async function updateStudent(maHocSinh, data) {
     try {
-        const response = await fetch(`${API_URL}/${maHocSinh}`, {
+        const response = await authenticatedFetch(`${API_URL}/${maHocSinh}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -127,7 +127,7 @@ async function updateStudent(maHocSinh, data) {
 // ========== XÓA HỌC SINH ==========
 async function deleteStudent(maHocSinh) {
     try {
-        const response = await fetch(`${API_URL}/${maHocSinh}`, {
+        const response = await authenticatedFetch(`${API_URL}/${maHocSinh}`, {
             method: 'DELETE'
         });
         
@@ -193,9 +193,11 @@ function attachCheckboxEvents() {
 async function loadFilters() {
     try {
         // Load năm học
-        const yearsRes = await fetch('/api/settings/school-years');
+        const yearsRes = await authenticatedFetch('/api/settings/school-years');
         const years = await yearsRes.json();
         const yearSelect = document.getElementById('yearFilter');
+        // Clear existing options except the first one
+        yearSelect.innerHTML = '<option value="">Tất cả năm học</option>';
         years.forEach(y => {
             const option = document.createElement('option');
             option.value = y.manamhoc;
@@ -204,9 +206,11 @@ async function loadFilters() {
         });
         
         // Load lớp
-        const classesRes = await fetch('/api/classes');
+        const classesRes = await authenticatedFetch('/api/classes');
         const classes = await classesRes.json();
         const classSelect = document.getElementById('classFilter');
+        // Clear existing options except the first one
+        classSelect.innerHTML = '<option value="">Tất cả lớp</option>';
         classes.forEach(c => {
             const option = document.createElement('option');
             option.value = c.malop;

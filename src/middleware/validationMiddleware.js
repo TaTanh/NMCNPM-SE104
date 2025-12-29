@@ -85,7 +85,7 @@ const validateStudent = [
             const today = new Date();
             const age = today.getFullYear() - birthDate.getFullYear();
             if (age < 10 || age > 25) {
-                throw new Error('Tuổi học sinh phải từ 10-25');
+                throw new Error('Tuổi học sinh không hợp lệ');
             }
             return true;
         }),

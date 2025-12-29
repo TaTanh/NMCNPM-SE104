@@ -273,13 +273,8 @@ const getAvailableStudentsFromClass = async (sourceMaLop, targetNamHoc) => {
          FROM HOCSINH hs
          JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
          WHERE qth.MaLop = $1
-         AND NOT EXISTS (
-             SELECT 1 FROM QUATRINHHOC qth2
-             JOIN LOP l2 ON qth2.MaLop = l2.MaLop
-             WHERE qth2.MaHocSinh = hs.MaHocSinh AND l2.MaNamHoc = $2
-         )
          ORDER BY hs.HoTen`,
-        [sourceMaLop, targetNamHoc]
+        [sourceMaLop]
     );
     return result.rows;
 };

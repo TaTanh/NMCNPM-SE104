@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/layout/styles.css">
     <script src="/js/toast.js"></script>
     <script src="/js/auth.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -58,7 +59,6 @@
 
                 <div class="toolbar-actions">
                     <button class="btn btn-outline" id="btnClassRules">Thay đổi quy định</button>
-                    <button class="btn btn-print" onclick="window.print()">In</button>
                     <button class="btn btn-outline" id="btnExportClass">Xuất Excel</button>
 
                     <div class="toolbar-actions-main">
@@ -301,6 +301,7 @@
                 
                 <div class="modal-footer" style="margin-top: 16px;">
                     <span id="studentCountInfo" style="margin-right: auto; color: #666;"></span>
+                    <button type="button" class="btn btn-primary" id="btnExportStudentList" style="margin-right: 8px;">Xuất Excel</button>
                     <button type="button" class="btn btn-outline" id="closeViewStudentsBtn">Đóng</button>
                 </div>
             </div>
@@ -978,6 +979,57 @@
             }
         };
 
+        // ========== XUẤT EXCEL ==========
+        document.getElementById('btnExportClass').addEventListener('click', () => {
+            if (allClasses.length === 0) {
+                toastWarning('Không có dữ liệu để xuất!');
+                return;
+            }
+
+            try {
+                // Chuẩn bị dữ liệu cho Excel
+                const excelData = allClasses.map((lop, index) => ({
+                    'STT': index + 1,
+                    'Mã lớp': lop.malop,
+                    'Tên lớp': lop.tenlop,
+                    'Khối': lop.khoi || '',
+                    'Sĩ số': lop.siso || 0,
+                    'GVCN': lop.tengvcn || 'Chưa phân công',
+                    'Năm học': lop.namhoc || ''
+                }));
+
+                // Tạo workbook và worksheet
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(excelData);
+
+                // Tự động điều chỉnh độ rộng cột
+                const colWidths = [
+                    { wch: 5 },  // STT
+                    { wch: 12 }, // Mã lớp
+                    { wch: 20 }, // Tên lớp
+                    { wch: 8 },  // Khối
+                    { wch: 8 },  // Sĩ số
+                    { wch: 25 }, // GVCN
+                    { wch: 15 }  // Năm học
+                ];
+                ws['!cols'] = colWidths;
+
+                // Thêm worksheet vào workbook
+                XLSX.utils.book_append_sheet(wb, ws, 'Danh sách lớp');
+
+                // Tạo tên file với ngày giờ hiện tại
+                const now = new Date();
+                const filename = `DanhSachLop_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}.xlsx`;
+
+                // Xuất file
+                XLSX.writeFile(wb, filename);
+                toastSuccess('Xuất Excel thành công!');
+            } catch (error) {
+                console.error('Lỗi xuất Excel:', error);
+                toastError('Lỗi khi xuất file Excel!');
+            }
+        });
+
         // ========== KHỞI TẠO ==========
         document.addEventListener('DOMContentLoaded', () => {
             // Check user role and show/hide menu items
@@ -997,6 +1049,7 @@
         /* ========= POPUP XEM DANH SÁCH HỌC SINH ========= */
         const viewStudentsModal = document.getElementById('viewStudentsModal');
         const classStudentsTableBody = document.getElementById('classStudentsTableBody');
+        let currentViewingClass = { maLop: null, tenLop: null, students: [] };
 
         function formatDate(dateStr) {
             if (!dateStr) return '';
@@ -1008,6 +1061,9 @@
         }
 
         async function viewClassStudents(maLop, tenLop) {
+            currentViewingClass.maLop = maLop;
+            currentViewingClass.tenLop = tenLop;
+            
             document.getElementById('viewStudentsTitle').textContent = `Danh sách học sinh lớp ${tenLop}`;
             classStudentsTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Đang tải...</td></tr>';
             viewStudentsModal.classList.add('show');
@@ -1017,6 +1073,7 @@
                 if (!response.ok) throw new Error('Lỗi tải dữ liệu');
                 
                 const students = await response.json();
+                currentViewingClass.students = students;
                 
                 if (students.length === 0) {
                     classStudentsTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Lớp chưa có học sinh nào</td></tr>';
@@ -1061,6 +1118,58 @@
         viewStudentsModal.addEventListener('click', (e) => {
             if (e.target === viewStudentsModal) {
                 closeViewStudentsModal();
+            }
+        });
+
+        // ========== XUẤT EXCEL DANH SÁCH HỌC SINH ==========
+        document.getElementById('btnExportStudentList').addEventListener('click', () => {
+            if (!currentViewingClass.students || currentViewingClass.students.length === 0) {
+                toastWarning('Không có học sinh để xuất!');
+                return;
+            }
+
+            try {
+                // Chuẩn bị dữ liệu cho Excel
+                const excelData = currentViewingClass.students.map((hs, index) => ({
+                    'STT': index + 1,
+                    'Mã học sinh': hs.mahocsinh,
+                    'Họ tên': hs.hoten,
+                    'Giới tính': hs.gioitinh || '',
+                    'Ngày sinh': formatDate(hs.ngaysinh),
+                    'Địa chỉ': hs.diachi || '',
+                    'Email': hs.email || ''
+                }));
+
+                // Tạo workbook và worksheet
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(excelData);
+
+                // Tự động điều chỉnh độ rộng cột
+                const colWidths = [
+                    { wch: 5 },  // STT
+                    { wch: 12 }, // Mã học sinh
+                    { wch: 25 }, // Họ tên
+                    { wch: 10 }, // Giới tính
+                    { wch: 12 }, // Ngày sinh
+                    { wch: 30 }, // Địa chỉ
+                    { wch: 25 }  // Email
+                ];
+                ws['!cols'] = colWidths;
+
+                // Thêm worksheet vào workbook
+                XLSX.utils.book_append_sheet(wb, ws, 'Danh sách học sinh');
+
+                // Tạo tên file với tên lớp và ngày giờ
+                const now = new Date();
+                const tenLopClean = currentViewingClass.tenLop.replace(/\s/g, '');
+                const filename = `DanhSachHS_${tenLopClean}_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`;
+
+                // Xuất file
+                XLSX.writeFile(wb, filename);
+                toastSuccess(`Đã xuất danh sách ${currentViewingClass.students.length} học sinh!`);
+            } catch (error) {
+                console.error('Lỗi xuất Excel:', error);
+                toastError('Lỗi khi xuất file Excel!');
             }
         });
 
@@ -1324,11 +1433,11 @@
                 const classes = await response.json();
                 
                 // Lọc các lớp khác năm học đích
-                const sourceClasses = classes.filter(c => c.namhoc !== targetYear);
+                const sourceClasses = classes.filter(c => c.manamhoc !== targetYear);
                 
                 importSourceClass.innerHTML = '<option value="">-- Chọn lớp --</option>';
                 sourceClasses.forEach(c => {
-                    importSourceClass.innerHTML += `<option value="${c.malop}">${c.tenlop} (${c.namhoc})</option>`;
+                    importSourceClass.innerHTML += `<option value="${c.malop}">${c.tenlop}</option>`;
                 });
             } catch (err) {
                 console.error('Lỗi load lớp nguồn:', err);

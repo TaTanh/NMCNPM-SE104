@@ -299,23 +299,14 @@ const bulkAddStudentsToClass = async (req, res) => {
             });
         }
         
-        // QĐ4: Kiểm tra học sinh đã thuộc lớp khác trong cùng năm học chưa
-        const conflictStudents = [];
+        // QĐ4: Xử lý học sinh đã thuộc lớp khác trong cùng năm học
+        // Nếu học sinh đã ở lớp khác trong năm, tự động chuyển lớp
         for (const maHocSinh of students) {
             const existingClass = await classModel.checkStudentInYearClass(maHocSinh, lop.manamhoc);
-            if (existingClass) {
-                conflictStudents.push({
-                    maHocSinh,
-                    existingClass: existingClass.tenlop
-                });
+            if (existingClass && existingClass.malop !== maLop) {
+                // Xóa khỏi lớp cũ trước khi thêm vào lớp mới
+                await classModel.removeStudent(existingClass.malop, maHocSinh);
             }
-        }
-        
-        if (conflictStudents.length > 0) {
-            return res.status(400).json({ 
-                error: 'Một số học sinh đã thuộc lớp khác trong năm học này',
-                conflicts: conflictStudents
-            });
         }
         
         // Thêm học sinh vào lớp (bulk)

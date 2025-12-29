@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="/layout/styles.css">
     <script src="/js/toast.js"></script>
     <script src="/js/auth.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 
 <body class="dashboard-body">
@@ -50,27 +51,6 @@
 
         <!-- CONTENT -->
         <div class="content">
-            <!-- FILTER: NĂM HỌC + LỚP -->
-            <div class="filters-row">
-                <div class="filter-item">
-                    <label class="filter-label" for="yearFilter">Năm học</label>
-                    <select id="yearFilter">
-                        <option value="">Tất cả năm học</option>
-                        <option>2023–2024</option>
-                        <option>2024–2025</option>
-                    </select>
-                </div>
-
-                <div class="filter-item">
-                    <label class="filter-label" for="classFilter">Lớp</label>
-                    <select id="classFilter">
-                        <option value="">Tất cả lớp</option>
-                        <option>10A1</option>
-                        <option>10A2</option>
-                        <option>10A3</option>
-                    </select>
-                </div>
-            </div>
             <!-- TOOLBAR: search trái, nút phải -->
             <div class="toolbar">
                 <div class="search-box">
@@ -524,6 +504,63 @@
             e.preventDefault();
             if (selectModeOn) exitSelectMode();
             else enterSelectMode();
+        });
+
+        // ========== XUẤT EXCEL DANH SÁCH HỌC SINH ==========
+        document.getElementById('btnExport').addEventListener('click', () => {
+            if (allStudents.length === 0) {
+                toastWarning('Không có dữ liệu để xuất!');
+                return;
+            }
+
+            try {
+                // Chuẩn bị dữ liệu cho Excel
+                const excelData = allStudents.map((hs, index) => ({
+                    'STT': index + 1,
+                    'Mã học sinh': hs.mahocsinh,
+                    'Họ tên': hs.hoten,
+                    'Giới tính': hs.gioitinh || '',
+                    'Ngày sinh': formatDate(hs.ngaysinh),
+                    'Lớp': hs.tenlop || 'Chưa xếp lớp',
+                    'Địa chỉ': hs.diachi || '',
+                    'Email': hs.email || '',
+                    'Phụ huynh': hs.hotenphuhuynh || '',
+                    'SĐT PH': hs.sdtphuhuynh || ''
+                }));
+
+                // Tạo workbook và worksheet
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.json_to_sheet(excelData);
+
+                // Tự động điều chỉnh độ rộng cột
+                const colWidths = [
+                    { wch: 5 },  // STT
+                    { wch: 12 }, // Mã học sinh
+                    { wch: 25 }, // Họ tên
+                    { wch: 10 }, // Giới tính
+                    { wch: 12 }, // Ngày sinh
+                    { wch: 15 }, // Lớp
+                    { wch: 30 }, // Địa chỉ
+                    { wch: 25 }, // Email
+                    { wch: 25 }, // Phụ huynh
+                    { wch: 12 }  // SĐT PH
+                ];
+                ws['!cols'] = colWidths;
+
+                // Thêm worksheet vào workbook
+                XLSX.utils.book_append_sheet(wb, ws, 'Danh sách học sinh');
+
+                // Tạo tên file với ngày giờ
+                const now = new Date();
+                const filename = `DanhSachHocSinh_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.xlsx`;
+
+                // Xuất file
+                XLSX.writeFile(wb, filename);
+                toastSuccess('Đã xuất danh sách học sinh!');
+            } catch (error) {
+                console.error('Lỗi xuất Excel:', error);
+                toastError('Lỗi khi xuất file Excel!');
+            }
         });
 
         // Load dữ liệu khi trang load

@@ -99,7 +99,7 @@
             <!-- HƯỚNG DẪN NHẬP ĐIỂM HẠNH KIỂM -->
             <div id="keyboardHints" style="margin-bottom: 15px; padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; display: none;">
                 <span style="color: #dc2626; font-size: 13px; font-weight: 500;">
-                    Cách nhập hạnh kiểm: Nhập điểm từ <strong>0-100</strong> &nbsp;|&nbsp; Hệ thống tự động xếp loại: <strong>80-100 = Tốt</strong>, <strong>65-79 = Khá</strong>, <strong>50-64 = Trung bình</strong>, <strong>20-49 = Yếu</strong>, <strong>0-19 = Kém</strong>
+                    Cách nhập hạnh kiểm: Nhập điểm từ <strong>0-100</strong> &nbsp;|&nbsp; Hệ thống tự động xếp loại: <strong>80-100 = Tốt</strong>, <strong>65-79 = Khá</strong>, <strong>50-64 = Trung bình</strong>, <strong>1-49 = Yếu</strong>
                 </span>
             </div>
 
@@ -572,16 +572,28 @@
                     // Auto-calculate xếp loại on input change
                     input.addEventListener('input', (e) => {
                         const mhs = e.target.dataset.mhs;
-                        const diem = parseFloat(e.target.value) || 0;
+                        let diem = parseFloat(e.target.value) || 0;
+                        
+                        // Giới hạn 0-100
+                        if (diem > 100) {
+                            diem = 100;
+                            e.target.value = 100;
+                        }
+                        if (diem < 0) {
+                            diem = 0;
+                            e.target.value = 0;
+                        }
+                        
                         const s = currentData.find(x => x.mahocsinh === mhs);
                         
-                        // Tính xếp loại từ điểm (theo seed.sql)
+                        // Tính xếp loại từ điểm (CHỈ 4 LOẠI: Tốt, Khá, Trung bình, Yếu)
+                        // KHÔNG có Kém theo constraint database
                         let xepLoai = '';
                         if (diem >= 80) xepLoai = 'Tốt';
                         else if (diem >= 65) xepLoai = 'Khá';
                         else if (diem >= 50) xepLoai = 'Trung bình';
                         else if (diem >= 20) xepLoai = 'Yếu';
-                        else if (diem > 0) xepLoai = 'Kém';
+                        // Dưới 20 điểm: không xếp loại (rỗng)
                         
                         // Cập nhật data
                         if (s) {
@@ -611,9 +623,6 @@
                             } else if (xepLoai === 'Yếu') {
                                 xepLoaiDisplay.style.background = '#fecaca';
                                 xepLoaiDisplay.style.color = '#991b1b';
-                            } else if (xepLoai === 'Kém') {
-                                xepLoaiDisplay.style.background = '#fca5a5';
-                                xepLoaiDisplay.style.color = '#7f1d1d';
                             }
                         }
                         
@@ -643,33 +652,48 @@
             }
 
             // Thu thập dữ liệu từ input (Điểm Hạnh Kiểm 0-100)
-            const toSave = currentData.map(s => {
-                const input = document.querySelector(`.hk-input[data-mhs="${s.mahocsinh}"]`);
-                const diem = input ? parseFloat(input.value) || null : null;
-                
-                // Tính xếp loại từ điểm
-                let xepLoai = null;
-                if (diem !== null && diem >= 0 && diem <= 100) {
+            const toSave = currentData
+                .map(s => {
+                    const input = document.querySelector(`.hk-input[data-mhs="${s.mahocsinh}"]`);
+                    const diemStr = input ? input.value.trim() : '';
+                    
+                    // Nếu không nhập gì hoặc nhập 0, bỏ qua học sinh này
+                    if (!diemStr || diemStr === '0') {
+                        return null;
+                    }
+                    
+                    let diem = parseFloat(diemStr);
+                    
+                    // Giới hạn 1-100
+                    if (diem > 100) diem = 100;
+                    if (diem < 1) return null; // Chỉ bỏ qua nếu điểm < 1
+                    
+                    // Validate điểm trong khoảng 1-100
+                    if (isNaN(diem)) {
+                        return null;
+                    }
+                    
+                    // Tính xếp loại từ điểm (CHỊ 4 LOẠI theo constraint database)
+                    let xepLoai;
                     if (diem >= 80) xepLoai = 'Tốt';
                     else if (diem >= 65) xepLoai = 'Khá';
                     else if (diem >= 50) xepLoai = 'Trung bình';
-                    else if (diem >= 20) xepLoai = 'Yếu';
-                    else xepLoai = 'Kém';
-                }
-                
-                return {
-                    maHocSinh: s.mahocsinh,
-                    maNamHoc: window.currentYear,
-                    maHocKy: window.currentSemesterRaw,
-                    diemHanhKiem: diem, // GỬI ĐIỂM (0-100)
-                    xepLoai: xepLoai,   // Backend cũng tính nhưng frontend gửi để sync
-                    ghiChu: null
-                };
-            });
+                    else xepLoai = 'Yếu';
+                    
+                    return {
+                        maHocSinh: s.mahocsinh,
+                        maNamHoc: window.currentYear,
+                        maHocKy: window.currentSemesterRaw,
+                        diemHanhKiem: diem,
+                        xepLoai: xepLoai,
+                        ghiChu: null
+                    };
+                })
+                .filter(item => item !== null); // Chỉ lấy học sinh đã nhập điểm hợp lệ
             
-            // Chỉ cảnh báo nếu không có học sinh nào
+            // Cảnh báo nếu không có học sinh nào được nhập điểm
             if (toSave.length === 0) {
-                toastWarning('Không có học sinh trong danh sách');
+                toastWarning('Chưa nhập điểm hạnh kiểm cho học sinh nào. Vui lòng nhập điểm (1-100) trước khi lưu.');
                 return;
             }
 
