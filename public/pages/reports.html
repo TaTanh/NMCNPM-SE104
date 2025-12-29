@@ -49,10 +49,10 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html">Dashboard</a>
             <a href="/pages/students.html">Quản lý học sinh</a>
-            <a href="/pages/classes.html">Quản lý lớp học</a>
-            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/classes.html" id="menuClasses" style="display:none;">Quản lý lớp học</a>
+            <a href="/pages/subject_list.html" id="menuSubjects" style="display:none;">Quản lý môn học</a>
             <a href="/pages/grade_entry_select.html">Nhập điểm</a>
-            <a href="/pages/hanhkiem_entry.html">Nhập hạnh kiểm</a>
+            <a href="/pages/hanhkiem_entry.html" id="menuHanhKiem" style="display:none;">Nhập hạnh kiểm</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
             <a href="/pages/class_summary.html">Tổng kết lớp</a>
@@ -157,6 +157,9 @@
             document.getElementById('userGreeting').textContent = `Xin chào, ${user.hoTen || user.hotendangnhap || 'Bạn'}`;
 
             if (user.vaiTro === 'ADMIN') {
+                document.getElementById('menuClasses').style.display = 'block';
+                document.getElementById('menuSubjects').style.display = 'block';
+                document.getElementById('menuHanhKiem').style.display = 'block';
                 document.getElementById('menuTeaching').style.display = 'block';
                 document.getElementById('menuUsers').style.display = 'block';
             }

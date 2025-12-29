@@ -21,15 +21,15 @@
         <nav class="sidebar-menu">
             <a href="/pages/dashboard.html">Dashboard</a>
             <a href="/pages/students.html" class="active">Quản lý học sinh</a>
-            <a href="/pages/classes.html">Quản lý lớp học</a>
-            <a href="/pages/subject_list.html">Quản lý môn học</a>
+            <a href="/pages/classes.html" id="menuClasses" style="display:none;">Quản lý lớp học</a>
+            <a href="/pages/subject_list.html" id="menuSubjects" style="display:none;">Quản lý môn học</a>
             <a href="/pages/grade_entry_select.html">Nhập điểm</a>
-            <a href="/pages/hanhkiem_entry.html">Nhập hạnh kiểm</a>
+            <a href="/pages/hanhkiem_entry.html" id="menuHanhKiem" style="display:none;">Nhập hạnh kiểm</a>
             <a href="/pages/grade_select.html">Bảng điểm</a>
             <a href="/pages/student_transcript.html">Tra cứu điểm HS</a>
             <a href="/pages/class_summary.html">Tổng kết lớp</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
-            <a href="/pages/teaching_assignment.html">Phân công giảng dạy</a>
+            <a href="/pages/teaching_assignment.html" id="menuTeaching" style="display:none;">Phân công giảng dạy</a>
             <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
 
@@ -78,14 +78,14 @@
                 </div>
 
                 <div class="toolbar-actions">
-                    <button class="btn btn-outline" id="btnStudentRules">Thay đổi quy định</button>
+                    <button class="btn btn-outline" id="btnStudentRules" style="display:none;">Thay đổi quy định</button>
                     <button class="btn btn-print" id="btnPrint" onclick="window.print()">In</button>
                     <button class="btn btn-outline" id="btnExport">Xuất Excel</button>
 
                     <div class="toolbar-actions-main">
-                        <button class="btn btn-primary" id="btnAddStudent">Thêm</button>
+                        <button class="btn btn-primary" id="btnAddStudent" style="display:none;">Thêm</button>
                         <!-- nút sửa đổi: mặc định xanh lá, khi vào select-mode sẽ trắng viền đỏ -->
-                        <button class="btn btn-edit" id="btnToggleEditMode">Sửa đổi</button>
+                        <button class="btn btn-edit" id="btnToggleEditMode" style="display:none;">Sửa đổi</button>
                     </div>
                 </div>
             </div>
@@ -415,6 +415,10 @@
                 return;
             }
             
+            // Check user role
+            const user = getCurrentUser();
+            const isAdmin = user && user.vaiTro === 'ADMIN';
+            
             tableBody.innerHTML = students.map(hs => `
                 <tr data-id="${hs.mahocsinh}">
                     <td class="select-cell">
@@ -426,8 +430,8 @@
                     <td>${formatDate(hs.ngaysinh)}</td>
                     <td>
                         <span class="class-badge ${hs.tenlop ? '' : 'no-class'}" 
-                              onclick="openAssignClassModal('${hs.mahocsinh}', '${hs.hoten}', '${hs.malop || ''}', '${hs.tenlop || ''}')"
-                              style="cursor: pointer;">
+                              ${isAdmin ? `onclick="openAssignClassModal('${hs.mahocsinh}', '${hs.hoten}', '${hs.malop || ''}', '${hs.tenlop || ''}')"` : ''}
+                              style="cursor: ${isAdmin ? 'pointer' : 'default'};">
                             ${hs.tenlop || 'Chưa xếp lớp'}
                         </span>
                     </td>
@@ -523,7 +527,24 @@
         });
 
         // Load dữ liệu khi trang load
-        document.addEventListener('DOMContentLoaded', loadStudents);
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check user role and show/hide menu items
+            const user = getCurrentUser();
+            if (user && user.vaiTro === 'ADMIN') {
+                document.getElementById('menuClasses').style.display = 'block';
+                document.getElementById('menuSubjects').style.display = 'block';
+                document.getElementById('menuHanhKiem').style.display = 'block';
+                document.getElementById('menuTeaching').style.display = 'block';
+                document.getElementById('menuUsers').style.display = 'block';
+                
+                // Hiện các nút chỉnh sửa cho ADMIN
+                document.getElementById('btnAddStudent').style.display = 'inline-block';
+                document.getElementById('btnToggleEditMode').style.display = 'inline-block';
+                document.getElementById('btnStudentRules').style.display = 'inline-block';
+            }
+            
+            loadStudents();
+        });
 
         // ========== TÌM KIẾM HỌC SINH ==========
         document.querySelector('.search-box input').addEventListener('input', (e) => {
@@ -914,6 +935,12 @@
 
         // Mở popup xếp lớp
         function openAssignClassModal(maHS, hoTen, maLop, tenLop) {
+            // Chỉ ADMIN mới được mở popup này
+            const user = getCurrentUser();
+            if (!user || user.vaiTro !== 'ADMIN') {
+                return;
+            }
+            
             document.getElementById('assignStudentId').value = maHS;
             document.getElementById('assignStudentInfo').value = `${hoTen} (${maHS})`;
             document.getElementById('currentClassInfo').value = tenLop || 'Chưa xếp lớp';

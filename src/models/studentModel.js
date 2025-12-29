@@ -74,7 +74,12 @@ const findAll = async (filters = {}) => {
 // ========== LẤY 1 HỌC SINH THEO MÃ ==========
 const findById = async (id) => {
     const result = await pool.query(
-        'SELECT * FROM HOCSINH WHERE MaHocSinh = $1',
+        `SELECT hs.*, l.TenLop, l.MaLop, l.MaNamHoc
+         FROM HOCSINH hs
+         LEFT JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
+         LEFT JOIN LOP l ON qth.MaLop = l.MaLop
+         WHERE hs.MaHocSinh = $1
+         LIMIT 1`,
         [id]
     );
     return result.rows[0] || null;
