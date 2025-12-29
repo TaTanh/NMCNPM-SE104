@@ -130,11 +130,11 @@
 
             try {
                 // Lấy thông tin môn học
-                const subjectRes = await fetch(`/api/subjects/${subjectId}`);
+                const subjectRes = await authFetch(`/api/subjects/${subjectId}`);
                 const subject = await subjectRes.json();
 
                 // Lấy thông tin lớp
-                const classRes = await fetch(`/api/classes/${classId}`);
+                const classRes = await authFetch(`/api/classes/${classId}`);
                 const classInfo = await classRes.json();
 
                 // Cập nhật tiêu đề
@@ -144,11 +144,11 @@
                     `Lớp ${classId} – Môn ${subject.tenmonhoc} – ${semester}`;
 
                 // Lấy loại hình kiểm tra
-                const examTypesRes = await fetch('/api/grades/exam-types');
+                const examTypesRes = await authFetch('/api/grades/exam-types');
                 examTypes = await examTypesRes.json();
 
                 // Tạo hoặc lấy bảng điểm
-                const bdmRes = await fetch('/api/grades/create', {
+                const bdmRes = await authFetch('/api/grades/create', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -178,7 +178,7 @@
                 });
 
                 // Lấy học sinh và điểm
-                const gradesRes = await fetch(`/api/grades/class/${classId}/subject/${subjectId}?hocky=${semester}`);
+                const gradesRes = await authFetch(`/api/grades/class/${classId}/subject/${subjectId}?hocky=${semester}`);
                 const grades = await gradesRes.json();
                 
                 allStudents = grades;
@@ -327,7 +327,7 @@
                 // Xóa điểm cho từng học sinh đã chọn
                 for (const studentId of studentIds) {
                     for (const examType of examTypes) {
-                        await fetch('/api/grades/update', {
+                        await authFetch('/api/grades/update', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -372,7 +372,7 @@
 
             try {
                 for (const update of updates) {
-                    await fetch('/api/grades/update', {
+                    await authFetch('/api/grades/update', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(update)

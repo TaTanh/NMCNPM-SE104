@@ -6,6 +6,14 @@ const auditModel = require('../models/auditModel');
 // ========== LẤY DANH SÁCH LỚP ==========
 const getClasses = async (req, res) => {
     try {
+        // SECURITY: Học sinh chỉ được xem lớp của mình
+        if (req.user && req.user.vaiTro === 'STUDENT') {
+            const userMaHS = req.user.tenDangNhap;
+            // Lấy lớp học của học sinh này
+            const studentClasses = await classModel.getClassesByStudent(userMaHS);
+            return res.json(studentClasses);
+        }
+        
         const { namhoc, khoi } = req.query;
         const classes = await classModel.findAll({ namhoc, khoi });
         res.json(classes);

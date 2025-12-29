@@ -219,7 +219,7 @@
         // ========== LOAD DỮ LIỆU TỪ DATABASE ==========
         async function loadSubjects() {
             try {
-                const response = await fetch('/api/subjects');
+                const response = await authFetch('/api/subjects');
                 if (!response.ok) throw new Error('Lỗi tải dữ liệu');
                 
                 const subjects = await response.json();
@@ -353,7 +353,7 @@
             };
             
             try {
-                const response = await fetch('/api/subjects', {
+                const response = await authFetch('/api/subjects', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -421,7 +421,7 @@
             };
             
             try {
-                const response = await fetch(`/api/subjects/${maMonHoc}`, {
+                const response = await authFetch(`/api/subjects/${maMonHoc}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -484,7 +484,7 @@
             const maMonHoc = selectedRow.querySelectorAll('td')[1].textContent.trim();
             
             try {
-                const response = await fetch(`/api/subjects/${maMonHoc}`, {
+                const response = await authFetch(`/api/subjects/${maMonHoc}`, {
                     method: 'DELETE'
                 });
                 

@@ -122,7 +122,7 @@
         // ========== LOAD THỐNG KÊ DASHBOARD ==========
         async function loadDashboardStats() {
             try {
-                const response = await fetch('/api/dashboard/stats');
+                const response = await authFetch('/api/dashboard/stats');
                 const stats = await response.json();
                 
                 document.getElementById('statStudents').textContent = stats.students || 0;
@@ -137,7 +137,7 @@
         // ========== LOAD THỐNG KÊ THEO KHỐI LỚP ==========
         async function loadGradeStats() {
             try {
-                const response = await fetch('/api/dashboard/stats-by-grade');
+                const response = await authFetch('/api/dashboard/stats-by-grade');
                 const stats = await response.json();
                 
                 const grid = document.getElementById('gradeStatsGrid');
@@ -167,7 +167,7 @@
         // ========== LOAD PHÂN BỐ XẾP LOẠI ==========
         async function loadGradeDistribution() {
             try {
-                const response = await fetch('/api/dashboard/grade-distribution');
+                const response = await authFetch('/api/dashboard/grade-distribution');
                 const distribution = await response.json();
                 
                 const grid = document.getElementById('gradeDistributionGrid');
@@ -206,7 +206,7 @@
         // ========== LOAD HOẠT ĐỘNG GẦN ĐÂY ==========
         async function loadRecentActivities() {
             try {
-                const response = await fetch('/api/dashboard/recent-activities?limit=10');
+                const response = await authFetch('/api/dashboard/recent-activities?limit=10');
                 const activities = await response.json();
                 
                 const tbody = document.getElementById('activityTableBody');

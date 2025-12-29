@@ -8,6 +8,13 @@ const getClassSubjectGrades = async (req, res) => {
         const { hocky, namhoc } = req.query;
         const hk = hocky ? normalizeHocKy(hocky) : null;
 
+        // SECURITY: Học sinh KHÔNG được xem bảng điểm của cả lớp
+        if (req.user && req.user.vaiTro === 'STUDENT') {
+            return res.status(403).json({ 
+                error: 'Học sinh không có quyền xem bảng điểm của lớp' 
+            });
+        }
+
         // Admin có toàn quyền, GVBM chỉ được xem/sửa môn mình dạy theo phân công
         try {
             const user = req.user;
@@ -260,6 +267,16 @@ const getStudentGrades = async (req, res) => {
         const { maHocSinh } = req.params;
         const { namhoc, hocky } = req.query;
         const hkParam = hocky ? normalizeHocKy(hocky) : null;
+        
+        // SECURITY: Nếu là học sinh, CHỈ được xem điểm của chính mình
+        if (req.user && req.user.vaiTro === 'STUDENT') {
+            const userMaHS = req.user.tenDangNhap;
+            if (maHocSinh !== userMaHS) {
+                return res.status(403).json({ 
+                    error: 'Bạn chỉ được xem điểm của chính mình' 
+                });
+            }
+        }
         
         // Lấy thông tin lớp của học sinh
         const lopInfo = await gradeModel.getStudentClass(maHocSinh, namhoc);

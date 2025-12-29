@@ -245,7 +245,7 @@
         async function loadFilters() {
             try {
                 // Load năm học
-                const yearsRes = await fetch('/api/settings/school-years');
+                const yearsRes = await authFetch('/api/settings/school-years');
                 const years = await yearsRes.json();
                 
                 ['yearFilter', 'yearAdd'].forEach(id => {
@@ -259,7 +259,7 @@
                 });
 
                 // Load lớp
-                const classesRes = await fetch('/api/classes');
+                const classesRes = await authFetch('/api/classes');
                 const classes = await classesRes.json();
                 const classSelect = document.getElementById('classAdd');
                 classes.forEach(c => {
@@ -270,7 +270,7 @@
                 });
 
                 // Load môn học
-                const subjectsRes = await fetch('/api/subjects');
+                const subjectsRes = await authFetch('/api/subjects');
                 const subjects = await subjectsRes.json();
                 const subjectSelect = document.getElementById('subjectAdd');
                 subjects.forEach(s => {
@@ -281,7 +281,7 @@
                 });
 
                 // Load giáo viên (GVBM + GVCN)
-                const teachersRes = await fetch('/api/auth/users?role=teacher');
+                const teachersRes = await authFetch('/api/auth/users?role=teacher');
                 const teachers = await teachersRes.json();
                 const teacherSelect = document.getElementById('teacherAdd');
                 // Filter to ensure only teacher roles are shown (safety check)
@@ -319,7 +319,7 @@
                 const token = getAuthToken();
                 console.log('Using token:', token ? token.substring(0, 20) + '...' : 'NO TOKEN');
                 
-                const response = await fetch(url, {
+                const response = await authFetch(url, {
                     headers: { 
                         'Authorization': `Bearer ${token}`
                     }
@@ -634,7 +634,7 @@
 
             try {
                 const token = getAuthToken();
-                const response = await fetch('/api/giangday', {
+                const response = await authFetch('/api/giangday', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -690,7 +690,7 @@
                 const { maLop, maMonHoc, maGiaoVien, maHocKy, maNamHoc } = currentDeleteItem;
                 const token = getAuthToken();
 
-                const response = await fetch(`/api/giangday?maLop=${maLop}&maMonHoc=${maMonHoc}&maGiaoVien=${maGiaoVien}&maHocKy=${maHocKy}&maNamHoc=${maNamHoc}`, {
+                const response = await authFetch(`/api/giangday?maLop=${maLop}&maMonHoc=${maMonHoc}&maGiaoVien=${maGiaoVien}&maHocKy=${maHocKy}&maNamHoc=${maNamHoc}`, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });

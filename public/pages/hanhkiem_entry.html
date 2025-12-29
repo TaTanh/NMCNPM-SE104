@@ -285,7 +285,7 @@
             try {
                 const token = getAuthToken();
                 const params = new URLSearchParams({ khoi: grade, namhoc: year });
-                const res = await fetch('/api/classes?' + params.toString(), {
+                const res = await authFetch('/api/classes?' + params.toString(), {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) throw new Error('Cannot load classes');
@@ -340,12 +340,12 @@
                 const authHeaders = { 'Authorization': `Bearer ${token}` };
 
                 // Load students
-                const sRes = await fetch(`/api/classes/${cls}/students`, { headers: authHeaders });
+                const sRes = await authFetch(`/api/classes/${cls}/students`, { headers: authHeaders });
                 if (!sRes.ok) throw new Error('Cannot load students');
                 const students = await sRes.json();
 
                 // Load hanhkiem data from dedicated API
-                const hanhkiemRes = await fetch(`/api/hanhkiem/lop/${cls}?maNamHoc=${year}&maHocKy=${semRaw}`, { headers: authHeaders });
+                const hanhkiemRes = await authFetch(`/api/hanhkiem/lop/${cls}?maNamHoc=${year}&maHocKy=${semRaw}`, { headers: authHeaders });
                 const hanhkiemData = hanhkiemRes.ok ? await hanhkiemRes.json() : { success: false, data: [] };
 
                 console.log('Hanhkiem API response:', hanhkiemData);
@@ -363,7 +363,7 @@
                 }
 
                 // Load scores for calculating DiemTK and HocLuc
-                const scoresRes = await fetch(`/api/reports/class-final?maLop=${cls}&namhoc=${year}`, { headers: authHeaders });
+                const scoresRes = await authFetch(`/api/reports/class-final?maLop=${cls}&namhoc=${year}`, { headers: authHeaders });
                 const scoresData = scoresRes.ok ? await scoresRes.json() : { success: false, data: [] };
                 
                 const scoreMap = {};
@@ -435,6 +435,22 @@
                         diemhanhkiem: hkInfo.diemhanhkiem,
                         xeploai: hkInfo.xeploai
                     };
+                });
+
+                // Sắp xếp theo TÊN (từ cuối cùng của họ tên)
+                currentData.sort((a, b) => {
+                    const getTen = (hoten) => {
+                        const parts = hoten.trim().split(/\s+/);
+                        return parts[parts.length - 1]; // Lấy từ cuối cùng (tên)
+                    };
+                    const tenA = getTen(a.hoten);
+                    const tenB = getTen(b.hoten);
+                    const compare = tenA.localeCompare(tenB, 'vi');
+                    // Nếu tên giống nhau, sắp xếp theo họ tên đầy đủ
+                    if (compare === 0) {
+                        return a.hoten.localeCompare(b.hoten, 'vi');
+                    }
+                    return compare;
                 });
 
                 renderTable();
@@ -674,7 +690,7 @@
                     hoTen: user.hoTen 
                 });
 
-                const res = await fetch('/api/hanhkiem/bulk-upsert', {
+                const res = await authFetch('/api/hanhkiem/bulk-upsert', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

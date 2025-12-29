@@ -111,7 +111,7 @@
         async function loadDropdowns() {
             try {
                 // Load năm học
-                const yearRes = await fetch('/api/settings/school-years');
+                const yearRes = await authFetch('/api/settings/school-years');
                 const years = await yearRes.json();
                 const yearSelect = document.getElementById('yearSelect');
                 years.forEach(y => {
@@ -119,7 +119,7 @@
                 });
 
                 // Load học kỳ (CHỈ HK1 và HK2 - Cả năm xem ở trang Báo cáo tổng kết)
-                const semRes = await fetch('/api/settings/semesters');
+                const semRes = await authFetch('/api/settings/semesters');
                 const semesters = await semRes.json();
                 const semesterSelect = document.getElementById('semesterSelect');
                 semesters.forEach(s => {
@@ -130,7 +130,7 @@
                 });
 
                 // Load khối
-                const gradeRes = await fetch('/api/settings/grade-levels');
+                const gradeRes = await authFetch('/api/settings/grade-levels');
                 const grades = await gradeRes.json();
                 const gradeSelect = document.getElementById('gradeSelect');
                 grades.forEach(g => {
@@ -158,7 +158,7 @@
                 if (namhoc) params.append('namhoc', namhoc);
                 if (params.toString()) url += '?' + params.toString();
 
-                const response = await fetch(url);
+                const response = await authFetch(url);
                 const classes = await response.json();
                 
                 classes.forEach(c => {
@@ -181,7 +181,7 @@
             }
 
             try {
-                const response = await fetch('/api/subjects');
+                const response = await authFetch('/api/subjects');
                 const subjects = await response.json();
                 
                 if (subjects.length === 0) {

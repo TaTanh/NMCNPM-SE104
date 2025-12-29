@@ -396,7 +396,7 @@
         // ========== LOAD DANH SÁCH HỌC SINH TỪ DATABASE ==========
         async function loadStudents() {
             try {
-                const response = await fetch('/api/students/with-class');
+                const response = await authFetch('/api/students/with-class');
                 if (!response.ok) throw new Error('Lỗi tải dữ liệu');
                 
                 allStudents = await response.json();
@@ -682,7 +682,7 @@
             };
             
             try {
-                const response = await fetch('/api/students', {
+                const response = await authFetch('/api/students', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -801,7 +801,7 @@
             console.log('Data gửi lên API khi sửa:', data); // Debug: kiểm tra data trước khi gửi
             
             try {
-                const response = await fetch(`/api/students/${maHocSinh}`, {
+                const response = await authFetch(`/api/students/${maHocSinh}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -872,7 +872,7 @@
             const maHocSinh = selectedRow.querySelectorAll('td')[1].textContent.trim();
             
             try {
-                const response = await fetch(`/api/students/${maHocSinh}`, {
+                const response = await authFetch(`/api/students/${maHocSinh}`, {
                     method: 'DELETE'
                 });
                 
@@ -899,7 +899,7 @@
         // Load danh sách lớp cho dropdown
         async function loadClassesForDropdown() {
             try {
-                const response = await fetch('/api/classes');
+                const response = await authFetch('/api/classes');
                 const classes = await response.json();
                 
                 const select = document.getElementById('newClassSelect');
@@ -961,13 +961,13 @@
             try {
                 // Nếu đã có lớp cũ, xóa khỏi lớp cũ trước
                 if (currentAssignMaLop) {
-                    await fetch(`/api/classes/${currentAssignMaLop}/students/${maHS}`, {
+                    await authFetch(`/api/classes/${currentAssignMaLop}/students/${maHS}`, {
                         method: 'DELETE'
                     });
                 }
                 
                 // Thêm vào lớp mới
-                const response = await fetch(`/api/classes/${newMaLop}/students`, {
+                const response = await authFetch(`/api/classes/${newMaLop}/students`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ MaHocSinh: maHS })
@@ -1001,7 +1001,7 @@
             }
             
             try {
-                const response = await fetch(`/api/classes/${currentAssignMaLop}/students/${maHS}`, {
+                const response = await authFetch(`/api/classes/${currentAssignMaLop}/students/${maHS}`, {
                     method: 'DELETE'
                 });
                 
@@ -1025,7 +1025,7 @@
         
         async function loadStudentRules() {
             try {
-                const response = await fetch('/api/settings/params');
+                const response = await authFetch('/api/settings/params');
                 const params = await response.json();
                 
                 params.forEach(p => {
@@ -1051,12 +1051,12 @@
             }
 
             try {
-                await fetch('/api/settings/params/TuoiToiThieu', {
+                await authFetch('/api/settings/params/TuoiToiThieu', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ GiaTri: tuoiMin })
                 });
-                await fetch('/api/settings/params/TuoiToiDa', {
+                await authFetch('/api/settings/params/TuoiToiDa', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ GiaTri: tuoiMax })

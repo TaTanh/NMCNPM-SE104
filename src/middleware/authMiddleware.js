@@ -212,6 +212,44 @@ const canViewClassSummary = (req, res, next) => {
     });
 };
 
+// ========== KIỂM TRA STUDENT CHỈ XEM ĐIỂM CỦA MÌNH ==========
+const checkStudentAccess = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Chưa đăng nhập' });
+    }
+    
+    // Nếu là STUDENT, kiểm tra xem có đang xem điểm của chính mình không
+    if (req.user.vaiTro === 'STUDENT') {
+        const requestedMaHS = req.params.maHocSinh || req.params.id;
+        const userMaHS = req.user.tenDangNhap;
+        
+        // Học sinh chỉ được xem điểm của chính mình (username = mã học sinh)
+        if (requestedMaHS !== userMaHS) {
+            return res.status(403).json({ 
+                error: 'Bạn chỉ được xem điểm của chính mình' 
+            });
+        }
+    }
+    
+    // Admin, GVCN, GVBM có thể xem tất cả
+    next();
+};
+
+// ========== BLOCK STUDENT KHỎI ROUTES KHÔNG ĐƯỢC PHÉP ==========
+const blockStudent = (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ error: 'Chưa đăng nhập' });
+    }
+    
+    if (req.user.vaiTro === 'STUDENT') {
+        return res.status(403).json({ 
+            error: 'Học sinh không có quyền truy cập chức năng này' 
+        });
+    }
+    
+    next();
+};
+
 module.exports = {
     checkAuth,
     checkPermission,
@@ -220,5 +258,7 @@ module.exports = {
     isGVCN,
     isTeacher,
     canInputHanhKiem,
-    canViewClassSummary
+    canViewClassSummary,
+    checkStudentAccess,
+    blockStudent
 };

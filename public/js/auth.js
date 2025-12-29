@@ -164,26 +164,20 @@ function applyPermissions() {
         }
     }
     
-    // PHỤ HUYNH VÀ HỌC SINH: Chỉ thấy Dashboard, Bảng điểm (xem), Tra cứu điểm HS, Báo cáo
-    // Không thấy trang Nhập điểm
+    // PHỤ HUYNH VÀ HỌC SINH: Chỉ thấy Dashboard và Tra cứu điểm HS
     if (user.vaiTro === 'PARENT' || user.vaiTro === 'STUDENT') {
         sidebarLinks.forEach(link => {
             const href = link.getAttribute('href') || '';
-            // Ẩn grade_entry (nhập điểm)
-            if (href.includes('grade_entry')) {
-                link.style.display = 'none';
-            } else if (!href.includes('dashboard') && 
-                       !href.includes('grade') && 
-                       !href.includes('student_transcript') &&
-                       !href.includes('reports')) {
+            // CHỈ hiển thị Dashboard và Tra cứu điểm học sinh
+            if (!href.includes('dashboard') && !href.includes('student_transcript')) {
                 link.style.display = 'none';
             }
         });
         
-        // Chặn truy cập trực tiếp các trang không được phép (không bao gồm student_transcript)
-        const restrictedPages = ['students.html', 'classes', 'subject', 'users', 'teaching', 'grade_entry'];
-        const isRestricted = restrictedPages.some(p => page.includes(p));
-        if (isRestricted) {
+        // Cho phép truy cập dashboard và student_transcript
+        const allowedPages = ['dashboard', 'student_transcript'];
+        const isAllowed = allowedPages.some(p => page.includes(p));
+        if (!isAllowed && !page.includes('login')) {
             window.location.href = '/pages/dashboard.html';
             return;
         }

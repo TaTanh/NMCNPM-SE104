@@ -305,6 +305,31 @@ const checkGvcnConflict = async (maGiaoVien, maNamHoc, excludeMaLop = null) => {
     return result.rows[0] || null;
 };
 
+// ========== LẤY LỚP CỦA HỌC SINH ==========
+const getClassesByStudent = async (maHocSinh) => {
+    const query = `
+        SELECT l.MaLop, l.TenLop, kl.TenKhoiLop as Khoi,
+               COALESCE(hs_count.siso, 0) as SiSo, 
+               l.MaNamHoc as NamHoc, l.MaKhoiLop, l.MaGVCN,
+               nd.HoTen as TenGVCN
+        FROM LOP l
+        JOIN KHOILOP kl ON l.MaKhoiLop = kl.MaKhoiLop
+        LEFT JOIN NGUOIDUNG nd ON l.MaGVCN = nd.MaNguoiDung
+        LEFT JOIN (
+            SELECT MaLop, COUNT(*) as siso 
+            FROM QUATRINHHOC 
+            GROUP BY MaLop
+        ) hs_count ON l.MaLop = hs_count.MaLop
+        WHERE l.MaLop IN (
+            SELECT MaLop FROM QUATRINHHOC WHERE MaHocSinh = $1
+        )
+        ORDER BY l.MaNamHoc DESC, l.TenLop
+    `;
+    
+    const result = await pool.query(query, [maHocSinh]);
+    return result.rows;
+};
+
 module.exports = {
     findAll,
     findById,
@@ -321,5 +346,6 @@ module.exports = {
     bulkAddStudents,
     getUnassignedStudents,
     getAvailableStudentsFromClass,
-    checkGvcnConflict
+    checkGvcnConflict,
+    getClassesByStudent
 };

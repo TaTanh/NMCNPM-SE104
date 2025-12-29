@@ -160,7 +160,7 @@
         async function loadDropdowns() {
             try {
                 // Load năm học
-                const yearRes = await fetch('/api/settings/school-years');
+                const yearRes = await authFetch('/api/settings/school-years');
                 const years = await yearRes.json();
                 const yearSelect = document.getElementById('yearSelect');
                 years.forEach(y => {
@@ -168,7 +168,7 @@
                 });
 
                 // Load khối
-                const gradeRes = await fetch('/api/settings/grade-levels');
+                const gradeRes = await authFetch('/api/settings/grade-levels');
                 const grades = await gradeRes.json();
                 const gradeSelect = document.getElementById('gradeSelect');
                 grades.forEach(g => {
@@ -178,7 +178,7 @@
                 // Học kỳ dropdown đã được set cố định trong HTML (HK1, HK2, Cả năm)
 
                 // Load loại hình kiểm tra
-                const examRes = await fetch('/api/grades/exam-types');
+                const examRes = await authFetch('/api/grades/exam-types');
                 examTypes = await examRes.json();
             } catch (error) {
                 console.error('Lỗi load dropdowns:', error);
@@ -200,7 +200,7 @@
                 if (namhoc) params.append('namhoc', namhoc);
                 if (params.toString()) url += '?' + params.toString();
 
-                const response = await fetch(url);
+                const response = await authFetch(url);
                 const classes = await response.json();
                 
                 classes.forEach(c => {
@@ -239,7 +239,7 @@
                 
                 url += params.toString();
                 
-                const response = await fetch(url);
+                const response = await authFetch(url);
                 const students = await response.json();
                 
                 allStudents = students;
@@ -357,7 +357,7 @@
                 // Lấy thông tin học sinh
                 const student = allStudents.find(s => s.mahocsinh === maHocSinh);
                 if (!student) {
-                    const res = await fetch(`/api/students/${maHocSinh}`);
+                    const res = await authFetch(`/api/students/${maHocSinh}`);
                     selectedStudent = await res.json();
                 } else {
                     selectedStudent = student;
@@ -388,7 +388,7 @@
                 // Luôn load tất cả điểm (HK1 và HK2) để tính cả năm
                 let url = `/api/grades/student/${maHocSinh}`;
                 
-                const response = await fetch(url);
+                const response = await authFetch(url);
                 const allGrades = await response.json();
                 
                 // Render điểm TRƯỚC (để hiển thị xếp loại học lực)
@@ -405,29 +405,68 @@
 
         async function loadHanhKiem(maHocSinh, semester) {
             try {
-                // Get year and class from selected student
+                // Get year from filter (hoặc năm hiện tại nếu không có)
                 const namHoc = document.getElementById('yearSelect').value;
-                const maLop = selectedStudent?.malop || document.getElementById('classSelect').value;
-                
-                if (!namHoc || !maLop) {
+                if (!namHoc) {
                     document.getElementById('hanhkiem').textContent = '-';
                     document.getElementById('danhhieu').textContent = '-';
                     return;
                 }
+                
+                // Load danh sách lớp của học sinh để lấy maLop
+                let maLop = null;
+                let tenLop = '-';
+                try {
+                    const classRes = await authFetch(`/api/classes?namhoc=${namHoc}`);
+                    const classes = await classRes.json();
+                    
+                    console.log('Classes for student:', classes);
+                    
+                    if (classes && classes.length > 0) {
+                        // Nếu có nhiều lớp (chuyển lớp, học nhiều năm), tìm lớp khớp với selectedStudent.tenlop
+                        // hoặc lấy lớp đầu tiên nếu không có thông tin
+                        const studentTenLop = selectedStudent?.tenlop || selectedStudent?.TenLop;
+                        
+                        if (studentTenLop) {
+                            // Tìm lớp khớp với tên lớp của học sinh
+                            const matchedClass = classes.find(c => 
+                                (c.tenlop || c.TenLop) === studentTenLop
+                            );
+                            if (matchedClass) {
+                                maLop = matchedClass.malop || matchedClass.MaLop;
+                                tenLop = matchedClass.tenlop || matchedClass.TenLop;
+                            }
+                        }
+                        
+                        // Fallback: lấy lớp đầu tiên nếu không tìm thấy
+                        if (!maLop) {
+                            maLop = classes[0]?.malop || classes[0]?.MaLop;
+                            tenLop = classes[0]?.tenlop || classes[0]?.TenLop || '-';
+                        }
+                    }
+                } catch (error) {
+                    console.error('Lỗi load lớp:', error);
+                }
+                
+                if (!maLop) {
+                    console.log('No maLop found for student');
+                    document.getElementById('hanhkiem').textContent = '-';
+                    document.getElementById('danhhieu').textContent = '-';
+                    document.getElementById('infoLop').textContent = '-';
+                    return;
+                }
+                
+                // Cập nhật tên lớp lên UI
+                document.getElementById('infoLop').textContent = tenLop;
 
                 // Map semester filter to column key
                 let hkKey = 'hk1';
                 if (semester === 'HK2') hkKey = 'hk2';
                 else if (semester === 'CANAM') hkKey = 'cn';
 
-                const user = getCurrentUser();
-                const userId = user?.maNguoiDung || user?.manguoidung || user?.MaNguoiDung;
-                const token = getAuthToken();
-                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-
                 // Dùng CÙNG API như báo cáo tổng kết - đã hoạt động tốt
                 const url = `/api/reports/class-final?maLop=${maLop}&namhoc=${namHoc}`;
-                const response = await fetch(url, { headers });
+                const response = await authFetch(url);
                 const result = await response.json();
 
                 if (result.success && result.data && result.data.length > 0) {
@@ -552,6 +591,9 @@
             let totalAvg = 0;
             let countAvg = 0;
             let passedCount = 0;
+            let toanAvg = null;
+            let vanAvg = null;
+            let minAvg = 10;
             
             const rows = [];
             
@@ -568,6 +610,11 @@
                         totalAvg += avgNum;
                         countAvg++;
                         if (avgNum >= 5) passedCount++;
+                        
+                        // Lưu điểm Toán, Văn và điểm thấp nhất (để xét học lực theo TT58)
+                        if (subject.tenMonHoc === 'Toán') toanAvg = avgNum;
+                        if (subject.tenMonHoc === 'Ngữ Văn') vanAvg = avgNum;
+                        if (avgNum < minAvg) minAvg = avgNum;
                     }
                     
                     const gradeDisplay = examTypes.map(et => {
@@ -595,11 +642,19 @@
                 const finalAvg = totalAvg / countAvg;
                 document.getElementById('avgScore').textContent = finalAvg.toFixed(2);
                 
+                // Xét học lực theo TT58/2011 (HK1 hoặc HK2)
                 let ranking = '';
-                if (finalAvg >= 8) ranking = 'Giỏi';
-                else if (finalAvg >= 6.5) ranking = 'Khá';
-                else if (finalAvg >= 5) ranking = 'TB';
-                else ranking = 'Yếu';
+                if (finalAvg >= 8.0 && (toanAvg >= 8.0 || vanAvg >= 8.0) && minAvg >= 6.5) {
+                    ranking = 'Giỏi';
+                } else if (finalAvg >= 6.5 && (toanAvg >= 6.5 || vanAvg >= 6.5) && minAvg >= 5.0) {
+                    ranking = 'Khá';
+                } else if (finalAvg >= 5.0 && (toanAvg >= 5.0 || vanAvg >= 5.0) && minAvg >= 3.5) {
+                    ranking = 'TB';
+                } else if (finalAvg >= 3.5 && minAvg >= 2.0) {
+                    ranking = 'Yếu';
+                } else {
+                    ranking = 'Kém';
+                }
                 
                 document.getElementById('ranking').textContent = ranking;
                 document.getElementById('passedSubjects').textContent = `${passedCount}/${countAvg}`;
@@ -641,7 +696,9 @@
             let totalYearAvg = 0;
             let countYearAvg = 0;
             let passedCount = 0;
-            let isHocSinhGioi = true;
+            let toanAvg = null;
+            let vanAvg = null;
+            let minAvg = 10;
             
             const rows = [];
             
@@ -658,7 +715,11 @@
                     totalYearAvg += yearAvg;
                     countYearAvg++;
                     if (yearAvg >= 5) passedCount++;
-                    if (yearAvg < 8) isHocSinhGioi = false;
+                    
+                    // Lưu điểm Toán, Văn và điểm thấp nhất (để xét học lực theo TT58)
+                    if (subject.tenMonHoc === 'Toán') toanAvg = yearAvg;
+                    if (subject.tenMonHoc === 'Ngữ Văn') vanAvg = yearAvg;
+                    if (yearAvg < minAvg) minAvg = yearAvg;
                     
                     rows.push(`
                         <tr>
@@ -678,18 +739,20 @@
                 const finalAvg = totalYearAvg / countYearAvg;
                 document.getElementById('avgScore').textContent = finalAvg.toFixed(2);
                 
+                // Xét học lực theo TT58/2011 (cả năm)
                 let ranking = '';
-                if (finalAvg >= 8 && isHocSinhGioi) {
-                    ranking = 'Giỏi ⭐';
-                } else if (finalAvg >= 8) {
-                    ranking = 'Giỏi (không đạt HS Giỏi)';
-                } else if (finalAvg >= 6.5) {
+                if (finalAvg >= 8.0 && (toanAvg >= 8.0 || vanAvg >= 8.0) && minAvg >= 6.5) {
+                    ranking = 'Giỏi';
+                } else if (finalAvg >= 6.5 && (toanAvg >= 6.5 || vanAvg >= 6.5) && minAvg >= 5.0) {
                     ranking = 'Khá';
-                } else if (finalAvg >= 5) {
+                } else if (finalAvg >= 5.0 && (toanAvg >= 5.0 || vanAvg >= 5.0) && minAvg >= 3.5) {
                     ranking = 'TB';
-                } else {
+                } else if (finalAvg >= 3.5 && minAvg >= 2.0) {
                     ranking = 'Yếu';
+                } else {
+                    ranking = 'Kém';
                 }
+                
                 document.getElementById('ranking').textContent = ranking;
                 document.getElementById('passedSubjects').textContent = `${passedCount}/${countYearAvg}`;
                 

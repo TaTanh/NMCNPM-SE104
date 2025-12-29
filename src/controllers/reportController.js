@@ -4,6 +4,13 @@ const { normalizeHocKy } = require('../utils/semesterUtil');
 // ========== BÁO CÁO TỔNG KẾT MÔN ==========
 const getSubjectReport = async (req, res) => {
     try {
+        // SECURITY: Học sinh KHÔNG được xem báo cáo tổng kết
+        if (req.user && req.user.vaiTro === 'STUDENT') {
+            return res.status(403).json({ 
+                error: 'Học sinh không có quyền xem báo cáo tổng kết' 
+            });
+        }
+        
         const { namhoc, hocky, monhoc } = req.query;
         
         if (!namhoc || !hocky || !monhoc) {
@@ -28,6 +35,13 @@ const getSubjectReport = async (req, res) => {
 // ========== BÁO CÁO TỔNG KẾT HỌC KỲ ==========
 const getSemesterReport = async (req, res) => {
     try {
+        // SECURITY: Học sinh KHÔNG được xem báo cáo tổng kết
+        if (req.user && req.user.vaiTro === 'STUDENT') {
+            return res.status(403).json({ 
+                error: 'Học sinh không có quyền xem báo cáo tổng kết' 
+            });
+        }
+        
         const { namhoc, hocky } = req.query;
         
         if (!namhoc || !hocky) {
@@ -107,8 +121,20 @@ module.exports = {
             if (!maLop || !namhoc) {
                 return res.status(400).json({ error: 'Thiếu tham số: maLop, namhoc' });
             }
-
+            
+            // SECURITY: Học sinh có thể xem báo cáo lớp của mình để lấy hạnh kiểm
+            // Nhưng chỉ nhận được dữ liệu của chính họ
             const rows = await reportModel.getClassFinalReport(maLop, namhoc);
+            
+            // Nếu là học sinh, chỉ trả về dữ liệu của chính họ
+            if (req.user && req.user.vaiTro === 'STUDENT') {
+                const userMaHS = req.user.tenDangNhap;
+                const studentData = rows.filter(row => 
+                    (row.mahocsinh || row.MaHocSinh) === userMaHS
+                );
+                return res.json({ success: true, data: studentData });
+            }
+
             res.json({ success: true, data: rows });
         } catch (err) {
             console.error('Lỗi báo cáo tổng kết theo lớp:', err);

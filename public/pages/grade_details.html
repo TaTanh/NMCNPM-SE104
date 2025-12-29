@@ -127,7 +127,7 @@
 
             try {
                 // Lấy thông tin môn học
-                const subjectRes = await fetch(`/api/subjects/${subjectId}`);
+                const subjectRes = await authFetch(`/api/subjects/${subjectId}`);
                 const subject = await subjectRes.json();
 
                 // Cập nhật tiêu đề
@@ -137,7 +137,7 @@
                     `Lớp ${classId} – Môn ${subject.tenmonhoc} – ${semester}`;
 
                 // Lấy loại hình kiểm tra
-                const examTypesRes = await fetch('/api/grades/exam-types');
+                const examTypesRes = await authFetch('/api/grades/exam-types');
                 examTypes = await examTypesRes.json();
 
                 // Cập nhật header bảng
@@ -150,11 +150,28 @@
                 `;
 
                 // Lấy học sinh và điểm
-                const gradesRes = await fetch(`/api/grades/class/${classId}/subject/${subjectId}?hocky=${semester}`);
+                const gradesRes = await authFetch(`/api/grades/class/${classId}/subject/${subjectId}?hocky=${semester}`);
                 const grades = await gradesRes.json();
                 
                 allStudents = grades;
-                renderGradeTable(grades);
+                
+                // Sắp xếp theo TÊN (từ cuối cùng của họ tên)
+                allStudents.sort((a, b) => {
+                    const getTen = (hoten) => {
+                        const parts = hoten.trim().split(/\s+/);
+                        return parts[parts.length - 1]; // Lấy từ cuối cùng (tên)
+                    };
+                    const tenA = getTen(a.HoTen);
+                    const tenB = getTen(b.HoTen);
+                    const compare = tenA.localeCompare(tenB, 'vi');
+                    // Nếu tên giống nhau, sắp xếp theo họ tên đầy đủ
+                    if (compare === 0) {
+                        return a.HoTen.localeCompare(b.HoTen, 'vi');
+                    }
+                    return compare;
+                });
+                
+                renderGradeTable(allStudents);
             } catch (error) {
                 console.error('Lỗi:', error);
                 document.getElementById('gradeTableBody').innerHTML = 

@@ -149,6 +149,16 @@
                 <!-- Student ranking table -->
                 <div class="section-card">
                     <h4>👥 Danh sách học sinh</h4>
+                    
+                    <!-- Sắp xếp -->
+                    <div style="margin-bottom: 10px; display: none;" id="sortOptions">
+                        <label style="font-weight: 500; margin-right: 8px;">Sắp xếp theo:</label>
+                        <select id="sortSelect" style="padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="name">Tên học sinh (A-Z)</option>
+                            <option value="score">Điểm TB (Cao → Thấp)</option>
+                        </select>
+                    </div>
+                    
                     <div class="table-wrapper">
                         <table class="data-table">
                             <thead>
@@ -234,6 +244,8 @@
     </style>
 
     <script>
+        let currentStudentStats = [];
+        
         // Initialize page when DOM is ready
         document.addEventListener('DOMContentLoaded', async () => {
             // Check authentication
@@ -623,26 +635,14 @@
                 document.getElementById('passedCount').textContent =
                     `${studentStats.filter(s => s.isPassed).length}/${students.length}`;
 
+                // Lưu vào biến global để dùng cho sorting
+                currentStudentStats = studentStats;
+                
+                // Hiển thị dropdown sắp xếp
+                document.getElementById('sortOptions').style.display = 'block';
+
                 // Render bảng xếp hạng HS
-                const tbody = document.getElementById('studentRankingBody');
-                if (studentStats.length > 0) {
-                    tbody.innerHTML = studentStats
-                        .sort((a, b) => (b.avgScore || 0) - (a.avgScore || 0))
-                        .map((s, i) => `
-                            <tr>
-                                <td>${i + 1}</td>
-                                <td>${s.mahocsinh}</td>
-                                <td>${s.hoten}</td>
-                                <td>${s.avgScore !== null ? s.avgScore.toFixed(2) : '-'}</td>
-                                <td>${s.ranking}</td>
-                                <td>${s.hanhkiem}</td>
-                                <td><strong>${s.danhHieu}</strong></td>
-                            </tr>
-                        `)
-                        .join('');
-                } else {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">Chưa có dữ liệu</td></tr>';
-                }
+                renderStudentTable();
 
                 // Thống kê theo môn
                 const subjectStats = {};
@@ -693,6 +693,60 @@
             }
         }
 
+        // Render student table with sorting
+        function renderStudentTable() {
+            const tbody = document.getElementById('studentRankingBody');
+            const sortBy = document.getElementById('sortSelect').value;
+            
+            if (currentStudentStats.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Chưa có dữ liệu</td></tr>';
+                return;
+            }
+            
+            // Helper: lấy tên (từ cuối cùng)
+            const getTen = (hoten) => {
+                const parts = hoten.trim().split(/\s+/);
+                return parts[parts.length - 1];
+            };
+            
+            // Sắp xếp theo lựa chọn
+            let sortedData = [...currentStudentStats];
+            if (sortBy === 'score') {
+                // Sắp xếp theo điểm TB (cao → thấp)
+                sortedData.sort((a, b) => (b.avgScore || 0) - (a.avgScore || 0));
+            } else {
+                // Sắp xếp theo TÊN (A-Z)
+                sortedData.sort((a, b) => {
+                    const tenA = getTen(a.hoten);
+                    const tenB = getTen(b.hoten);
+                    const compare = tenA.localeCompare(tenB, 'vi');
+                    if (compare === 0) {
+                        return a.hoten.localeCompare(b.hoten, 'vi');
+                    }
+                    return compare;
+                });
+            }
+            
+            tbody.innerHTML = sortedData
+                .map((s, i) => `
+                    <tr>
+                        <td>${i + 1}</td>
+                        <td>${s.mahocsinh}</td>
+                        <td>${s.hoten}</td>
+                        <td>${s.avgScore !== null ? s.avgScore.toFixed(2) : '-'}</td>
+                        <td>${s.ranking}</td>
+                        <td>${s.hanhkiem}</td>
+                        <td><strong>${s.danhHieu}</strong></td>
+                    </tr>
+                `)
+                .join('');
+        }
+        
+        // Event listener for sort dropdown
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('sortSelect')?.addEventListener('change', renderStudentTable);
+        });
+        
         // Calculate weighted average for a subject
         function calculateSubjectAverage(gradeData) {
             if (!gradeData || !gradeData.Diem) {

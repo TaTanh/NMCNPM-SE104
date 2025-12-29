@@ -4,37 +4,37 @@ const classController = require('../controllers/classController');
 const { checkAuth, isAdmin } = require('../middleware/authMiddleware');
 
 // ========== LẤY DANH SÁCH LỚP ==========
-router.get('/', classController.getClasses);
+router.get('/', checkAuth, classController.getClasses);
 
 // ========== LẤY DANH SÁCH HỌC SINH CHƯA ĐƯỢC PHÂN LỚP (PHẢI ĐẶT TRƯỚC /:id) ==========
-router.get('/unassigned/students', classController.getUnassignedStudents);
+router.get('/unassigned/students', checkAuth, classController.getUnassignedStudents);
 
 // ========== LẤY DANH SÁCH HỌC SINH TỪ LỚP NGUỒN (PHẢI ĐẶT TRƯỚC /:id) ==========
-router.get('/available/from-class', classController.getAvailableStudentsFromClass);
+router.get('/available/from-class', checkAuth, classController.getAvailableStudentsFromClass);
 
 // ========== LẤY 1 LỚP THEO MÃ ==========
-router.get('/:id', classController.getClassById);
+router.get('/:id', checkAuth, classController.getClassById);
 
 // ========== THÊM LỚP ==========
-router.post('/', classController.createClass);
+router.post('/', checkAuth, classController.createClass);
 
 // ========== CẬP NHẬT LỚP ==========
-router.put('/:id', classController.updateClass);
+router.put('/:id', checkAuth, classController.updateClass);
 
 // ========== XÓA LỚP ==========
-router.delete('/:id', classController.deleteClass);
+router.delete('/:id', checkAuth, classController.deleteClass);
 
 // ========== LẤY DANH SÁCH HỌC SINH TRONG LỚP ==========
-router.get('/:id/students', classController.getClassStudents);
+router.get('/:id/students', checkAuth, classController.getClassStudents);
 
 // ========== THÊM NHIỀU HỌC SINH VÀO LỚP (BULK) ==========
-router.post('/:id/students/bulk', classController.bulkAddStudentsToClass);
+router.post('/:id/students/bulk', checkAuth, classController.bulkAddStudentsToClass);
 
 // ========== GÁN HỌC SINH VÀO LỚP ==========
-router.post('/:id/students', classController.addStudentToClass);
+router.post('/:id/students', checkAuth, classController.addStudentToClass);
 
 // ========== XÓA HỌC SINH KHỎI LỚP ==========
-router.delete('/:id/students/:maHocSinh', classController.removeStudentFromClass);
+router.delete('/:id/students/:maHocSinh', checkAuth, classController.removeStudentFromClass);
 
 // ========== GÁN / HỦY GVCN CHO LỚP (Chỉ Admin) ==========
 router.put('/:id/gvcn', checkAuth, isAdmin, classController.assignGvcnToClass);

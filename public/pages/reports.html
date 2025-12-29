@@ -166,7 +166,7 @@
         async function loadFilters() {
             try {
                 // Load năm học
-                const yearRes = await fetch('/api/settings/school-years');
+                const yearRes = await authFetch('/api/settings/school-years');
                 const years = await yearRes.json();
                 const yearSelect = document.getElementById('yearSelect');
                 years.forEach(y => {
@@ -174,7 +174,7 @@
                 });
 
                 // Load khối
-                const gradeRes = await fetch('/api/settings/grade-levels');
+                const gradeRes = await authFetch('/api/settings/grade-levels');
                 const grades = await gradeRes.json();
                 const gradeSelect = document.getElementById('gradeSelect');
                 grades.forEach(g => {
@@ -189,7 +189,7 @@
                     if (!khoi) return;
                     
                     try {
-                        const res = await fetch(`/api/classes?khoi=${khoi}`);
+                        const res = await authFetch(`/api/classes?khoi=${khoi}`);
                         const classList = await res.json();
                         console.log('Class list response:', classList);
                         classList.forEach(cls => {
@@ -228,7 +228,7 @@
             try {
                 const url = `/api/reports/class-final?maLop=${cls}&namhoc=${year}`;
                 console.log('Fetching URL:', url);
-                const res = await fetch(url);
+                const res = await authFetch(url);
                 const json = await res.json();
                 console.log('Response:', json);
                 const rows = json.data || [];
@@ -508,6 +508,12 @@
             
             if (studentsData.length === 0) return;
             
+            // Hàm lấy tên (từ cuối cùng) từ họ tên đầy đủ
+            const getTen = (hoten) => {
+                const parts = hoten.trim().split(/\s+/);
+                return parts[parts.length - 1]; // Lấy từ cuối cùng (tên)
+            };
+            
             // Sắp xếp dữ liệu
             let dataToRender = [...studentsData];
             if (sortBy === 'rank') {
@@ -523,8 +529,19 @@
                     
                     return rankA - rankB;
                 });
+            } else {
+                // Sắp xếp theo TÊN (từ cuối cùng của họ tên)
+                dataToRender.sort((a, b) => {
+                    const tenA = getTen(a.hoten);
+                    const tenB = getTen(b.hoten);
+                    const compare = tenA.localeCompare(tenB, 'vi');
+                    // Nếu tên giống nhau, sắp xếp theo họ tên đầy đủ
+                    if (compare === 0) {
+                        return a.hoten.localeCompare(b.hoten, 'vi');
+                    }
+                    return compare;
+                });
             }
-            // else: giữ nguyên thứ tự theo tên (đã sort sẵn từ backend)
             
             // Render bảng
             const body = document.getElementById('reportBody');

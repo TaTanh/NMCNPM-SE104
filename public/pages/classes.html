@@ -513,7 +513,7 @@
         // ========== LOAD DỮ LIỆU TỪ DATABASE ==========
         async function loadClasses() {
             try {
-                const response = await fetch('/api/classes');
+                const response = await authFetch('/api/classes');
                 if (!response.ok) throw new Error('Lỗi tải dữ liệu');
                 
                 const classes = await response.json();
@@ -568,7 +568,7 @@
         async function loadDropdowns() {
             try {
                 // Load khối lớp
-                const khoiRes = await fetch('/api/settings/grade-levels');
+                const khoiRes = await authFetch('/api/settings/grade-levels');
                 const khoiList = await khoiRes.json();
                 const gradeLevelAdd = document.getElementById('gradeLevelAdd');
                 gradeLevelAdd.innerHTML = '<option value="">-- Chọn khối --</option>';
@@ -577,7 +577,7 @@
                 });
                 
                 // Load năm học
-                const yearRes = await fetch('/api/settings/school-years');
+                const yearRes = await authFetch('/api/settings/school-years');
                 const yearList = await yearRes.json();
                 const schoolYearAdd = document.getElementById('schoolYearAdd');
                 schoolYearAdd.innerHTML = '<option value="">-- Chọn năm học --</option>';
@@ -586,7 +586,7 @@
                 });
 
                 // Load homeroom teachers (GVCN)
-                const teachersRes = await fetch('/api/auth/users?role=teacher');
+                const teachersRes = await authFetch('/api/auth/users?role=teacher');
                 const teachers = await teachersRes.json();
                 const homeroomAdd = document.getElementById('homeroomTeacherAdd');
                 const homeroomEdit = document.getElementById('homeroomTeacherEdit');
@@ -730,7 +730,7 @@
             if (maGvcn) data.MaGVCN = parseInt(maGvcn, 10);
             
             try {
-                const response = await fetch('/api/classes', {
+                const response = await authFetch('/api/classes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -812,7 +812,7 @@
             if (maGvcnEdit) data.MaGVCN = parseInt(maGvcnEdit, 10);
             
             try {
-                const response = await fetch(`/api/classes/${maLop}`, {
+                const response = await authFetch(`/api/classes/${maLop}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
@@ -873,7 +873,7 @@
             const maLop = classSelectedRow.querySelectorAll('td')[1].textContent.trim();
             
             try {
-                const response = await fetch(`/api/classes/${maLop}`, {
+                const response = await authFetch(`/api/classes/${maLop}`, {
                     method: 'DELETE'
                 });
                 
@@ -1003,7 +1003,7 @@
             viewStudentsModal.classList.add('show');
             
             try {
-                const response = await fetch(`/api/classes/${maLop}/students`);
+                const response = await authFetch(`/api/classes/${maLop}/students`);
                 if (!response.ok) throw new Error('Lỗi tải dữ liệu');
                 
                 const students = await response.json();
@@ -1061,7 +1061,7 @@
         async function loadClassRules() {
             try {
                 // Load sĩ số tối đa
-                const paramsRes = await fetch('/api/settings/params');
+                const paramsRes = await authFetch('/api/settings/params');
                 const params = await paramsRes.json();
                 
                 params.forEach(p => {
@@ -1071,7 +1071,7 @@
                 });
 
                 // Load danh sách khối lớp
-                const khoiRes = await fetch('/api/settings/grade-levels');
+                const khoiRes = await authFetch('/api/settings/grade-levels');
                 const khoiList = await khoiRes.json();
                 
                 const khoiBody = document.getElementById('khoiLopBody');
@@ -1096,7 +1096,7 @@
         // ====== QUẢN LÝ NĂM HỌC ======
         async function loadSchoolYears() {
             try {
-                const res = await fetch('/api/settings/school-years');
+                const res = await authFetch('/api/settings/school-years');
                 const years = await res.json();
                 
                 const tbody = document.getElementById('namHocBody');
@@ -1135,7 +1135,7 @@
             }
 
             try {
-                const res = await fetch('/api/settings/school-years', {
+                const res = await authFetch('/api/settings/school-years', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ MaNamHoc: maNamHoc, TenNamHoc: tenNamHoc })
@@ -1161,7 +1161,7 @@
             const tenNamHoc = row.querySelector('.edit-tennamhoc').value.trim();
 
             try {
-                const res = await fetch(`/api/settings/school-years/${id}`, {
+                const res = await authFetch(`/api/settings/school-years/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ TenNamHoc: tenNamHoc })
@@ -1182,7 +1182,7 @@
             if (!confirm(`Bạn có chắc muốn xóa năm học "${id}"?`)) return;
 
             try {
-                const res = await fetch(`/api/settings/school-years/${id}`, {
+                const res = await authFetch(`/api/settings/school-years/${id}`, {
                     method: 'DELETE'
                 });
                 
@@ -1208,7 +1208,7 @@
             }
 
             try {
-                await fetch('/api/settings/params/SiSoToiDa', {
+                await authFetch('/api/settings/params/SiSoToiDa', {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ GiaTri: siSoToiDa })
@@ -1273,7 +1273,7 @@
             
             // Load sĩ số tối đa
             try {
-                const paramsRes = await fetch('/api/settings/params');
+                const paramsRes = await authFetch('/api/settings/params');
                 const params = await paramsRes.json();
                 const sisoParam = params.find(p => p.tenthamso === 'SiSoToiDa');
                 document.getElementById('importMaxSize').textContent = sisoParam ? sisoParam.giatri : 40;
@@ -1310,7 +1310,7 @@
 
         async function loadSourceClasses(targetYear) {
             try {
-                const response = await fetch('/api/classes');
+                const response = await authFetch('/api/classes');
                 const classes = await response.json();
                 
                 // Lọc các lớp khác năm học đích
@@ -1345,7 +1345,7 @@
                 
                 importStudentsTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">Đang tải...</td></tr>';
                 
-                const response = await fetch(url);
+                const response = await authFetch(url);
                 if (!response.ok) throw new Error('Lỗi tải dữ liệu');
                 
                 availableStudents = await response.json();
@@ -1499,7 +1499,7 @@
                     const sourceClassId = importSourceClass.value;
                     for (const maHS of selectedStudents) {
                         try {
-                            await fetch(`/api/classes/${sourceClassId}/students/${maHS}`, {
+                            await authFetch(`/api/classes/${sourceClassId}/students/${maHS}`, {
                                 method: 'DELETE'
                             });
                         } catch (err) {
@@ -1508,7 +1508,7 @@
                     }
                 }
                 
-                const response = await fetch(`/api/classes/${currentImportTargetClass}/students/bulk`, {
+                const response = await authFetch(`/api/classes/${currentImportTargetClass}/students/bulk`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ students: selectedStudents })
@@ -1577,7 +1577,7 @@
 
                 for (const maHS of selectedStudents) {
                     try {
-                        const response = await fetch(`/api/classes/${currentImportTargetClass}/students/${maHS}`, {
+                        const response = await authFetch(`/api/classes/${currentImportTargetClass}/students/${maHS}`, {
                             method: 'DELETE'
                         });
                         

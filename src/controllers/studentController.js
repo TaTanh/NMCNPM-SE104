@@ -43,6 +43,25 @@ const getStudentsWithClass = async (req, res) => {
 const getStudents = async (req, res) => {
     try {
         const { namhoc, lop, khoi, search } = req.query;
+        
+        // SECURITY: Nếu là học sinh, CHỈ trả về thông tin của chính mình
+        if (req.user && req.user.vaiTro === 'STUDENT') {
+            const userMaHS = req.user.tenDangNhap;
+            const student = await studentModel.findById(userMaHS);
+            
+            if (!student) {
+                return res.json([]);
+            }
+            
+            // Chỉ trả về học sinh đó nếu search khớp với mã học sinh
+            if (search && !userMaHS.toLowerCase().includes(search.toLowerCase())) {
+                return res.json([]);
+            }
+            
+            return res.json([student]);
+        }
+        
+        // Admin, GVCN, GVBM xem được tất cả
         const students = await studentModel.findAll({ namhoc, lop, khoi, search });
         res.json(students);
     } catch (err) {
@@ -55,6 +74,17 @@ const getStudents = async (req, res) => {
 const getStudentById = async (req, res) => {
     try {
         const { id } = req.params;
+        
+        // SECURITY: Nếu là học sinh, CHỈ được xem thông tin của chính mình
+        if (req.user && req.user.vaiTro === 'STUDENT') {
+            const userMaHS = req.user.tenDangNhap;
+            if (id !== userMaHS) {
+                return res.status(403).json({ 
+                    error: 'Bạn chỉ được xem thông tin của chính mình' 
+                });
+            }
+        }
+        
         const student = await studentModel.findById(id);
         
         if (!student) {
