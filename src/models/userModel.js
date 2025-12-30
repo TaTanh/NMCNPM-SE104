@@ -121,32 +121,13 @@ const changePassword = async (id, newPassword) => {
     return true;
 };
 
-// ========== XÓA USER (CASCADE: Xóa phân công giảng dạy và gỡ chủ nhiệm) ==========
+// ========== XÓA USER ==========
 const remove = async (id) => {
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN');
-        
-        // Bước 1: Xóa tất cả phân công giảng dạy của giáo viên
-        await client.query('DELETE FROM GIANGDAY WHERE MaGiaoVien = $1', [id]);
-        
-        // Bước 2: Gỡ chủ nhiệm lớp (SET NULL)
-        await client.query('UPDATE LOP SET MaGVCN = NULL WHERE MaGVCN = $1', [id]);
-        
-        // Bước 3: Xóa người dùng
-        const result = await client.query(
-            'DELETE FROM NGUOIDUNG WHERE MaNguoiDung = $1 RETURNING *',
-            [id]
-        );
-        
-        await client.query('COMMIT');
-        return result.rows[0] || null;
-    } catch (error) {
-        await client.query('ROLLBACK');
-        throw error;
-    } finally {
-        client.release();
-    }
+    const result = await pool.query(
+        'DELETE FROM NGUOIDUNG WHERE MaNguoiDung = $1 RETURNING *',
+        [id]
+    );
+    return result.rows[0] || null;
 };
 
 // ========== LẤY TẤT CẢ VAI TRÒ ==========

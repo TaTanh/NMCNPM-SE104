@@ -1,5 +1,6 @@
 const userModel = require('../models/userModel');
 const classModel = require('../models/classModel');
+const pool = require('../config/db');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET, JWT_EXPIRES_IN } = require('../config/jwt');
 
@@ -201,8 +202,45 @@ const deleteUser = async (req, res) => {
                 return res.status(403).json({ error: 'Phải có ít nhất 1 admin trong hệ thống!' });
             }
         }
+                // BẢO VỆ 4: Kiểm tra giáo viên còn chủ nhiệm lớp không
+        if (targetUser.mavaitro === 'GVCN') {
+            const classInfo = await classModel.countClassesByGvcn(id);
+            if (classInfo.total > 0) {
+                const danhSachLop = classInfo.classes.join(', ');
+                return res.status(403).json({ 
+                    error: `Không thể xóa! Giáo viên đang chủ nhiệm ${classInfo.total} lớp: ${danhSachLop}. Vui lòng gỡ chủ nhiệm trước khi xóa.`,
+                    classes: classInfo.classes,
+                    total: classInfo.total
+                });
+            }
+        }
         
-        const user = await userModel.remove(id);
+        // BẢO VỆ 5: Kiểm tra giáo viên còn phân công giảng dạy không
+        if (targetUser.mavaitro === 'GVBM' || targetUser.mavaitro === 'GVCN') {
+            const teachingResult = await pool.query(
+                `SELECT DISTINCT l.TenLop, mh.TenMonHoc, hk.TenHocKy, nh.TenNamHoc
+                 FROM GIANGDAY gd
+                 JOIN LOP l ON gd.MaLop = l.MaLop
+                 JOIN MONHOC mh ON gd.MaMonHoc = mh.MaMonHoc
+                 JOIN HOCKY hk ON gd.MaHocKy = hk.MaHocKy
+                 JOIN NAMHOC nh ON gd.MaNamHoc = nh.MaNamHoc
+                 WHERE gd.MaGiaoVien = $1
+                 ORDER BY nh.TenNamHoc DESC, l.TenLop, mh.TenMonHoc`,
+                [id]
+            );
+            
+            if (teachingResult.rows.length > 0) {
+                const danhSach = teachingResult.rows.map(r => 
+                    `${r.tenmonhoc} - ${r.tenlop} (${r.tenhocky}, ${r.tennamhoc})`
+                ).join('; ');
+                return res.status(403).json({ 
+                    error: `Giáo viên đang được phân công giảng dạy ${teachingResult.rows.length} môn. Vui lòng gỡ phân công trước khi xóa.`,
+                    assignments: teachingResult.rows,
+                    total: teachingResult.rows.length
+                });
+            }
+        }
+                const user = await userModel.remove(id);
         res.json({ success: true, message: 'Đã xóa người dùng' });
     } catch (err) {
         console.error('Lỗi xóa người dùng:', err);

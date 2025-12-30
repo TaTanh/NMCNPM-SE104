@@ -37,4 +37,7 @@ router.get('/lop/giaovien/:maGiaoVien/monhoc/:maMonHoc', checkAuth, isTeacher, g
 // Lấy tất cả phân công (chỉ Admin)
 router.get('/', checkAuth, isAdmin, giangdayController.getAll);
 
+// Xóa tất cả phân công của giáo viên (chỉ Admin)
+router.delete('/teacher/:id', checkAuth, isAdmin, giangdayController.deleteAllByTeacher);
+
 module.exports = router;

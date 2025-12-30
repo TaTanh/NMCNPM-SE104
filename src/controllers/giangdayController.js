@@ -331,6 +331,39 @@ const getAll = async (req, res) => {
     }
 };
 
+// ========== XÓA TẤT CẢ PHÂN CÔNG CỦA GIÁO VIÊN ==========
+const deleteAllByTeacher = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Kiểm tra giáo viên có tồn tại không
+        const assignments = await giangdayModel.getByGiaoVien(parseInt(id));
+        
+        if (assignments.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Giáo viên không có phân công nào'
+            });
+        }
+        
+        // Xóa tất cả phân công
+        const result = await giangdayModel.removeAllByTeacher(parseInt(id));
+        
+        res.json({
+            success: true,
+            message: `Đã xóa ${result.deletedCount} phân công của giáo viên`,
+            deletedCount: result.deletedCount
+        });
+    } catch (error) {
+        console.error('Error in deleteAllByTeacher:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Lỗi khi xóa phân công giáo viên',
+            error: error.message
+        });
+    }
+};
+
 
 module.exports = {
     getByGiaoVien,
@@ -342,5 +375,6 @@ module.exports = {
     deleteGiangDay,
     getMonHocByGiaoVien,
     getLopByGiaoVienAndMonHoc,
-    getAll
+    getAll,
+    deleteAllByTeacher
 };

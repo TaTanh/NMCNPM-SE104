@@ -479,6 +479,9 @@
                 header.style.justifyContent = 'space-between';
                 header.style.alignItems = 'center';
 
+                const leftInfo = document.createElement('div');
+                leftInfo.style.flex = '1';
+
                 const info = document.createElement('div');
                 let teacherLabel = `<strong>${teacher.tengiaovien}</strong> <span style="margin-left:8px; color:#6b7280;">${teacher.role}</span>`;
                 
@@ -488,13 +491,22 @@
                 }
                 
                 info.innerHTML = teacherLabel;
-                header.appendChild(info);
+                leftInfo.appendChild(info);
 
                 const email = document.createElement('div');
                 email.style.color = '#6b7280';
                 email.style.fontSize = '12px';
                 email.textContent = teacher.email || '';
-                header.appendChild(email);
+                leftInfo.appendChild(email);
+
+                header.appendChild(leftInfo);
+
+                const btnDeleteAll = document.createElement('button');
+                btnDeleteAll.className = 'btn btn-danger btn-sm';
+                btnDeleteAll.textContent = 'Xóa tất cả';
+                btnDeleteAll.style.marginLeft = '12px';
+                btnDeleteAll.onclick = () => deleteAllAssignments(teacher.magiaovien, teacher.tengiaovien);
+                header.appendChild(btnDeleteAll);
 
                 card.appendChild(header);
 
@@ -716,6 +728,31 @@
                 toastError('Lỗi: ' + error.message);
             }
         });
+
+        // ========== XÓA TẤT CẢ PHÂN CÔNG CỦA GIÁO VIÊN ==========
+        async function deleteAllAssignments(teacherId, teacherName) {
+            if (!confirm(`Xóa TẤT CẢ phân công của ${teacherName}?\n\nCảnh báo: Hành động này không thể hoàn tác!`)) return;
+            
+            try {
+                const token = getAuthToken();
+                const response = await authFetch(`/api/giangday/teacher/${teacherId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    toastSuccess(`Đã xóa ${result.deletedCount} phân công!`);
+                    loadAssignments();
+                } else {
+                    toastError(result.message);
+                }
+            } catch (error) {
+                console.error('Lỗi xóa tất cả phân công:', error);
+                toastError('Lỗi: ' + error.message);
+            }
+        }
 
         // ========== XÓA PHÂN CÔNG ==========
         const deleteModal = document.getElementById('deleteModal');

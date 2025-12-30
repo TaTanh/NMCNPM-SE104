@@ -268,6 +268,22 @@ const GiangDayModel = {
         } catch (error) {
             throw error;
         }
+    },
+
+    // Xóa tất cả phân công của giáo viên
+    removeAllByTeacher: async (maGiaoVien) => {
+        try {
+            const result = await pool.query(
+                'DELETE FROM GIANGDAY WHERE MaGiaoVien = $1 RETURNING *',
+                [maGiaoVien]
+            );
+            return {
+                deletedCount: result.rowCount,
+                deletedRows: result.rows
+            };
+        } catch (error) {
+            throw error;
+        }
     }
 };
 
