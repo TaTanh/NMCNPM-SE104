@@ -383,28 +383,24 @@
                     // Xét danh hiệu theo TT58 đầy đủ
                     const getDanhHieu = () => {
                         if (!hanhKiem || hocLuc === '-') return '-';
-                        
+                        // Chỉ xét danh hiệu nếu hạnh kiểm từ Khá trở lên
+                        if (hanhKiem !== 'Tốt' && hanhKiem !== 'Khá') {
+                            return 'Không có danh hiệu';
+                        }
                         // Học sinh Giỏi: Giỏi + Tốt
                         if (hocLuc === 'Giỏi' && hanhKiem === 'Tốt') {
                             return 'Học sinh giỏi';
                         }
-                        // Học sinh Khá: (Giỏi + Khá) OR (Khá + Tốt) OR (Khá + Khá)
+                        // Học sinh tiên tiến: Giỏi + Khá hoặc Khá + Tốt/Khá
                         else if (
                             (hocLuc === 'Giỏi' && hanhKiem === 'Khá') ||
                             (hocLuc === 'Khá' && (hanhKiem === 'Tốt' || hanhKiem === 'Khá'))
                         ) {
-                            return 'Học sinh khá';
-                        }
-                        // Học sinh Trung bình: (Giỏi + TB) OR (TB + Tốt) OR (TB + Khá)
-                        else if (
-                            (hocLuc === 'Giỏi' && hanhKiem === 'Trung bình') ||
-                            (hocLuc === 'Trung bình' && (hanhKiem === 'Tốt' || hanhKiem === 'Khá'))
-                        ) {
-                            return 'Học sinh trung bình';
+                            return 'Học sinh tiên tiến';
                         }
                         // Các trường hợp còn lại
                         else {
-                            return 'Học sinh yếu';
+                            return 'Không có danh hiệu';
                         }
                     };
                     const danhHieu = getDanhHieu();

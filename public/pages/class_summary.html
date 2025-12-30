@@ -595,27 +595,18 @@
                     // Tính danh hiệu theo TT 58/2011 (logic từ reportModel.js)
                     let danhHieu = '-';
                     if (ranking !== '-' && hkInfo.xeploai !== '-') {
-                        // Học sinh Giỏi: CHÍNH XÁC Giỏi (>=8.0) + Hạnh kiểm Tốt
-                        if (ranking === 'Giỏi' && hkInfo.xeploai === 'Tốt') {
+                        // Chỉ xét danh hiệu nếu hạnh kiểm từ Khá trở lên
+                        if (hkInfo.xeploai !== 'Tốt' && hkInfo.xeploai !== 'Khá') {
+                            danhHieu = 'Không có danh hiệu';
+                        } else if (ranking === 'Giỏi' && hkInfo.xeploai === 'Tốt') {
                             danhHieu = 'Học sinh Giỏi';
-                        }
-                        // Học sinh Khá: (Giỏi + Khá) OR (Khá + Tốt) OR (Khá + Khá)
-                        else if (
+                        } else if (
                             (ranking === 'Giỏi' && hkInfo.xeploai === 'Khá') ||
                             (ranking === 'Khá' && (hkInfo.xeploai === 'Tốt' || hkInfo.xeploai === 'Khá'))
                         ) {
-                            danhHieu = 'Học sinh Khá';
-                        }
-                        // Học sinh Trung bình: (Giỏi + TB) OR (TB + Tốt) OR (TB + Khá)
-                        else if (
-                            (ranking === 'Giỏi' && hkInfo.xeploai === 'Trung bình') ||
-                            (ranking === 'Trung bình' && (hkInfo.xeploai === 'Tốt' || hkInfo.xeploai === 'Khá'))
-                        ) {
-                            danhHieu = 'Học sinh Trung bình';
-                        }
-                        // Tất cả trường hợp còn lại
-                        else {
-                            danhHieu = 'Học sinh Yếu';
+                            danhHieu = 'Học sinh Tiên tiến';
+                        } else {
+                            danhHieu = 'Không có danh hiệu';
                         }
                     }
 
