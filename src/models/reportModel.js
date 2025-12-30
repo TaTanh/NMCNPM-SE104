@@ -20,37 +20,31 @@ const pool = require('../config/db');
  * @returns {string} Danh hiệu học sinh
  */
 function tinhDanhHieu(diemTB, xepLoaiHK) {
-    if (!diemTB || !xepLoaiHK) return null;
-    
+    if (diemTB == null || !xepLoaiHK) return null;
+
     // Xác định xếp loại học lực
     let hocLuc = '';
     if (diemTB >= 8) hocLuc = 'Giỏi';
     else if (diemTB >= 6.5) hocLuc = 'Khá';
-    else if (diemTB >= 5) hocLuc = 'TB';
-    else hocLuc = 'Yếu';
-    
+    else hocLuc = '';
+
     // Chuẩn hóa xếp loại hạnh kiểm
     const hk = (xepLoaiHK || '').trim();
-    
-    // Xét danh hiệu theo quy định TT 58/2011
+
+    // Chỉ xét danh hiệu nếu hạnh kiểm từ Khá trở lên
+    if (hk !== 'Tốt' && hk !== 'Khá') {
+        return 'Không có danh hiệu';
+    }
+
     if (hocLuc === 'Giỏi' && hk === 'Tốt') {
-        // CHỈ Giỏi + Tốt mới được HS Giỏi
         return 'Học sinh giỏi';
     } else if (
-        (hocLuc === 'Giỏi' && hk === 'Khá') ||  // Giỏi + Khá → Khá (do HK không Tốt)
-        (hocLuc === 'Khá' && hk === 'Tốt') ||   // Khá + Tốt → Khá
-        (hocLuc === 'Khá' && hk === 'Khá')      // Khá + Khá → Khá
+        (hocLuc === 'Giỏi' && hk === 'Khá') ||
+        (hocLuc === 'Khá' && (hk === 'Tốt' || hk === 'Khá'))
     ) {
-        return 'Học sinh khá';
-    } else if (
-        (hocLuc === 'Giỏi' && hk === 'Trung bình') ||  // Giỏi + TB → TB
-        (hocLuc === 'TB' && hk === 'Tốt') ||    // TB + Tốt → TB
-        (hocLuc === 'TB' && hk === 'Khá')       // TB + Khá → TB
-    ) {
-        return 'Học sinh trung bình';
+        return 'Học sinh tiên tiến';
     } else {
-        // Tất cả còn lại
-        return 'Học sinh yếu';
+        return 'Không có danh hiệu';
     }
 }
 

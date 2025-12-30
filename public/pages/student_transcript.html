@@ -805,25 +805,18 @@
             const hl = hocLuc.replace(' ⭐', '').replace(' (không đạt HS Giỏi)', '').trim();
             const hk = hanhKiem.trim();
             
-            // Xét danh hiệu theo quy định TT 58/2011 (NGHIÊM NGẶT)
-            if (hl === 'Giỏi' && hk === 'Tốt') {
-                // CHỈ Giỏi + Tốt mới được HS Giỏi
+            // Chỉ xét danh hiệu nếu hạnh kiểm từ Khá trở lên
+            if (hk !== 'Tốt' && hk !== 'Khá') {
+                danhHieu = 'Không có danh hiệu';
+            } else if (hl === 'Giỏi' && hk === 'Tốt') {
                 danhHieu = 'Học sinh giỏi';
             } else if (
-                (hl === 'Giỏi' && hk === 'Khá') ||  // Giỏi + Khá → Khá (do HK không Tốt)
-                (hl === 'Khá' && hk === 'Tốt') ||   // Khá + Tốt → Khá
-                (hl === 'Khá' && hk === 'Khá')      // Khá + Khá → Khá
+                (hl === 'Giỏi' && hk === 'Khá') ||
+                (hl === 'Khá' && (hk === 'Tốt' || hk === 'Khá'))
             ) {
-                danhHieu = 'Học sinh khá';
-            } else if (
-                (hl === 'Giỏi' && hk === 'Trung bình') ||  // Giỏi + TB → TB
-                (hl === 'TB' && hk === 'Tốt') ||    // TB + Tốt → TB
-                (hl === 'TB' && hk === 'Khá')       // TB + Khá → TB
-            ) {
-                danhHieu = 'Học sinh trung bình';
+                danhHieu = 'Học sinh tiên tiến';
             } else {
-                // Các trường hợp còn lại: Yếu + bất kỳ, hoặc bất kỳ + TB/Yếu/Kém
-                danhHieu = 'Học sinh yếu';
+                danhHieu = 'Không có danh hiệu';
             }
             
             document.getElementById('danhhieu').textContent = danhHieu;
