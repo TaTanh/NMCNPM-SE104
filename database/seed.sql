@@ -547,7 +547,7 @@ END $$;
 SELECT 'Tổng số phân công giảng dạy: ' || COUNT(*) as ThongKe FROM GIANGDAY;
 SELECT MaHocKy, COUNT(*) as SoLuongPhanCong FROM GIANGDAY GROUP BY MaHocKy ORDER BY MaHocKy;
 
-SELECT '✓ Generate dữ liệu thành công!' as Status;
+SELECT 'Generate dữ liệu thành công!' as Status;
 
 -- =====================================================
 -- TIỆN ÍCH: XÓA HỌC SINH BỊ TRÙNG LỚP

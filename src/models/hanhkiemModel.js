@@ -49,7 +49,7 @@ const HanhKiemModel = {
         }
     },
 
-    // Lấy hạnh kiểm của cả lớp
+    // Lấy hạnh kiểm của cả lớp (chỉ lấy của năm học lớp đó)
     getByLop: async (maLop, maNamHoc, maHocKy) => {
         try {
             const altHocKy = (() => {
@@ -65,14 +65,19 @@ const HanhKiemModel = {
                 SELECT hk.*, hs.HoTen, hs.MaHocSinh
                 FROM HANHKIEM hk
                 JOIN HOCSINH hs ON hk.MaHocSinh = hs.MaHocSinh
-                JOIN QUATRINHHOC qth ON hs.MaHocSinh = qth.MaHocSinh
-                WHERE qth.MaLop = $1 
-                    AND hk.MaNamHoc = $2 
-                    AND (UPPER(hk.MaHocKy) = UPPER($3) ${altHocKy ? 'OR hk.MaHocKy = $4' : ''})
+                WHERE hk.MaHocSinh IN (
+                    SELECT qth.MaHocSinh 
+                    FROM QUATRINHHOC qth
+                    JOIN LOP l ON qth.MaLop = l.MaLop
+                    WHERE qth.MaLop = $1 AND l.MaNamHoc = $2
+                )
+                AND hk.MaNamHoc = $2
+                AND (UPPER(hk.MaHocKy) = UPPER($3) ${altHocKy ? 'OR hk.MaHocKy = $4' : ''})
                 ORDER BY hs.HoTen
             `;
             const params = altHocKy ? [maLop, maNamHoc, maHocKy, altHocKy] : [maLop, maNamHoc, maHocKy];
             const result = await pool.query(query, params);
+            return result.rows;
             return result.rows;
         } catch (error) {
             throw error;

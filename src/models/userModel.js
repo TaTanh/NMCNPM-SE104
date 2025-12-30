@@ -22,13 +22,25 @@ const findByCredentials = async (username, password) => {
     return user;
 };
 
-// ========== LẤY USER THEO ID ==========
+// ========== LẤY USER THEO ID (CHỈ USER HOẠT ĐỘNG) ==========
 const findById = async (id) => {
     const result = await pool.query(
         `SELECT u.*, r.TenVaiTro, r.Quyen
          FROM NGUOIDUNG u
          JOIN VAITRO r ON u.MaVaiTro = r.MaVaiTro
          WHERE u.MaNguoiDung = $1 AND u.TrangThai = true`,
+        [id]
+    );
+    return result.rows[0] || null;
+};
+
+// ========== LẤY USER THEO ID (BẤT KỂ TRẠNG THÁI) ==========
+const findByIdIgnoreStatus = async (id) => {
+    const result = await pool.query(
+        `SELECT u.*, r.TenVaiTro, r.Quyen
+         FROM NGUOIDUNG u
+         JOIN VAITRO r ON u.MaVaiTro = r.MaVaiTro
+         WHERE u.MaNguoiDung = $1`,
         [id]
     );
     return result.rows[0] || null;
@@ -109,13 +121,32 @@ const changePassword = async (id, newPassword) => {
     return true;
 };
 
-// ========== XÓA USER ==========
+// ========== XÓA USER (CASCADE: Xóa phân công giảng dạy và gỡ chủ nhiệm) ==========
 const remove = async (id) => {
-    const result = await pool.query(
-        'DELETE FROM NGUOIDUNG WHERE MaNguoiDung = $1 RETURNING *',
-        [id]
-    );
-    return result.rows[0] || null;
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        // Bước 1: Xóa tất cả phân công giảng dạy của giáo viên
+        await client.query('DELETE FROM GIANGDAY WHERE MaGiaoVien = $1', [id]);
+        
+        // Bước 2: Gỡ chủ nhiệm lớp (SET NULL)
+        await client.query('UPDATE LOP SET MaGVCN = NULL WHERE MaGVCN = $1', [id]);
+        
+        // Bước 3: Xóa người dùng
+        const result = await client.query(
+            'DELETE FROM NGUOIDUNG WHERE MaNguoiDung = $1 RETURNING *',
+            [id]
+        );
+        
+        await client.query('COMMIT');
+        return result.rows[0] || null;
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
 };
 
 // ========== LẤY TẤT CẢ VAI TRÒ ==========
@@ -217,6 +248,7 @@ const countAdmins = async () => {
 module.exports = {
     findByCredentials,
     findById,
+    findByIdIgnoreStatus,
     findAll,
     existsByUsername,
     create,

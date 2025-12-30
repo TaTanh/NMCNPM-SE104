@@ -52,6 +52,7 @@ const GiangDayModel = {
                     nd.HoTen as TenGiaoVien,
                     nd.Email,
                     mh.TenMonHoc,
+                    mh.HeSo,
                     vt.TenVaiTro
                 FROM GIANGDAY gd
                 JOIN NGUOIDUNG nd ON gd.MaGiaoVien = nd.MaNguoiDung

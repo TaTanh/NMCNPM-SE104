@@ -107,7 +107,7 @@ const updateUser = async (req, res) => {
         const { HoTen, Email, MaVaiTro, TrangThai } = req.body;
         
         // BẢO VỆ 1: Không được sửa super admin (ID = 1 hoặc username = 'admin')
-        const targetUser = await userModel.findById(id);
+        const targetUser = await userModel.findByIdIgnoreStatus(id);
         if (!targetUser) {
             return res.status(404).json({ error: 'Không tìm thấy người dùng' });
         }
@@ -178,8 +178,8 @@ const deleteUser = async (req, res) => {
     try {
         const { id } = req.params;
         
-        // 🔒 BẢO VỆ 1: Không được xóa super admin
-        const targetUser = await userModel.findById(id);
+        // BẢO VỆ 1: Không được xóa super admin
+        const targetUser = await userModel.findByIdIgnoreStatus(id);
         if (!targetUser) {
             return res.status(404).json({ error: 'Không tìm thấy người dùng' });
         }
@@ -188,13 +188,13 @@ const deleteUser = async (req, res) => {
             return res.status(403).json({ error: 'Không thể xóa super admin!' });
         }
         
-        // 🔒 BẢO VỆ 2: Không cho admin tự xóa chính mình
+        // BẢO VỆ 2: Không cho admin tự xóa chính mình
         const currentUserId = req.user.maNguoiDung;
         if (parseInt(id) === currentUserId) {
             return res.status(403).json({ error: 'Bạn không thể xóa chính mình!' });
         }
         
-        // 🔒 BẢO VỆ 3: Nếu xóa admin, phải còn ít nhất 1 admin khác
+        // BẢO VỆ 3: Nếu xóa admin, phải còn ít nhất 1 admin khác
         if (targetUser.mavaitro === 'ADMIN') {
             const adminCount = await userModel.countAdmins();
             if (adminCount <= 1) {
