@@ -158,12 +158,10 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- ========== GENERATE 530 HỌC SINH ==========
--- Mã học sinh từ HS010000 đến HS010529
--- 160 học sinh khối 10 (sinh năm 2010): HS010000-HS010159
--- 160 học sinh khối 11 (sinh năm 2009): HS010160-HS010319
--- 160 học sinh khối 12 (sinh năm 2008): HS010320-HS010479
--- 50 học sinh chưa phân lớp (sinh năm 2010): HS010480-HS010529
+-- ========== GENERATE 1500 HỌC SINH ==========  
+-- Mã học sinh từ HS010000 đến HS011499
+-- Mỗi năm học (2023-2024, 2024-2025, 2025-2026): 480 HS (160 khối 10, 160 khối 11, 160 khối 12)
+-- Tổng đã phân lớp: 1440 HS; chưa phân lớp: 60 HS
 
 DO $$
 DECLARE
@@ -180,87 +178,115 @@ DECLARE
     email TEXT;
     sdt_ph TEXT;
     khoi_lop VARCHAR;
+    nam_hoc TEXT;
+    idx_in_year INT;
 BEGIN
-    FOR i IN 0..529 LOOP
-        -- Tạo mã học sinh: HS01 + 4 chữ số (0000-0529)
+    FOR i IN 0..1499 LOOP
+        -- Tạo mã học sinh: HS01 + 4 chữ số (0000-1499)
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
-        
-        -- Xác định khối lớp dựa trên số thứ tự
-        -- 0-159: Khối 10, 160-319: Khối 11, 320-479: Khối 12, 480-529: Chưa phân lớp (K10)
-        IF i < 160 THEN
-            khoi_lop := 'K10';
-        ELSIF i < 320 THEN
-            khoi_lop := 'K11';
-        ELSIF i < 480 THEN
-            khoi_lop := 'K12';
+
+        -- Xác định năm học và khối lớp theo nhóm 480 HS / năm
+        IF i < 480 THEN
+            nam_hoc := '2023-2024';
+            idx_in_year := i;
+        ELSIF i < 960 THEN
+            nam_hoc := '2024-2025';
+            idx_in_year := i - 480;
+        ELSIF i < 1440 THEN
+            nam_hoc := '2025-2026';
+            idx_in_year := i - 960;
         ELSE
-            khoi_lop := 'K10'; -- Học sinh chưa phân lớp sinh năm 2010
+            nam_hoc := NULL; -- nhóm chưa phân lớp
+            idx_in_year := NULL;
         END IF;
-        
+
+        -- Khối: mỗi năm 160 HS khối 10, 160 khối 11, 160 khối 12; chưa phân lớp mặc định K10
+        IF idx_in_year IS NULL THEN
+            khoi_lop := 'K10';
+        ELSIF idx_in_year < 160 THEN
+            khoi_lop := 'K10';
+        ELSIF idx_in_year < 320 THEN
+            khoi_lop := 'K11';
+        ELSE
+            khoi_lop := 'K12';
+        END IF;
+
         -- Generate thông tin ngẫu nhiên
-        -- HỌ CỦA CON PHẢI GIỐNG HỌ CỦA CHA
         ho := random_ho();
         ten_dem := random_ten_dem();
         ten := random_ten();
         ho_ten := ho || ' ' || ten_dem || ' ' || ten;
-        
-        -- Phụ huynh (cha) có cùng họ với con
         ho_ten_ph := ho || ' ' || random_ten_dem() || ' ' || random_ten();
-        
         gioi_tinh := random_gioi_tinh();
-        ngay_sinh := random_ngay_sinh(khoi_lop); -- Năm sinh phù hợp với khối lớp
+        ngay_sinh := random_ngay_sinh(khoi_lop);
         dia_chi := random_dia_chi();
         email := lower(ma_hs) || '@school.edu.vn';
         sdt_ph := random_sdt();
-        
-        -- Insert học sinh với khối hiện tại
+
         INSERT INTO HOCSINH (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh, KhoiHienTai)
         VALUES (ma_hs, ho_ten, gioi_tinh, ngay_sinh, dia_chi, email, ho_ten_ph, sdt_ph, khoi_lop)
         ON CONFLICT (MaHocSinh) DO NOTHING;
-        
-        -- Tạo tài khoản học sinh (mật khẩu mặc định: 123456, đã hash với bcrypt)
+
         INSERT INTO NGUOIDUNG (TenDangNhap, MatKhau, HoTen, Email, MaVaiTro, TrangThai)
         VALUES (ma_hs, '$2b$10$h/NusP0ja4LDkEmXAdm6ueE69hVuu7s9Xb2I3QyYnbZMO3GPLqc7y', ho_ten, email, 'STUDENT', true)
         ON CONFLICT (TenDangNhap) DO NOTHING;
-        
-        -- In tiến trình mỗi 100 bản ghi
-        IF i % 100 = 0 THEN
+
+        IF i % 200 = 0 THEN
             RAISE NOTICE 'Đã tạo % học sinh...', i;
         END IF;
     END LOOP;
-    
-    RAISE NOTICE 'Hoàn thành! Đã tạo 530 học sinh từ HS010000 đến HS010529';
-    RAISE NOTICE '  - Khối 10 (sinh 2010): 160 HS (HS010000-HS010159)';
-    RAISE NOTICE '  - Khối 11 (sinh 2009): 160 HS (HS010160-HS010319)';
-    RAISE NOTICE '  - Khối 12 (sinh 2008): 160 HS (HS010320-HS010479)';
-    RAISE NOTICE '  - Chưa phân lớp (sinh 2010): 50 HS (HS010480-HS010529)';
+
+    RAISE NOTICE 'Hoàn thành! Đã tạo 1500 học sinh từ HS010000 đến HS011499';
+    RAISE NOTICE '  - Mỗi năm (2023-2024, 2024-2025, 2025-2026): 480 HS (160 khối 10, 160 khối 11, 160 khối 12)';
+    RAISE NOTICE '  - Chưa phân lớp: 60 HS cuối (HS011440-HS011499, mặc định KhoiHienTai=K10)';
 END $$;
 
--- ========== TẠO 12 LỚP CHO NĂM HỌC 2024-2025 ==========
+-- ========== TẠO 12 LỚP CHO MỖI NĂM HỌC 2023-2024, 2024-2025, 2025-2026 ==========  
 INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc) VALUES 
-    -- Khối 10 (4 lớp)
-    ('10A1', 'Lớp 10A1', 'K10', 0, '2024-2025'),
-    ('10A2', 'Lớp 10A2', 'K10', 0, '2024-2025'),
-    ('10A3', 'Lớp 10A3', 'K10', 0, '2024-2025'),
-    ('10A4', 'Lớp 10A4', 'K10', 0, '2024-2025'),
-    -- Khối 11 (4 lớp)
-    ('11A1', 'Lớp 11A1', 'K11', 0, '2024-2025'),
-    ('11A2', 'Lớp 11A2', 'K11', 0, '2024-2025'),
-    ('11A3', 'Lớp 11A3', 'K11', 0, '2024-2025'),
-    ('11A4', 'Lớp 11A4', 'K11', 0, '2024-2025'),
-    -- Khối 12 (4 lớp)
-    ('12A1', 'Lớp 12A1', 'K12', 0, '2024-2025'),
-    ('12A2', 'Lớp 12A2', 'K12', 0, '2024-2025'),
-    ('12A3', 'Lớp 12A3', 'K12', 0, '2024-2025'),
-    ('12A4', 'Lớp 12A4', 'K12', 0, '2024-2025')
+    -- Năm 2023-2024
+    ('23_10A1', 'Lớp 10A1 (2023-2024)', 'K10', 0, '2023-2024'),
+    ('23_10A2', 'Lớp 10A2 (2023-2024)', 'K10', 0, '2023-2024'),
+    ('23_10A3', 'Lớp 10A3 (2023-2024)', 'K10', 0, '2023-2024'),
+    ('23_10A4', 'Lớp 10A4 (2023-2024)', 'K10', 0, '2023-2024'),
+    ('23_11A1', 'Lớp 11A1 (2023-2024)', 'K11', 0, '2023-2024'),
+    ('23_11A2', 'Lớp 11A2 (2023-2024)', 'K11', 0, '2023-2024'),
+    ('23_11A3', 'Lớp 11A3 (2023-2024)', 'K11', 0, '2023-2024'),
+    ('23_11A4', 'Lớp 11A4 (2023-2024)', 'K11', 0, '2023-2024'),
+    ('23_12A1', 'Lớp 12A1 (2023-2024)', 'K12', 0, '2023-2024'),
+    ('23_12A2', 'Lớp 12A2 (2023-2024)', 'K12', 0, '2023-2024'),
+    ('23_12A3', 'Lớp 12A3 (2023-2024)', 'K12', 0, '2023-2024'),
+    ('23_12A4', 'Lớp 12A4 (2023-2024)', 'K12', 0, '2023-2024'),
+    -- Năm 2024-2025
+    ('24_10A1', 'Lớp 10A1 (2024-2025)', 'K10', 0, '2024-2025'),
+    ('24_10A2', 'Lớp 10A2 (2024-2025)', 'K10', 0, '2024-2025'),
+    ('24_10A3', 'Lớp 10A3 (2024-2025)', 'K10', 0, '2024-2025'),
+    ('24_10A4', 'Lớp 10A4 (2024-2025)', 'K10', 0, '2024-2025'),
+    ('24_11A1', 'Lớp 11A1 (2024-2025)', 'K11', 0, '2024-2025'),
+    ('24_11A2', 'Lớp 11A2 (2024-2025)', 'K11', 0, '2024-2025'),
+    ('24_11A3', 'Lớp 11A3 (2024-2025)', 'K11', 0, '2024-2025'),
+    ('24_11A4', 'Lớp 11A4 (2024-2025)', 'K11', 0, '2024-2025'),
+    ('24_12A1', 'Lớp 12A1 (2024-2025)', 'K12', 0, '2024-2025'),
+    ('24_12A2', 'Lớp 12A2 (2024-2025)', 'K12', 0, '2024-2025'),
+    ('24_12A3', 'Lớp 12A3 (2024-2025)', 'K12', 0, '2024-2025'),
+    ('24_12A4', 'Lớp 12A4 (2024-2025)', 'K12', 0, '2024-2025'),
+    -- Năm 2025-2026
+    ('25_10A1', 'Lớp 10A1 (2025-2026)', 'K10', 0, '2025-2026'),
+    ('25_10A2', 'Lớp 10A2 (2025-2026)', 'K10', 0, '2025-2026'),
+    ('25_10A3', 'Lớp 10A3 (2025-2026)', 'K10', 0, '2025-2026'),
+    ('25_10A4', 'Lớp 10A4 (2025-2026)', 'K10', 0, '2025-2026'),
+    ('25_11A1', 'Lớp 11A1 (2025-2026)', 'K11', 0, '2025-2026'),
+    ('25_11A2', 'Lớp 11A2 (2025-2026)', 'K11', 0, '2025-2026'),
+    ('25_11A3', 'Lớp 11A3 (2025-2026)', 'K11', 0, '2025-2026'),
+    ('25_11A4', 'Lớp 11A4 (2025-2026)', 'K11', 0, '2025-2026'),
+    ('25_12A1', 'Lớp 12A1 (2025-2026)', 'K12', 0, '2025-2026'),
+    ('25_12A2', 'Lớp 12A2 (2025-2026)', 'K12', 0, '2025-2026'),
+    ('25_12A3', 'Lớp 12A3 (2025-2026)', 'K12', 0, '2025-2026'),
+    ('25_12A4', 'Lớp 12A4 (2025-2026)', 'K12', 0, '2025-2026')
 ON CONFLICT (MaLop) DO NOTHING;
 
--- ========== PHÂN BỔ HỌC SINH VÀO CÁC LỚP ==========
--- Phân bổ theo đúng khối lớp và năm sinh:
--- Khối 10 (sinh 2010): HS010000-HS010159 → 10A1, 10A2, 10A3, 10A4 (40 HS/lớp)
--- Khối 11 (sinh 2009): HS010160-HS010319 → 11A1, 11A2, 11A3, 11A4 (40 HS/lớp)
--- Khối 12 (sinh 2008): HS010320-HS010479 → 12A1, 12A2, 12A3, 12A4 (40 HS/lớp)
--- Chưa phân lớp: HS010480-HS010529 (50 học sinh)
+-- ========== PHÂN BỔ HỌC SINH VÀO CÁC LỚP (3 NĂM HỌC) ==========
+-- Mỗi năm: 480 HS (khối 10/11/12 mỗi khối 160 HS) → 12 lớp (4 lớp/khối, 40 HS/lớp)
+-- HS chưa phân lớp: 60 cuối cùng giữ nguyên trạng thái
 
 DO $$
 DECLARE
@@ -268,65 +294,92 @@ DECLARE
     ma_lop TEXT;
     students_per_class INT := 40;
     total_assigned INT := 0;
-    lop_10 TEXT[] := ARRAY['10A1', '10A2', '10A3', '10A4'];
-    lop_11 TEXT[] := ARRAY['11A1', '11A2', '11A3', '11A4'];
-    lop_12 TEXT[] := ARRAY['12A1', '12A2', '12A3', '12A4'];
+    lop_10_23 TEXT[] := ARRAY['23_10A1', '23_10A2', '23_10A3', '23_10A4'];
+    lop_11_23 TEXT[] := ARRAY['23_11A1', '23_11A2', '23_11A3', '23_11A4'];
+    lop_12_23 TEXT[] := ARRAY['23_12A1', '23_12A2', '23_12A3', '23_12A4'];
+    lop_10_24 TEXT[] := ARRAY['24_10A1', '24_10A2', '24_10A3', '24_10A4'];
+    lop_11_24 TEXT[] := ARRAY['24_11A1', '24_11A2', '24_11A3', '24_11A4'];
+    lop_12_24 TEXT[] := ARRAY['24_12A1', '24_12A2', '24_12A3', '24_12A4'];
+    lop_10_25 TEXT[] := ARRAY['25_10A1', '25_10A2', '25_10A3', '25_10A4'];
+    lop_11_25 TEXT[] := ARRAY['25_11A1', '25_11A2', '25_11A3', '25_11A4'];
+    lop_12_25 TEXT[] := ARRAY['25_12A1', '25_12A2', '25_12A3', '25_12A4'];
     lop_idx INT;
 BEGIN
-    -- Phân bổ học sinh khối 10: HS010000-HS010159 (160 HS = 4 lớp x 40 HS)
-    FOR i IN 0..159 LOOP
+    -- Năm 2023-2024 (HS010000-HS010479)
+    FOR i IN 0..479 LOOP
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
-        lop_idx := (i / students_per_class) + 1; -- 1-4
-        ma_lop := lop_10[lop_idx];
-        
+        IF i < 160 THEN
+            lop_idx := (i / students_per_class) + 1;
+            ma_lop := lop_10_23[lop_idx];
+        ELSIF i < 320 THEN
+            lop_idx := ((i - 160) / students_per_class) + 1;
+            ma_lop := lop_11_23[lop_idx];
+        ELSE
+            lop_idx := ((i - 320) / students_per_class) + 1;
+            ma_lop := lop_12_23[lop_idx];
+        END IF;
+
         INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
         VALUES (ma_hs, ma_lop)
         ON CONFLICT DO NOTHING;
-        
         total_assigned := total_assigned + 1;
     END LOOP;
-    RAISE NOTICE 'Đã phân 160 học sinh khối 10 vào 4 lớp (10A1-10A4)';
-    
-    -- Phân bổ học sinh khối 11: HS010160-HS010319 (160 HS = 4 lớp x 40 HS)
-    FOR i IN 160..319 LOOP
+    RAISE NOTICE 'Đã phân 480 HS vào 12 lớp năm 2023-2024';
+
+    -- Năm 2024-2025 (HS010480-HS010959)
+    FOR i IN 480..959 LOOP
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
-        lop_idx := ((i - 160) / students_per_class) + 1; -- 1-4
-        ma_lop := lop_11[lop_idx];
-        
+        IF i < 640 THEN
+            lop_idx := ((i - 480) / students_per_class) + 1;
+            ma_lop := lop_10_24[lop_idx];
+        ELSIF i < 800 THEN
+            lop_idx := ((i - 640) / students_per_class) + 1;
+            ma_lop := lop_11_24[lop_idx];
+        ELSE
+            lop_idx := ((i - 800) / students_per_class) + 1;
+            ma_lop := lop_12_24[lop_idx];
+        END IF;
+
         INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
         VALUES (ma_hs, ma_lop)
         ON CONFLICT DO NOTHING;
-        
         total_assigned := total_assigned + 1;
     END LOOP;
-    RAISE NOTICE 'Đã phân 160 học sinh khối 11 vào 4 lớp (11A1-11A4)';
-    
-    -- Phân bổ học sinh khối 12: HS010320-HS010479 (160 HS = 4 lớp x 40 HS)
-    FOR i IN 320..479 LOOP
+    RAISE NOTICE 'Đã phân 480 HS vào 12 lớp năm 2024-2025';
+
+    -- Năm 2025-2026 (HS010960-HS011439)
+    FOR i IN 960..1439 LOOP
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
-        lop_idx := ((i - 320) / students_per_class) + 1; -- 1-4
-        ma_lop := lop_12[lop_idx];
-        
+        IF i < 1120 THEN
+            lop_idx := ((i - 960) / students_per_class) + 1;
+            ma_lop := lop_10_25[lop_idx];
+        ELSIF i < 1280 THEN
+            lop_idx := ((i - 1120) / students_per_class) + 1;
+            ma_lop := lop_11_25[lop_idx];
+        ELSE
+            lop_idx := ((i - 1280) / students_per_class) + 1;
+            ma_lop := lop_12_25[lop_idx];
+        END IF;
+
         INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
         VALUES (ma_hs, ma_lop)
         ON CONFLICT DO NOTHING;
-        
         total_assigned := total_assigned + 1;
     END LOOP;
-    RAISE NOTICE 'Đã phân 160 học sinh khối 12 vào 4 lớp (12A1-12A4)';
-    
-    -- 50 học sinh còn lại (HS010480 - HS010529) KHÔNG phân lớp
+    RAISE NOTICE 'Đã phân 480 HS vào 12 lớp năm 2025-2026';
+
+    -- 60 HS còn lại (HS011440 - HS011499) chưa phân lớp
     RAISE NOTICE '================================================';
     RAISE NOTICE 'Hoàn thành phân lớp!';
     RAISE NOTICE 'Tổng học sinh đã phân lớp: %', total_assigned;
-    RAISE NOTICE 'Học sinh chưa phân lớp: 50 (HS010480-HS010529)';
+    RAISE NOTICE 'Học sinh chưa phân lớp: 60 (HS011440-HS011499)';
     RAISE NOTICE '================================================';
 END $$;
 
 -- Cập nhật sĩ số lớp
 UPDATE LOP SET SiSo = (
     SELECT COUNT(*) FROM QUATRINHHOC WHERE QUATRINHHOC.MaLop = LOP.MaLop
-) WHERE MaNamHoc = '2024-2025';
+);
 
 -- ========== TẠO BẢNG ĐIỂM VÀ LOẠI HÌNH KIỂM TRA ==========
 -- Đảm bảo có loại hình kiểm tra
@@ -339,8 +392,9 @@ INSERT INTO LOAIHINHKIEMTRA (MaLHKT, TenLHKT, HeSo) VALUES
     ('TX4', 'Thường xuyên 4', 1)
 ON CONFLICT (MaLHKT) DO NOTHING;
 
--- ========== GENERATE ĐIỂM CHO 480 HỌC SINH ĐÃ PHÂN LỚP ==========
+-- ========== GENERATE ĐIỂM CHO 1440 HỌC SINH ĐÃ PHÂN LỚP (3 NĂM HỌC) ==========
 -- Tạo điểm cho tất cả môn học, cả 2 học kỳ (HK1, HK2)
+-- Năm 2023-2024: HS010000-HS010479, Năm 2024-2025: HS010480-HS010959, Năm 2025-2026: HS010960-HS011439
 
 DO $$
 DECLARE
@@ -348,7 +402,7 @@ DECLARE
     ma_mon TEXT;
     ma_lop TEXT;
     ma_hocky TEXT;
-    ma_nam_hoc TEXT := '2024-2025';
+    ma_nam_hoc TEXT;
     ma_bangdiem TEXT;
     diem_gk DECIMAL;
     diem_ck DECIMAL;
@@ -359,11 +413,32 @@ DECLARE
     diem_hk INTEGER;
     xep_loai_hk TEXT;
     count_hs INT := 0;
+    count_year INT := 0;
     i INT;
     j INT;
+    start_idx INT;
+    end_idx INT;
 BEGIN
-    -- Lặp qua 480 học sinh đã được phân lớp (HS010000 - HS010479)
-    FOR i IN 0..479 LOOP
+    -- Lặp qua 3 năm học
+    FOREACH ma_nam_hoc IN ARRAY ARRAY['2023-2024', '2024-2025', '2025-2026'] LOOP
+        count_hs := 0;
+        
+        -- Xác định khoảng học sinh cho từng năm
+        IF ma_nam_hoc = '2023-2024' THEN
+            start_idx := 0;
+            end_idx := 479;
+        ELSIF ma_nam_hoc = '2024-2025' THEN
+            start_idx := 480;
+            end_idx := 959;
+        ELSE -- 2025-2026
+            start_idx := 960;
+            end_idx := 1439;
+        END IF;
+        
+        RAISE NOTICE 'Đang tạo điểm cho năm học: %', ma_nam_hoc;
+        
+        -- Lặp qua 480 học sinh của năm học đó
+        FOR i IN start_idx..end_idx LOOP
         ma_hs := 'HS01' || lpad(i::TEXT, 4, '0');
         
         -- Lấy lớp của học sinh
@@ -437,12 +512,18 @@ BEGIN
         
         -- In tiến trình mỗi 50 học sinh
         IF count_hs % 50 = 0 THEN
-            RAISE NOTICE 'Đã tạo điểm cho % học sinh...', count_hs;
+            RAISE NOTICE '  - Đã tạo điểm cho % học sinh của năm %...', count_hs, ma_nam_hoc;
         END IF;
         
     END LOOP;
+        
+        RAISE NOTICE 'Năm %: hoàn thành % học sinh (9 môn x 2 học kỳ)', ma_nam_hoc, count_hs;
+        count_year := count_year + count_hs;
+    END LOOP;
     
-    RAISE NOTICE 'Hoàn thành! Đã tạo điểm cho % học sinh (9 môn x 2 học kỳ)', count_hs;
+    RAISE NOTICE '================================================';
+    RAISE NOTICE 'Hoàn thành! Đã tạo điểm cho % học sinh (3 năm x 9 môn x 2 học kỳ)', count_year;
+    RAISE NOTICE '================================================';
 END $$;
 
 -- ========== XÓA CÁC FUNCTION TẠM ==========
@@ -482,23 +563,28 @@ ORDER BY
     END;
 
 -- =====================================================
--- TẠO DỮ LIỆU GIANGDAY (PHÂN CÔNG GIẢNG DẠY)
+-- TẠO DỮ LIỆU GIANGDAY (PHÂN CÔNG GIẢNG DẠY - 3 NĂM HỌC)
 -- =====================================================
 -- Phân công: mỗi lớp có 9 môn, mỗi môn 1 giáo viên
--- 12 lớp x 9 môn = 108 phân công cho HK1 và HK2
+-- 3 năm x 12 lớp x 9 môn = 324 phân công cho HK1 và HK2
 
 DO $$
 DECLARE
     ma_lop TEXT;
     ma_mon TEXT;
     ma_gv INTEGER;
+    ma_nam_hoc TEXT;
     count_pc INT := 0;
+    count_total INT := 0;
     teachers INTEGER[];
     teacher_idx INT;
-    lop_list TEXT[] := ARRAY['10A1', '10A2', '10A3', '10A4', '11A1', '11A2', '11A3', '11A4', '12A1', '12A2', '12A3', '12A4'];
+    lop_prefix_list TEXT[] := ARRAY['23_', '24_', '25_'];
+    lop_base_list TEXT[] := ARRAY['10A1', '10A2', '10A3', '10A4', '11A1', '11A2', '11A3', '11A4', '12A1', '12A2', '12A3', '12A4'];
     mon_list TEXT[] := ARRAY['ANH', 'DIA', 'GDCD', 'HOA', 'LY', 'SINH', 'SU', 'TOAN', 'VAN'];
     hk_list TEXT[] := ARRAY['HK1', 'HK2'];
     ma_hocky TEXT;
+    prefix TEXT;
+    base_lop TEXT;
 BEGIN
     -- Lấy danh sách ID giáo viên
     SELECT ARRAY_AGG(MaNguoiDung ORDER BY MaNguoiDung) 
@@ -511,36 +597,59 @@ BEGIN
         RETURN;
     END IF;
     
-    RAISE NOTICE 'Bắt đầu tạo phân công giảng dạy...';
+    RAISE NOTICE 'Bắt đầu tạo phân công giảng dạy (3 năm học)...';
     RAISE NOTICE '  - Số lượng giáo viên: %', array_length(teachers, 1);
-    RAISE NOTICE '  - Số lượng lớp: %', array_length(lop_list, 1);
+    RAISE NOTICE '  - Số lượng năm học: 3';
+    RAISE NOTICE '  - Số lượng lớp/năm: %', array_length(lop_base_list, 1);
     RAISE NOTICE '  - Số lượng môn: %', array_length(mon_list, 1);
     RAISE NOTICE '';
     
-    teacher_idx := 1;
-    
-    -- Tạo phân công cho cả HK1 và HK2
-    FOREACH ma_hocky IN ARRAY hk_list LOOP
-        FOREACH ma_lop IN ARRAY lop_list LOOP
-            FOREACH ma_mon IN ARRAY mon_list LOOP
-                -- Lấy giáo viên theo vòng tròn
-                ma_gv := teachers[teacher_idx];
-                teacher_idx := teacher_idx + 1;
-                IF teacher_idx > array_length(teachers, 1) THEN
-                    teacher_idx := 1;
-                END IF;
+    -- Tạo phân công cho 3 năm học
+    FOREACH prefix IN ARRAY lop_prefix_list LOOP
+        -- Xác định năm học
+        IF prefix = '23_' THEN
+            ma_nam_hoc := '2023-2024';
+        ELSIF prefix = '24_' THEN
+            ma_nam_hoc := '2024-2025';
+        ELSE -- '25_'
+            ma_nam_hoc := '2025-2026';
+        END IF;
+        
+        count_pc := 0;
+        teacher_idx := 1;
+        
+        RAISE NOTICE 'Tạo phân công cho năm %...', ma_nam_hoc;
+        
+        -- Tạo phân công cho cả HK1 và HK2 của năm học đó
+        FOREACH ma_hocky IN ARRAY hk_list LOOP
+            FOREACH base_lop IN ARRAY lop_base_list LOOP
+                ma_lop := prefix || base_lop;
                 
-                -- Insert phân công
-                INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
-                VALUES (ma_lop, ma_mon, ma_gv, ma_hocky, '2024-2025')
-                ON CONFLICT (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc) DO NOTHING;
-                
-                count_pc := count_pc + 1;
+                FOREACH ma_mon IN ARRAY mon_list LOOP
+                    -- Lấy giáo viên theo vòng tròn
+                    ma_gv := teachers[teacher_idx];
+                    teacher_idx := teacher_idx + 1;
+                    IF teacher_idx > array_length(teachers, 1) THEN
+                        teacher_idx := 1;
+                    END IF;
+                    
+                    -- Insert phân công
+                    INSERT INTO GIANGDAY (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc)
+                    VALUES (ma_lop, ma_mon, ma_gv, ma_hocky, ma_nam_hoc)
+                    ON CONFLICT (MaLop, MaMonHoc, MaGiaoVien, MaHocKy, MaNamHoc) DO NOTHING;
+                    
+                    count_pc := count_pc + 1;
+                END LOOP;
             END LOOP;
         END LOOP;
+        
+        RAISE NOTICE '  - Năm %: % phân công', ma_nam_hoc, count_pc;
+        count_total := count_total + count_pc;
     END LOOP;
     
-    RAISE NOTICE 'Đã tạo % phân công giảng dạy (12 lớp x 9 môn x 2 học kỳ)', count_pc;
+    RAISE NOTICE '================================================';
+    RAISE NOTICE 'Đã tạo % phân công giảng dạy (3 năm x 12 lớp x 9 môn x 2 học kỳ)', count_total;
+    RAISE NOTICE '================================================';
 END $$;
 
 -- Thống kê phân công giảng dạy

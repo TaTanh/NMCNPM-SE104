@@ -21,15 +21,16 @@ async function initializeDatabase() {
             console.log('Database schema initialized');
         }
         
+        // AUTO-SEED DISABLED: Run seed.sql manually in pgAdmin if needed
         // Check if NAMHOC has data
-        const checkData = await pool.query('SELECT COUNT(*) as cnt FROM NAMHOC');
-        if (parseInt(checkData.rows[0].cnt) === 0) {
-            console.log('Seeding database with initial data...');
-            const seedPath = path.join(__dirname, '../database/seed.sql');
-            const seedSQL = fs.readFileSync(seedPath, 'utf-8');
-            await pool.query(seedSQL);
-            console.log('Database seeded with data');
-        }
+        // const checkData = await pool.query('SELECT COUNT(*) as cnt FROM NAMHOC');
+        // if (parseInt(checkData.rows[0].cnt) === 0) {
+        //     console.log('Seeding database with initial data...');
+        //     const seedPath = path.join(__dirname, '../database/seed.sql');
+        //     const seedSQL = fs.readFileSync(seedPath, 'utf-8');
+        //     await pool.query(seedSQL);
+        //     console.log('Database seeded with data');
+        // }
         
         // Verify key tables
         const stats = await pool.query(`

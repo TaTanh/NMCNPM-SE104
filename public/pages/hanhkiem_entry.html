@@ -157,7 +157,6 @@
             <a href="/pages/class_summary.html">Tổng kết lớp</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
             <a href="/pages/teaching_assignment.html" id="menuTeaching" style="display:none;">Phân công giảng dạy</a>
-            <a href="/pages/exam_types.html" id="menuExamTypes" style="display:none;">Loại hình kiểm tra</a>
             <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
     </aside>
@@ -245,7 +244,7 @@
                     </thead>
                     <tbody id="tableBody">
                         <tr>
-                            <td colspan="6" style="padding: 20px; text-align: center; color: #999;">Chưa có dữ liệu</td>
+                            <td colspan="6" style="padding: 20px; text-align: center; color: #999;">Vui lòng chọn lớp và học kì</td>
                         </tr>
                     </tbody>
                 </table>
@@ -427,7 +426,7 @@
             document.getElementById('userGreeting').textContent = `Xin chào, ${user.hoTen}`;
             
             if (user.vaiTro === 'ADMIN') {
-                ['menuClasses', 'menuSubjects', 'menuHanhKiem', 'menuTeaching', 'menuExamTypes', 'menuConductRules', 'menuUsers'].forEach(id => {
+                ['menuClasses', 'menuSubjects', 'menuHanhKiem', 'menuTeaching', 'menuConductRules', 'menuUsers'].forEach(id => {
                     const el = document.getElementById(id);
                     if (el) el.style.display = 'block';
                 });
@@ -437,8 +436,7 @@
 
             await loadConductRules();
             await loadDropdowns();
-
-            document.getElementById('selectGrade').addEventListener('change', loadClasses);
+        document.getElementById('selectYear').addEventListener('change', loadClasses);            document.getElementById('selectGrade').addEventListener('change', loadClasses);
             document.getElementById('btnLoad').addEventListener('click', onLoadClick);
             document.getElementById('btnSave').addEventListener('click', onSaveClick);
             document.getElementById('btnEditRules').addEventListener('click', openRulesModal);
@@ -468,15 +466,23 @@
 
         async function loadClasses() {
             const grade = document.getElementById('selectGrade').value;
-            if (!grade) {
-                document.getElementById('selectClass').innerHTML = '<option value="">-- Chọn --</option>';
-                return;
-            }
+            const year = document.getElementById('selectYear').value;
+            const classSelect = document.getElementById('selectClass');
+            
+            classSelect.innerHTML = '<option value="">-- Chọn --</option>';
+            
+            if (!grade) return;
 
             try {
-                const res = await authFetch(`/api/classes?khoilop=${grade}`);
+                let url = '/api/classes';
+                const params = new URLSearchParams();
+                if (grade) params.append('khoi', grade);
+                if (year) params.append('namhoc', year);
+                if (params.toString()) url += '?' + params.toString();
+
+                const res = await authFetch(url);
                 const classes = await res.json();
-                document.getElementById('selectClass').innerHTML = '<option value="">-- Chọn --</option>' +
+                classSelect.innerHTML = '<option value="">-- Chọn --</option>' +
                     classes.map(c => `<option value="${c.malop}">${c.malop}</option>`).join('');
             } catch (error) {
                 console.error('Lỗi load classes:', error);

@@ -4,21 +4,25 @@ const userModel = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../config/jwt');
 
+// Bật debug log khi cần bằng biến môi trường AUTH_DEBUG=true
+const AUTH_DEBUG = process.env.AUTH_DEBUG === 'true';
+
 // Middleware kiểm tra đăng nhập (verify JWT token)
 const checkAuth = async (req, res, next) => {
     try {
         // Lấy token từ header Authorization
         const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.startsWith('Bearer ') 
-            ? authHeader.substring(7) 
+        const token = authHeader && authHeader.startsWith('Bearer ')
+            ? authHeader.substring(7)
             : null;
-        
-        console.log('=== checkAuth middleware ===');
-        console.log('Authorization header:', authHeader);
-        console.log('Token:', token ? token.substring(0, 20) + '...' : 'null');
+
+        if (AUTH_DEBUG) {
+            console.log('=== checkAuth middleware ===');
+            console.log('Authorization header present:', !!authHeader);
+            console.log('Token present:', !!token);
+        }
         
         if (!token) {
-            console.log('ERROR: No token provided');
             return res.status(401).json({ error: 'Chưa đăng nhập' });
         }
         
@@ -26,19 +30,22 @@ const checkAuth = async (req, res, next) => {
         let decoded;
         try {
             decoded = jwt.verify(token, JWT_SECRET);
-            console.log('Token decoded:', decoded);
+            if (AUTH_DEBUG) {
+                console.log('Token decoded:', decoded);
+            }
         } catch (jwtError) {
-            console.log('ERROR: JWT verification failed:', jwtError.message);
+            console.warn('JWT verification failed:', jwtError.message);
             return res.status(401).json({ error: 'Phiên đăng nhập không hợp lệ hoặc đã hết hạn' });
         }
         
         // Lấy thông tin user từ database
         const user = await userModel.findById(decoded.maNguoiDung);
         
-        console.log('User from DB:', user);
+        if (AUTH_DEBUG) {
+            console.log('User from DB:', user);
+        }
         
         if (!user) {
-            console.log('ERROR: User not found in DB');
             return res.status(401).json({ error: 'Người dùng không tồn tại' });
         }
         
@@ -52,7 +59,9 @@ const checkAuth = async (req, res, next) => {
             quyen: typeof user.quyen === 'string' ? JSON.parse(user.quyen) : user.quyen
         };
         
-        console.log('req.user set to:', req.user);
+        if (AUTH_DEBUG) {
+            console.log('req.user set to:', req.user);
+        }
         
         next();
     } catch (err) {
@@ -167,12 +176,14 @@ const isTeacher = (req, res, next) => {
 
 // ========== KIỂM TRA QUYỀN NHẬP HẠNH KIỂM ==========
 const canInputHanhKiem = (req, res, next) => {
-    console.log('=== canInputHanhKiem middleware ===');
-    console.log('Request headers:', req.headers);
-    console.log('req.user:', req.user);
+    if (AUTH_DEBUG) {
+        console.log('=== canInputHanhKiem middleware ===');
+        console.log('Request headers:', req.headers);
+        console.log('req.user:', req.user);
+    }
     
     if (!req.user) {
-        console.log('ERROR: req.user is null/undefined');
+        if (AUTH_DEBUG) console.log('ERROR: req.user is null/undefined');
         return res.status(401).json({ error: 'Chưa đăng nhập' });
     }
 
@@ -186,11 +197,11 @@ const canInputHanhKiem = (req, res, next) => {
     const isGvcn = role === 'GVCN' || role.startsWith('GVCN') || roleName.includes('giáo viên chủ nhiệm');
 
     if (hasPermission || isAdmin || isGvcn) {
-        console.log('Access granted! Role:', req.user.vaiTro, 'Permission:', quyen);
+        if (AUTH_DEBUG) console.log('Access granted! Role:', req.user.vaiTro, 'Permission:', quyen);
         return next();
     }
 
-    console.log('Access denied! Role:', req.user.vaiTro, 'Permission:', quyen);
+    if (AUTH_DEBUG) console.log('Access denied! Role:', req.user.vaiTro, 'Permission:', quyen);
     return res.status(403).json({ 
         error: 'Bạn không có quyền nhập hạnh kiểm. Chỉ GVCN và Admin mới được phép.' 
     });

@@ -21,10 +21,7 @@ router.delete('/semesters/:id', settingController.deleteSemester);
 // ========== KHỐI LỚP ==========
 router.get('/grade-levels', settingController.getGradeLevels);
 
-// ========== LOẠI HÌNH KIỂM TRA ==========
+// ========== LOẠI HÌNH KIỂM TRA (READ-ONLY) ==========
 router.get('/exam-types', settingController.getExamTypes);
-router.post('/exam-types', settingController.createExamType);
-router.put('/exam-types/:id', settingController.updateExamType);
-router.delete('/exam-types/:id', settingController.deleteExamType);
 
 module.exports = router;

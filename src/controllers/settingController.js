@@ -168,7 +168,7 @@ const getGradeLevels = async (req, res) => {
     }
 };
 
-// ========== LOẠI HÌNH KIỂM TRA ==========
+// ========== LOẠI HÌNH KIỂM TRA (READ-ONLY) ==========
 const getExamTypes = async (req, res) => {
     try {
         const types = await settingModel.getAllExamTypes();
@@ -176,59 +176,6 @@ const getExamTypes = async (req, res) => {
     } catch (err) {
         console.error('Lỗi lấy loại hình kiểm tra:', err);
         res.status(500).json({ error: 'Lỗi server' });
-    }
-};
-
-const createExamType = async (req, res) => {
-    try {
-        const { MaLHKT, TenLHKT, HeSo } = req.body;
-        const type = await settingModel.createExamType({ MaLHKT, TenLHKT, HeSo });
-        res.status(201).json(type);
-    } catch (err) {
-        console.error('Lỗi thêm loại hình kiểm tra:', err);
-        if (err.code === '23505') {
-            res.status(400).json({ message: 'Mã loại hình kiểm tra đã tồn tại' });
-        } else {
-            res.status(500).json({ error: 'Lỗi server' });
-        }
-    }
-};
-
-const updateExamType = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { TenLHKT, HeSo } = req.body;
-        
-        const type = await settingModel.updateExamType(id, { TenLHKT, HeSo });
-        
-        if (!type) {
-            return res.status(404).json({ error: 'Không tìm thấy loại hình kiểm tra' });
-        }
-        
-        res.json(type);
-    } catch (err) {
-        console.error('Lỗi cập nhật loại hình kiểm tra:', err);
-        res.status(500).json({ error: 'Lỗi server' });
-    }
-};
-
-const deleteExamType = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const type = await settingModel.deleteExamType(id);
-        
-        if (!type) {
-            return res.status(404).json({ error: 'Không tìm thấy loại hình kiểm tra' });
-        }
-        
-        res.json({ message: 'Xóa thành công' });
-    } catch (err) {
-        console.error('Lỗi xóa loại hình kiểm tra:', err);
-        if (err.code === '23503') {
-            res.status(400).json({ message: 'Không thể xóa loại hình kiểm tra đang được sử dụng' });
-        } else {
-            res.status(500).json({ error: 'Lỗi server' });
-        }
     }
 };
 
@@ -244,8 +191,5 @@ module.exports = {
     updateSemester,
     deleteSemester,
     getGradeLevels,
-    getExamTypes,
-    createExamType,
-    updateExamType,
-    deleteExamType
+    getExamTypes
 };

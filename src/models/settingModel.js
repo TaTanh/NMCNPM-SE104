@@ -107,36 +107,10 @@ const getAllGradeLevels = async () => {
     return result.rows;
 };
 
-// ========== LOẠI HÌNH KIỂM TRA ==========
+// ========== LOẠI HÌNH KIỂM TRA (READ-ONLY) ==========
 const getAllExamTypes = async () => {
     const result = await pool.query('SELECT * FROM LOAIHINHKIEMTRA ORDER BY HeSo');
     return result.rows;
-};
-
-const createExamType = async (data) => {
-    const { MaLHKT, TenLHKT, HeSo } = data;
-    const result = await pool.query(
-        'INSERT INTO LOAIHINHKIEMTRA (MaLHKT, TenLHKT, HeSo) VALUES ($1, $2, $3) RETURNING *',
-        [MaLHKT, TenLHKT, HeSo]
-    );
-    return result.rows[0];
-};
-
-const updateExamType = async (id, data) => {
-    const { TenLHKT, HeSo } = data;
-    const result = await pool.query(
-        'UPDATE LOAIHINHKIEMTRA SET TenLHKT = $1, HeSo = $2 WHERE MaLHKT = $3 RETURNING *',
-        [TenLHKT, HeSo, id]
-    );
-    return result.rows[0] || null;
-};
-
-const deleteExamType = async (id) => {
-    const result = await pool.query(
-        'DELETE FROM LOAIHINHKIEMTRA WHERE MaLHKT = $1 RETURNING *',
-        [id]
-    );
-    return result.rows[0] || null;
 };
 
 module.exports = {
@@ -153,8 +127,5 @@ module.exports = {
     updateSemester,
     deleteSemester,
     getAllGradeLevels,
-    getAllExamTypes,
-    createExamType,
-    updateExamType,
-    deleteExamType
+    getAllExamTypes
 };
