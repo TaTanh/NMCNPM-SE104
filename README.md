@@ -17,9 +17,9 @@ Web/
 ├── DATABASE_GUIDE.md      # Hướng dẫn cài đặt database
 │
 ├── database/              # Tất cả SQL scripts
-│   ├── init.sql           # Script khởi tạo database
-│   ├── regulations.sql    # Script quy định
-│   └── users_roles.sql    # Script người dùng và vai trò
+│   ├── init.sql           # Script khởi tạo database (bảng + dữ liệu mặc định)
+│   ├── seed.sql           # Script tạo 1500 HS + 36 lớp + điểm (Tùy chọn)
+│   └── logic.md           # Sơ đồ logic database
 │
 ├── src/                   # Source code Backend (3 tầng)
 │   ├── app.js             # Entry point của ứng dụng
@@ -124,8 +124,22 @@ CREATE DATABASE student_management;
 
 ### Bước 2: Chạy script khởi tạo
 ```bash
+# Chạy init.sql - Tạo bảng và dữ liệu mặc định
 psql -U postgres -d student_management -f database/init.sql
+
+# (Tùy chọn) Chạy seed.sql - Tạo 1500 học sinh + 36 lớp + điểm
+# Cảnh báo: Quá trình này mất 2-5 phút
+psql -U postgres -d student_management -f database/seed.sql
 ```
+
+**Dữ liệu sau khi chạy seed.sql:**
+- 1500 học sinh (HS010000-HS011499)
+  - 1440 HS đã phân lớp: 3 năm × 480 HS/năm
+  - 60 HS chưa phân lớp
+- 36 lớp (12 lớp/năm: 2023-2024, 2024-2025, 2025-2026)
+- Điểm số đầy đủ: 9 môn × 2 học kỳ × 1440 HS
+- Hạnh kiểm cho mỗi học sinh
+- 648 phân công giảng dạy
 
 ### Bước 3: Cấu hình kết nối
 Mở file `db.js` và sửa thông tin kết nối nếu cần:
@@ -274,15 +288,9 @@ Trang mặc định là trang đăng nhập (`login.html`).
 - **Không đưa thư mục `node_modules` lên Git.**  
   Thư mục này đã được khai báo trong `.gitignore`.
 
-### 🔧 Fix: Ngăn chặn học sinh học nhiều lớp cùng năm học
+- **Dữ liệu mẫu (seed.sql):** Nếu muốn test với dữ liệu thực tế, chạy seed.sql. Lưu ý quá trình này mất 2-5 phút.
 
-**Vấn đề**: Học sinh có thể bị thêm vào nhiều lớp trong cùng một năm học (vi phạm QĐ4).
-
-**Giải pháp**: Validation trong `bulkAddStudents()` kiểm tra năm học trước khi thêm học sinh.
-
-**Nếu đã có dữ liệu duplicate**: Xem phần "Fix dữ liệu duplicate" trong `DATABASE_GUIDE.md`
-
-## � 11. Tài liệu tham khảo
+### 🔧 Kiểm tra database
 
 - [TESTING_PLAN.md](TESTING_PLAN.md) - Kế hoạch kiểm thử chi tiết
 - [SECURITY_AND_TESTING.md](SECURITY_AND_TESTING.md) - Bảo mật và kiểm thử

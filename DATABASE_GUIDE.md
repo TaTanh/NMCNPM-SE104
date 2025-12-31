@@ -24,8 +24,12 @@ CREATE DATABASE student_management;
 # Thoát
 \q
 
-# Chạy script tạo bảng
+# Chạy script tạo bảng và dữ liệu mặc định
 psql -U postgres -d student_management -f database/init.sql
+
+# (Tùy chọn) Chạy script tạo dữ liệu mẫu: 1500 học sinh + 36 lớp
+# Cảnh báo: Quá trình này mất 2-5 phút
+psql -U postgres -d student_management -f database/seed.sql
 ```
 
 ## 3. Cấu hình kết nối
@@ -96,7 +100,25 @@ Server sẽ chạy tại: http://localhost:3000
 - `GET /api/reports/subject?namhoc=&hocky=&monhoc=` - Báo cáo tổng kết môn
 - `GET /api/reports/semester?namhoc=&hocky=` - Báo cáo tổng kết học kỳ
 
-## 7. Cấu trúc thư mục
+## 7. Generate dữ liệu mẫu (Tùy chọn)
+
+File `seed.sql` sẽ tạo:
+- **1500 học sinh** (HS010000 - HS011499)
+  - 1440 học sinh đã phân lớp (3 năm × 480 HS/năm)
+  - 60 học sinh chưa phân lớp
+- **36 lớp học** (12 lớp/năm cho 3 năm học: 2023-2024, 2024-2025, 2025-2026)
+- **Điểm số đầy đủ** cho 9 môn × 2 học kỳ
+- **Hạnh kiểm** cho từng học sinh
+- **Phân công giảng dạy** (648 phân công)
+
+⚠️ **Lưu ý**: Quá trình này mất **2-5 phút** để hoàn tất.
+
+```bash
+# Chạy seed.sql
+psql -U postgres -d student_management -f database/seed.sql
+```
+
+## 8. Cấu trúc thư mục
 
 ```
 Web/
@@ -104,9 +126,9 @@ Web/
 ├── DATABASE_GUIDE.md         # Hướng dẫn database
 ├── README.md                 # Readme
 ├── database/                 # Scripts database
-│   ├── init.sql              # Script tạo bảng
-│   ├── regulations.sql       # Script quy định
-│   └── users_roles.sql       # Script users & roles
+│   ├── init.sql              # Script tạo bảng và dữ liệu mặc định
+│   ├── seed.sql              # Script tạo 1500 HS + 36 lớp + điểm (Tùy chọn)
+│   └── logic.md              # Sơ đồ logic database
 ├── src/                      # Backend source code
 │   ├── app.js                # Express server
 │   ├── config/
@@ -165,17 +187,29 @@ Web/
         └── users.html
 ```
 
-## 8. Fix dữ liệu duplicate (nếu cần)
+## 9. Thống kê database
 
-Nếu học sinh bị thêm vào nhiều lớp cùng năm học, chạy lại file `regulations.sql`:
+Sau khi chạy seed.sql, kiểm tra dữ liệu:
 
-```bash
-psql -U postgres -d student_management -f database/regulations.sql
+```sql
+-- Kiểm tra số học sinh
+SELECT COUNT(*) FROM HOCSINH;
+-- Kết quả: 1500
+
+-- Kiểm tra số lớp
+SELECT COUNT(*) FROM LOP;
+-- Kết quả: 36
+
+-- Kiểm tra số bản ghi điểm
+SELECT COUNT(*) FROM CT_BANGDIEMMON_HOCSINH;
+-- Kết quả: ~86,400 (1440 HS × 9 môn × 2 HK × ~5 loại điểm)
+
+-- Kiểm tra phân công giảng dạy
+SELECT COUNT(*) FROM GIANGDAY;
+-- Kết quả: 648 (3 năm × 12 lớp × 9 môn × 2 HK)
 ```
 
-Script này đã tích hợp sẵn câu lệnh xóa duplicate và cập nhật sĩ số.
-
-## 9. Troubleshooting
+## 10. Troubleshooting
 
 ### Lỗi "Cannot connect to database"
 - Kiểm tra PostgreSQL đã chạy chưa
