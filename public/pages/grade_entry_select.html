@@ -156,11 +156,20 @@
                                 <th>Mã</th>
                                 <th>Tên loại kiểm tra</th>
                                 <th>Hệ số</th>
+                                <th style="width:40px;">Xóa</th>
                             </tr>
                         </thead>
                         <tbody id="examTypeBody">
-                            <tr><td colspan="3" style="text-align:center;">Đang tải...</td></tr>
+                            <tr><td colspan="4" style="text-align:center;">Đang tải...</td></tr>
                         </tbody>
+                        <tfoot>
+                            <tr id="addExamTypeRow">
+                                <td><input type="text" id="newExamId" placeholder="Mã" style="width:70px; padding:4px 8px;"></td>
+                                <td><input type="text" id="newExamName" placeholder="Tên loại kiểm tra" style="width:100%; padding:4px 8px;"></td>
+                                <td><input type="number" id="newExamHeso" placeholder="Hệ số" min="1" max="5" value="1" style="width:60px; padding:4px 8px;"></td>
+                                <td><button class="btn btn-primary" id="btnAddExamType">Thêm</button></td>
+                            </tr>
+                        </tfoot>
                     </table>
                 </div>
 
@@ -400,16 +409,98 @@
                 const examBody = document.getElementById('examTypeBody');
                 
                 if (examTypes.length === 0) {
-                    examBody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Chưa có loại hình kiểm tra</td></tr>';
+                    examBody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Chưa có loại hình kiểm tra</td></tr>';
                 } else {
-                    examBody.innerHTML = examTypes.map(et => `
-                        <tr data-id="${et.malhkt}">
-                            <td>${et.malhkt}</td>
-                            <td><input type="text" class="exam-name" value="${et.tenlhkt}" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;"></td>
-                            <td><input type="number" class="exam-heso" value="${et.heso}" min="1" max="5" style="width:60px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;"></td>
-                        </tr>
-                    `).join('');
+                    examBody.innerHTML = examTypes.map(et => {
+                        if (window.confirmDeleteId === et.malhkt) {
+                            return `<tr data-id="${et.malhkt}">
+                                <td colspan="4" style="background:#fff0f0; color:#b91c1c; text-align:center;">
+                                    Xác nhận xoá loại kiểm tra <b>${et.tenlhkt}</b>? 
+                                    <button class='btn btn-danger btn-confirm-delete' style='margin-left:8px;'>Xoá</button>
+                                    <button class='btn btn-outline btn-cancel-delete' style='margin-left:4px;'>Huỷ</button>
+                                </td>
+                            </tr>`;
+                        } else {
+                            return `<tr data-id="${et.malhkt}">
+                                <td>${et.malhkt}</td>
+                                <td><input type="text" class="exam-name" value="${et.tenlhkt}" style="width:100%;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;"></td>
+                                <td><input type="number" class="exam-heso" value="${et.heso}" min="1" max="5" style="width:60px;padding:4px 8px;border:1px solid #d1d5db;border-radius:4px;"></td>
+                                <td><button class="btn btn-danger btn-delete-examtype" style="padding:4px 8px;font-size:12px;">Xóa</button></td>
+                            </tr>`;
+                        }
+                    }).join('');
                 }
+                // Gắn event xác nhận xoá
+                document.querySelectorAll('.btn-delete-examtype').forEach(btn => {
+                    btn.onclick = function() {
+                        const row = btn.closest('tr');
+                        window.confirmDeleteId = row.dataset.id;
+                        loadGradeRules();
+                    };
+                });
+                document.querySelectorAll('.btn-cancel-delete').forEach(btn => {
+                    btn.onclick = function() {
+                        window.confirmDeleteId = null;
+                        loadGradeRules();
+                    };
+                });
+                document.querySelectorAll('.btn-confirm-delete').forEach(btn => {
+                    btn.onclick = async function() {
+                        const row = btn.closest('tr');
+                        const id = row.dataset.id;
+                        try {
+                            const res = await authFetch(`/api/settings/exam-types/${id}`, { method: 'DELETE' });
+                            if (!res.ok) {
+                                const result = await res.json();
+                                let msg = result.error || result.message || 'Lỗi xóa';
+                                if (msg.includes('violates') || msg.includes('constraint')) {
+                                    msg = 'Không thể xoá vì đã có dữ liệu liên quan.';
+                                }
+                                toastError(msg);
+                            } else {
+                                toastSuccess('Đã xoá thành công!');
+                            }
+                            window.confirmDeleteId = null;
+                            loadGradeRules();
+                        } catch (err) {
+                            toastError('Lỗi không xác định khi xoá!');
+                            window.confirmDeleteId = null;
+                            loadGradeRules();
+                        }
+                    };
+                });
+                    // Thêm loại kiểm tra mới
+                    document.getElementById('btnAddExamType').onclick = async () => {
+                        const id = document.getElementById('newExamId').value.trim();
+                        const name = document.getElementById('newExamName').value.trim();
+                        const heso = document.getElementById('newExamHeso').value.trim();
+                        if (!id || !name || !heso) {
+                            toastWarning('Vui lòng nhập đủ mã, tên và hệ số!');
+                            return;
+                        }
+                        if (isNaN(heso) || parseInt(heso) < 1) {
+                            toastWarning('Hệ số phải là số nguyên >= 1');
+                            return;
+                        }
+                        try {
+                            const res = await authFetch('/api/settings/exam-types', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ MaLHKT: id, TenLHKT: name, HeSo: parseInt(heso) })
+                            });
+                            if (!res.ok) {
+                                const result = await res.json();
+                                throw new Error(result.message || result.error || 'Lỗi thêm');
+                            }
+                            document.getElementById('newExamId').value = '';
+                            document.getElementById('newExamName').value = '';
+                            document.getElementById('newExamHeso').value = '1';
+                            toastSuccess('Đã thêm loại kiểm tra!');
+                            loadGradeRules();
+                        } catch (err) {
+                            toastError(err.message);
+                        }
+                    };
             } catch (error) {
                 console.error('Lỗi load quy định:', error);
             }
