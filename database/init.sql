@@ -236,6 +236,12 @@ INSERT INTO THAMSO VALUES ('MaxHocSinhMotKhoa', '999') ON CONFLICT DO NOTHING;
 INSERT INTO THAMSO VALUES ('MaxHocSinhHeThong', '1600') ON CONFLICT DO NOTHING;
 INSERT INTO THAMSO VALUES ('MaxCotThuongXuyen', '4') ON CONFLICT DO NOTHING;
 
+-- Tham số quy định hạnh kiểm (ngưỡng điểm xếp loại)
+INSERT INTO THAMSO VALUES ('DiemHKTot', '80') ON CONFLICT DO NOTHING;
+INSERT INTO THAMSO VALUES ('DiemHKKha', '65') ON CONFLICT DO NOTHING;
+INSERT INTO THAMSO VALUES ('DiemHKTrungBinh', '50') ON CONFLICT DO NOTHING;
+INSERT INTO THAMSO VALUES ('DiemHKYeu', '20') ON CONFLICT DO NOTHING;
+
 -- ========== BẢNG NHẬT KÝ HỆ THỐNG (Audit log) ==========
 CREATE TABLE IF NOT EXISTS NHATKY (
     id SERIAL PRIMARY KEY,
@@ -430,6 +436,224 @@ WHERE TenDangNhap = 'gv_gdcd_2'
   AND EXISTS (SELECT 1 FROM LOP WHERE MaLop = '11A2')
   AND EXISTS (SELECT 1 FROM MONHOC WHERE MaMonHoc = 'GDCD')
 ON CONFLICT DO NOTHING;
+
+-- ========================================
+-- LỚP HỌC - NĂM HỌC 2023-2024
+-- ========================================
+INSERT INTO LOP VALUES ('10A1', 'Lớp 10A1', 'K10', 45, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_toan_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('10A2', 'Lớp 10A2', 'K10', 43, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_toan_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('10A3', 'Lớp 10A3', 'K10', 40, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_van_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('10A4', 'Lớp 10A4', 'K10', 42, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_van_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A1', 'Lớp 11A1', 'K11', 42, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_anh_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A2', 'Lớp 11A2', 'K11', 40, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_anh_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A3', 'Lớp 11A3', 'K11', 41, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_ly_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A4', 'Lớp 11A4', 'K11', 44, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_ly_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A1', 'Lớp 12A1', 'K12', 44, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_hoa_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A2', 'Lớp 12A2', 'K12', 43, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_hoa_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A3', 'Lớp 12A3', 'K12', 42, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_sinh_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A4', 'Lớp 12A4', 'K12', 45, '2023-2024', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_sinh_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+
+-- ========================================
+-- LỚP HỌC - NĂM HỌC 2024-2025
+-- ========================================
+INSERT INTO LOP VALUES ('10A1', 'Lớp 10A1', 'K10', 45, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_toan_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('10A2', 'Lớp 10A2', 'K10', 43, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_toan_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('10A3', 'Lớp 10A3', 'K10', 40, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_van_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('10A4', 'Lớp 10A4', 'K10', 42, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_van_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A1', 'Lớp 11A1', 'K11', 42, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_anh_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A2', 'Lớp 11A2', 'K11', 40, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_anh_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A3', 'Lớp 11A3', 'K11', 41, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_ly_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A4', 'Lớp 11A4', 'K11', 44, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_ly_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A1', 'Lớp 12A1', 'K12', 44, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_hoa_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A2', 'Lớp 12A2', 'K12', 43, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_hoa_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A3', 'Lớp 12A3', 'K12', 42, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_sinh_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A4', 'Lớp 12A4', 'K12', 45, '2024-2025', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_sinh_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+
+-- ========================================
+-- LỚP HỌC - NĂM HỌC 2025-2026
+-- ========================================
+INSERT INTO LOP VALUES ('10A1', 'Lớp 10A1', 'K10', 45, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_toan_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('10A2', 'Lớp 10A2', 'K10', 43, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_toan_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('10A3', 'Lớp 10A3', 'K10', 40, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_van_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('10A4', 'Lớp 10A4', 'K10', 42, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_van_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A1', 'Lớp 11A1', 'K11', 42, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_anh_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A2', 'Lớp 11A2', 'K11', 40, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_anh_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A3', 'Lớp 11A3', 'K11', 41, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_ly_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('11A4', 'Lớp 11A4', 'K11', 44, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_ly_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A1', 'Lớp 12A1', 'K12', 44, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_hoa_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A2', 'Lớp 12A2', 'K12', 43, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_hoa_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A3', 'Lớp 12A3', 'K12', 42, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_sinh_1' LIMIT 1)) ON CONFLICT DO NOTHING;
+INSERT INTO LOP VALUES ('12A4', 'Lớp 12A4', 'K12', 45, '2025-2026', (SELECT MaNguoiDung FROM NGUOIDUNG WHERE TenDangNhap = 'gv_sinh_2' LIMIT 1)) ON CONFLICT DO NOTHING;
+
+-- ========================================
+-- HỌC SINH - NĂM HỌC 2023-2024 (HS010000-HS010529: 530 học sinh)
+-- ========================================
+DO $$
+DECLARE
+  i INT;
+  mas VARCHAR;
+  fullname VARCHAR;
+  ngaythang INT;
+  nam INT;
+BEGIN
+  FOR i IN 0..529 LOOP
+    mas := 'HS01' || LPAD(i::TEXT, 4, '0');
+    fullname := (ARRAY['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Võ', 'Đỗ', 'Hà', 'Phan', 'Bùi'])[1 + (i % 10)] || ' ' ||
+                (ARRAY['Văn', 'Thị', 'Minh', 'Huy', 'Tú', 'Duy', 'Linh', 'Nam', 'Anh', 'Sơn'])[1 + ((i / 10) % 10)] || ' ' ||
+                (ARRAY['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K'])[1 + ((i / 100) % 10)];
+    ngaythang := 1 + (i % 365);
+    nam := 2006 + (i % 3);
+    
+    INSERT INTO HOCSINH (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh, KhoiHienTai)
+    VALUES (
+      mas,
+      fullname,
+      CASE WHEN (i % 2) = 0 THEN 'Nam' ELSE 'Nữ' END,
+      TO_DATE('2023-01-01', 'YYYY-MM-DD') + (ngaythang % 365 || ' days')::INTERVAL,
+      'TP. HCM - Đường ' || (i % 100),
+      LOWER(REPLACE(fullname, ' ', '.')) || i || '@student.edu.vn',
+      fullname || ' (Phụ huynh)',
+      '09' || LPAD((i % 100000000)::TEXT, 8, '0'),
+      'K10'
+    ) ON CONFLICT DO NOTHING;
+  END LOOP;
+END $$;
+
+-- Phân lớp cho năm 2023-2024
+DO $$
+DECLARE
+  i INT;
+  mas VARCHAR;
+  malop VARCHAR;
+  so_hs_tren_lop INT := 45;
+BEGIN
+  FOR i IN 0..529 LOOP
+    mas := 'HS01' || LPAD(i::TEXT, 4, '0');
+    -- Phân lớp: 10A1-10A4 (170), 11A1-11A4 (167), 12A1-12A4 (193)
+    IF i < 170 THEN
+      malop := '10A' || (1 + ((i / 45) % 4))::TEXT;
+    ELSIF i < 337 THEN
+      malop := '11A' || (1 + (((i - 170) / 42) % 4))::TEXT;
+    ELSE
+      malop := '12A' || (1 + (((i - 337) / 44) % 4))::TEXT;
+    END IF;
+    
+    INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
+    VALUES (mas, malop) ON CONFLICT DO NOTHING;
+  END LOOP;
+END $$;
+
+-- ========================================
+-- HỌC SINH - NĂM HỌC 2024-2025 (HS020000-HS020529: 530 học sinh)
+-- ========================================
+DO $$
+DECLARE
+  i INT;
+  mas VARCHAR;
+  fullname VARCHAR;
+  ngaythang INT;
+  nam INT;
+BEGIN
+  FOR i IN 0..529 LOOP
+    mas := 'HS02' || LPAD(i::TEXT, 4, '0');
+    fullname := (ARRAY['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Võ', 'Đỗ', 'Hà', 'Phan', 'Bùi'])[1 + (i % 10)] || ' ' ||
+                (ARRAY['Văn', 'Thị', 'Minh', 'Huy', 'Tú', 'Duy', 'Linh', 'Nam', 'Anh', 'Sơn'])[1 + ((i / 10) % 10)] || ' ' ||
+                (ARRAY['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K'])[1 + ((i / 100) % 10)];
+    ngaythang := 1 + (i % 365);
+    nam := 2006 + (i % 3);
+    
+    INSERT INTO HOCSINH (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh, KhoiHienTai)
+    VALUES (
+      mas,
+      fullname,
+      CASE WHEN (i % 2) = 0 THEN 'Nam' ELSE 'Nữ' END,
+      TO_DATE('2024-01-01', 'YYYY-MM-DD') + (ngaythang % 365 || ' days')::INTERVAL,
+      'TP. HCM - Đường ' || (i % 100),
+      LOWER(REPLACE(fullname, ' ', '.')) || i || '@student.edu.vn',
+      fullname || ' (Phụ huynh)',
+      '09' || LPAD((i % 100000000)::TEXT, 8, '0'),
+      'K10'
+    ) ON CONFLICT DO NOTHING;
+  END LOOP;
+END $$;
+
+-- Phân lớp cho năm 2024-2025
+DO $$
+DECLARE
+  i INT;
+  mas VARCHAR;
+  malop VARCHAR;
+BEGIN
+  FOR i IN 0..529 LOOP
+    mas := 'HS02' || LPAD(i::TEXT, 4, '0');
+    IF i < 170 THEN
+      malop := '10A' || (1 + ((i / 45) % 4))::TEXT;
+    ELSIF i < 337 THEN
+      malop := '11A' || (1 + (((i - 170) / 42) % 4))::TEXT;
+    ELSE
+      malop := '12A' || (1 + (((i - 337) / 44) % 4))::TEXT;
+    END IF;
+    
+    INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
+    VALUES (mas, malop) ON CONFLICT DO NOTHING;
+  END LOOP;
+END $$;
+
+-- ========================================
+-- HỌC SINH - NĂM HỌC 2025-2026 (HS030000-HS030529: 530 học sinh)
+-- ========================================
+DO $$
+DECLARE
+  i INT;
+  mas VARCHAR;
+  fullname VARCHAR;
+  ngaythang INT;
+  nam INT;
+BEGIN
+  FOR i IN 0..529 LOOP
+    mas := 'HS03' || LPAD(i::TEXT, 4, '0');
+    fullname := (ARRAY['Nguyễn', 'Trần', 'Lê', 'Phạm', 'Hoàng', 'Võ', 'Đỗ', 'Hà', 'Phan', 'Bùi'])[1 + (i % 10)] || ' ' ||
+                (ARRAY['Văn', 'Thị', 'Minh', 'Huy', 'Tú', 'Duy', 'Linh', 'Nam', 'Anh', 'Sơn'])[1 + ((i / 10) % 10)] || ' ' ||
+                (ARRAY['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K'])[1 + ((i / 100) % 10)];
+    ngaythang := 1 + (i % 365);
+    nam := 2006 + (i % 3);
+    
+    INSERT INTO HOCSINH (MaHocSinh, HoTen, GioiTinh, NgaySinh, DiaChi, Email, HoTenPhuHuynh, SdtPhuHuynh, KhoiHienTai)
+    VALUES (
+      mas,
+      fullname,
+      CASE WHEN (i % 2) = 0 THEN 'Nam' ELSE 'Nữ' END,
+      TO_DATE('2025-01-01', 'YYYY-MM-DD') + (ngaythang % 365 || ' days')::INTERVAL,
+      'TP. HCM - Đường ' || (i % 100),
+      LOWER(REPLACE(fullname, ' ', '.')) || i || '@student.edu.vn',
+      fullname || ' (Phụ huynh)',
+      '09' || LPAD((i % 100000000)::TEXT, 8, '0'),
+      'K10'
+    ) ON CONFLICT DO NOTHING;
+  END LOOP;
+END $$;
+
+-- Phân lớp cho năm 2025-2026
+DO $$
+DECLARE
+  i INT;
+  mas VARCHAR;
+  malop VARCHAR;
+BEGIN
+  FOR i IN 0..529 LOOP
+    mas := 'HS03' || LPAD(i::TEXT, 4, '0');
+    IF i < 170 THEN
+      malop := '10A' || (1 + ((i / 45) % 4))::TEXT;
+    ELSIF i < 337 THEN
+      malop := '11A' || (1 + (((i - 170) / 42) % 4))::TEXT;
+    ELSE
+      malop := '12A' || (1 + (((i - 337) / 44) % 4))::TEXT;
+    END IF;
+    
+    INSERT INTO QUATRINHHOC (MaHocSinh, MaLop)
+    VALUES (mas, malop) ON CONFLICT DO NOTHING;
+  END LOOP;
+END $$;
 
 COMMIT;
 

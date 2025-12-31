@@ -30,6 +30,7 @@
             <a href="/pages/class_summary.html">Tổng kết lớp</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
             <a href="/pages/teaching_assignment.html" id="menuTeaching" style="display:none;">Phân công giảng dạy</a>
+            <a href="/pages/exam_types.html" id="menuExamTypes" style="display:none;">Loại hình kiểm tra</a>
             <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
     </aside>
@@ -209,7 +210,7 @@
                 const gradeInputs = examTypes.map(et => {
                     const diem = hs.Diem && hs.Diem[et.tenlhkt] ? hs.Diem[et.tenlhkt][0] : '';
                     return `<td>
-                        <input type="number" min="0" max="10" step="0.1" 
+                        <input type="number" min="0" max="10" step="0.01" 
                                data-student="${hs.MaHocSinh}" 
                                data-examtype="${et.malhkt}"
                                data-heso="${et.heso}"
@@ -396,6 +397,8 @@
                 document.getElementById('menuSubjects').style.display = 'block';
                 document.getElementById('menuHanhKiem').style.display = 'block';
                 document.getElementById('menuTeaching').style.display = 'block';
+                document.getElementById('menuExamTypes').style.display = 'block';
+                document.getElementById('menuConductRules').style.display = 'block';
                 document.getElementById('menuUsers').style.display = 'block';
             }
         });

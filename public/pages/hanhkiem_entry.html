@@ -7,6 +7,133 @@
     <link rel="stylesheet" href="/layout/styles.css">
     <script src="/js/toast.js"></script>
     <script src="/js/auth.js"></script>
+    <style>
+        /* MODAL STYLES */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            overflow-y: auto;
+        }
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 32px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .modal-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: #9ca3af;
+        }
+        .modal-close:hover {
+            color: #374151;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* TABLE STYLES */
+        .hk-input {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+            text-align: center;
+            background: #fff;
+            font-weight: 500;
+        }
+        .hk-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+        }
+        .hk-input.filled {
+            background-color: #f0fdf4;
+        }
+        table tbody tr {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        table td {
+            padding: 12px;
+        }
+
+        /* TOOLBAR */
+        .toolbar-rules {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            border-radius: 4px;
+        }
+        .toolbar-rules-text {
+            flex: 1;
+            font-size: 13px;
+            color: #1e40af;
+        }
+    </style>
 </head>
 
 <body class="dashboard-body">
@@ -30,6 +157,7 @@
             <a href="/pages/class_summary.html">Tổng kết lớp</a>
             <a href="/pages/reports.html">Báo cáo tổng kết</a>
             <a href="/pages/teaching_assignment.html" id="menuTeaching" style="display:none;">Phân công giảng dạy</a>
+            <a href="/pages/exam_types.html" id="menuExamTypes" style="display:none;">Loại hình kiểm tra</a>
             <a href="/pages/users.html" id="menuUsers" style="display:none;">Quản lý người dùng</a>
         </nav>
     </aside>
@@ -53,33 +181,32 @@
             <!-- FILTERS -->
             <div class="filters-row">
                 <div class="filter-item">
-                    <label class="filter-label" for="selectYear">Năm học</label>
+                    <label class="filter-label">Năm học</label>
                     <select id="selectYear">
-                        <option value="">-- Chọn năm học --</option>
+                        <option value="">-- Chọn --</option>
                     </select>
                 </div>
 
                 <div class="filter-item">
-                    <label class="filter-label" for="selectSemester">Học kỳ</label>
+                    <label class="filter-label">Học kỳ</label>
                     <select id="selectSemester">
-                        <option value="">-- Chọn học kỳ --</option>
+                        <option value="">-- Chọn --</option>
                         <option value="HK1">Học kỳ 1</option>
                         <option value="HK2">Học kỳ 2</option>
-                        <!-- KHÔNG có "Cả năm" - điểm cả năm tính tự động từ HK1 và HK2 -->
                     </select>
                 </div>
 
                 <div class="filter-item">
-                    <label class="filter-label" for="selectGrade">Khối</label>
+                    <label class="filter-label">Khối</label>
                     <select id="selectGrade">
-                        <option value="">-- Chọn khối --</option>
+                        <option value="">-- Chọn --</option>
                     </select>
                 </div>
 
                 <div class="filter-item">
-                    <label class="filter-label" for="selectClass">Lớp</label>
+                    <label class="filter-label">Lớp</label>
                     <select id="selectClass">
-                        <option value="">-- Chọn lớp --</option>
+                        <option value="">-- Chọn --</option>
                     </select>
                 </div>
 
@@ -91,16 +218,16 @@
             <div id="classInfoBox" style="display: none; margin-bottom: 15px; padding: 12px; background: #f0f9ff; border-left: 4px solid #0284c7; border-radius: 4px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
                     <span id="classInfoText" style="color: #0c4a6e; font-size: 14px; font-weight: 500;"></span>
-                    <span id="teacherInfo" style="color: #0c4a6e; font-size: 14px; font-weight: 500;"></span>
-                    <span style="color: #059669; font-size: 14px; font-weight: 500;">✓ Ban có quyền nhập Hạnh kiểm</span>
+                    <span style="color: #059669; font-size: 14px; font-weight: 500;">✓ Bạn có quyền nhập hạnh kiểm</span>
                 </div>
             </div>
 
-            <!-- HƯỚNG DẪN NHẬP ĐIỂM HẠNH KIỂM -->
-            <div id="keyboardHints" style="margin-bottom: 15px; padding: 10px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px; display: none;">
-                <span style="color: #dc2626; font-size: 13px; font-weight: 500;">
-                    Cách nhập hạnh kiểm: Nhập điểm từ <strong>0-100</strong> &nbsp;|&nbsp; Hệ thống tự động xếp loại: <strong>80-100 = Tốt</strong>, <strong>65-79 = Khá</strong>, <strong>50-64 = Trung bình</strong>, <strong>1-49 = Yếu</strong>
-                </span>
+            <!-- QUYNH ĐỊNH TOOLBAR -->
+            <div class="toolbar-rules" id="toolbarRules" style="display: none;">
+                <div class="toolbar-rules-text">
+                    <strong>📋 Quy định xếp loại:</strong> <span id="rulesDisplay">Đang tải...</span>
+                </div>
+                <button class="btn btn-outline btn-sm" id="btnEditRules" style="margin-left: 12px;">⚙️ Thay đổi</button>
             </div>
 
             <!-- TABLE -->
@@ -108,19 +235,17 @@
                 <table class="data-table" style="width: 100%; border-collapse: collapse;">
                     <thead style="background: #f3f4f6; border-bottom: 2px solid #e5e7eb;">
                         <tr>
-                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #374151; width: 50px;">STT</th>
-                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151; width: 110px;">Mã học sinh</th>
-                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #374151; width: 200px;">Họ và tên</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #374151; width: 110px;">Ngày sinh</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #374151; width: 90px;">Điểm TK</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #374151; width: 100px;">Học lực</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #374151; width: 110px;">Điểm H.Kiểm</th>
-                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #374151; width: 120px;">Xếp loại</th>
+                            <th style="padding: 12px; text-align: center; width: 50px;">STT</th>
+                            <th style="padding: 12px; text-align: left; width: 110px;">Mã HS</th>
+                            <th style="padding: 12px; text-align: left; width: 180px;">Họ tên</th>
+                            <th style="padding: 12px; text-align: center; width: 100px;">Ngày sinh</th>
+                            <th style="padding: 12px; text-align: center; width: 100px;">Điểm H.Kiểm</th>
+                            <th style="padding: 12px; text-align: center; width: 120px;">Xếp loại</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
                         <tr>
-                            <td colspan="8" style="padding: 20px; text-align: center; color: #999;">Chưa có dữ liệu</td>
+                            <td colspan="6" style="padding: 20px; text-align: center; color: #999;">Chưa có dữ liệu</td>
                         </tr>
                     </tbody>
                 </table>
@@ -129,628 +254,396 @@
         </div><!-- content -->
     </div><!-- main -->
 
-    <style>
-        .hk-input {
-            width: 100%;
-            padding: 8px 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
-            font-size: 15px;
-            text-align: center;
-            background: #fff;
-            font-weight: 500;
-        }
-        .hk-input:focus {
-            outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-        }
-        .hk-input.filled {
-            background-color: #f0fdf4;
-            font-weight: 500;
-        }
-        .hk-input.disabled-input {
-            background-color: #f3f4f6;
-            color: #9ca3af;
-            cursor: not-allowed;
-            border-color: #e5e7eb;
-        }
-        .hk-input.disabled-input::placeholder {
-            color: #9ca3af;
-        }
-        table tbody tr {
-            border-bottom: 1px solid #e5e7eb;
-        }
-        table tbody tr:hover {
-            background-color: #f9fafb;
-        }
-        table td {
-            padding: 12px;
-        }
-    </style>
+    <!-- MODAL THAY ĐỔI QUY ĐỊNH -->
+    <div id="rulesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚙️ Thay đổi quy định xếp loại hạnh kiểm</h2>
+                <button class="modal-close" onclick="closeRulesModal()">&times;</button>
+            </div>
+
+            <form id="rulesForm" onsubmit="handleSaveRules(event)">
+                <div class="form-group">
+                    <label>🌟 Hạnh kiểm Tốt: từ <span id="totVal">80</span> đến 100 điểm</label>
+                    <input type="number" id="inputTot" min="0" max="100" required>
+                </div>
+
+                <div class="form-group">
+                    <label>⭐ Hạnh kiểm Khá: từ <span id="khaVal">65</span> đến <span id="khaMaxVal">79</span> điểm</label>
+                    <input type="number" id="inputKha" min="0" max="100" required>
+                </div>
+
+                <div class="form-group">
+                    <label>📊 Hạnh kiểm Trung bình: từ <span id="tbVal">50</span> đến <span id="tbMaxVal">64</span> điểm</label>
+                    <input type="number" id="inputTB" min="0" max="100" required>
+                </div>
+
+                <div class="form-group">
+                    <label>⚠️ Hạnh kiểm Yếu: từ <span id="yeuVal">20</span> đến <span id="yeuMaxVal">49</span> điểm</label>
+                    <input type="number" id="inputYeu" min="0" max="100" required>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeRulesModal()">Hủy</button>
+                    <button type="submit" class="btn btn-primary">💾 Lưu thay đổi</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <script>
         let currentData = [];
+        let conductRules = { tot: 80, kha: 65, tb: 50, yeu: 20 };
 
-        document.addEventListener('DOMContentLoaded', async () => {
+        // ========== LOAD QUY ĐỊNH ==========
+        async function loadConductRules() {
             try {
-                const user = getCurrentUser();
-                if (!user) {
-                    toastWarning('Chưa đăng nhập');
-                    setTimeout(() => window.location.href = '/pages/login.html', 1500);
-                    return;
-                }
-
-                if (user.vaiTro !== 'GVCN' && user.vaiTro !== 'ADMIN') {
-                    toastError('Không có quyền');
-                    setTimeout(() => window.location.href = '/pages/dashboard.html', 1500);
-                    return;
-                }
-
-                document.getElementById('userGreeting').textContent = `Xin chào, ${user.hoTen}`;
-                
-                // Hiển thị menu cho ADMIN
-                if (user.vaiTro === 'ADMIN') {
-                    document.getElementById('menuClasses').style.display = 'block';
-                    document.getElementById('menuSubjects').style.display = 'block';
-                    document.getElementById('menuHanhKiem').style.display = 'block';
-                    document.getElementById('menuTeaching').style.display = 'block';
-                    document.getElementById('menuUsers').style.display = 'block';
-                } else if (user.vaiTro === 'GVCN') {
-                    // GVCN chỉ được xem menu Nhập hạnh kiểm
-                    document.getElementById('menuHanhKiem').style.display = 'block';
-                }
-                if (user.vaiTro === 'ADMIN') {
-                    document.getElementById('menuTeaching').style.display = 'block';
-                    document.getElementById('menuUsers').style.display = 'block';
-                }
-
-                await loadDropdowns();
-
-                document.getElementById('selectYear').addEventListener('change', loadClasses);
-                document.getElementById('selectGrade').addEventListener('change', loadClasses);
-                document.getElementById('btnLoad').addEventListener('click', onLoadClick);
-                document.getElementById('btnSave').addEventListener('click', onSaveClick);
-
+                const res = await authFetch('/api/settings/params');
+                const params = await res.json();
+                conductRules.tot = parseInt(params.find(p => p.tenthamso === 'DiemHKTot')?.giatri || 80);
+                conductRules.kha = parseInt(params.find(p => p.tenthamso === 'DiemHKKha')?.giatri || 65);
+                conductRules.tb = parseInt(params.find(p => p.tenthamso === 'DiemHKTrungBinh')?.giatri || 50);
+                conductRules.yeu = parseInt(params.find(p => p.tenthamso === 'DiemHKYeu')?.giatri || 20);
+                updateRulesDisplay();
             } catch (error) {
-                console.error(error);
-                toastError('Lỗi: ' + error.message);
+                console.error('Lỗi load quy định:', error);
             }
+        }
+
+        function updateRulesDisplay() {
+            const display = document.getElementById('rulesDisplay');
+            if (display) {
+                display.textContent = `${conductRules.tot}-100: Tốt | ${conductRules.kha}-${conductRules.tot-1}: Khá | ${conductRules.tb}-${conductRules.kha-1}: Trung bình | ${conductRules.yeu}-${conductRules.tb-1}: Yếu`;
+            }
+        }
+
+        function getHKRank(diem) {
+            if (!diem || diem < conductRules.yeu) return '';
+            if (diem >= conductRules.tot) return 'Tốt';
+            if (diem >= conductRules.kha) return 'Khá';
+            if (diem >= conductRules.tb) return 'Trung bình';
+            if (diem >= conductRules.yeu) return 'Yếu';
+            return '';
+        }
+
+        function openRulesModal() {
+            document.getElementById('inputTot').value = conductRules.tot;
+            document.getElementById('inputKha').value = conductRules.kha;
+            document.getElementById('inputTB').value = conductRules.tb;
+            document.getElementById('inputYeu').value = conductRules.yeu;
+            updateRulesPreview();
+            document.getElementById('rulesModal').classList.add('active');
+        }
+
+        function closeRulesModal() {
+            document.getElementById('rulesModal').classList.remove('active');
+        }
+
+        function updateRulesPreview() {
+            const tot = parseInt(document.getElementById('inputTot').value) || conductRules.tot;
+            const kha = parseInt(document.getElementById('inputKha').value) || conductRules.kha;
+            const tb = parseInt(document.getElementById('inputTB').value) || conductRules.tb;
+            
+            document.getElementById('totVal').textContent = tot;
+            document.getElementById('khaVal').textContent = kha;
+            document.getElementById('khaMaxVal').textContent = tot - 1;
+            document.getElementById('tbVal').textContent = tb;
+            document.getElementById('tbMaxVal').textContent = kha - 1;
+            document.getElementById('yeuVal').textContent = parseInt(document.getElementById('inputYeu').value) || conductRules.yeu;
+            document.getElementById('yeuMaxVal').textContent = tb - 1;
+        }
+
+        async function handleSaveRules(e) {
+            e.preventDefault();
+            
+            const tot = parseInt(document.getElementById('inputTot').value);
+            const kha = parseInt(document.getElementById('inputKha').value);
+            const tb = parseInt(document.getElementById('inputTB').value);
+            const yeu = parseInt(document.getElementById('inputYeu').value);
+            
+            if (tot <= kha || kha <= tb || tb <= yeu) {
+                toastWarning('Ngưỡng phải giảm dần: Tốt > Khá > Trung bình > Yếu');
+                return;
+            }
+            
+            try {
+                const updates = [
+                    authFetch('/api/settings/params/DiemHKTot', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ GiaTri: tot.toString() })
+                    }),
+                    authFetch('/api/settings/params/DiemHKKha', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ GiaTri: kha.toString() })
+                    }),
+                    authFetch('/api/settings/params/DiemHKTrungBinh', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ GiaTri: tb.toString() })
+                    }),
+                    authFetch('/api/settings/params/DiemHKYeu', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ GiaTri: yeu.toString() })
+                    })
+                ];
+
+                await Promise.all(updates);
+                
+                conductRules = { tot, kha, tb, yeu };
+                updateRulesDisplay();
+                closeRulesModal();
+                toastSuccess('Đã cập nhật quy định!');
+                
+                // Tính lại xếp loại
+                currentData.forEach(s => {
+                    if (s.diemhanhkiem) {
+                        s.xeploai = getHKRank(s.diemhanhkiem);
+                    }
+                });
+                renderTable();
+            } catch (error) {
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi lưu quy định');
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('rulesModal');
+            if (event.target === modal) closeRulesModal();
+        }
+
+        // ========== KHỞI TẠO ==========
+        document.addEventListener('DOMContentLoaded', async () => {
+            const user = getCurrentUser();
+            if (!user || (user.vaiTro !== 'GVCN' && user.vaiTro !== 'ADMIN')) {
+                toastError('Không có quyền truy cập');
+                setTimeout(() => window.location.href = '/pages/dashboard.html', 1500);
+                return;
+            }
+
+            document.getElementById('userGreeting').textContent = `Xin chào, ${user.hoTen}`;
+            
+            if (user.vaiTro === 'ADMIN') {
+                ['menuClasses', 'menuSubjects', 'menuHanhKiem', 'menuTeaching', 'menuExamTypes', 'menuConductRules', 'menuUsers'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'block';
+                });
+            } else if (user.vaiTro === 'GVCN') {
+                document.getElementById('menuHanhKiem').style.display = 'block';
+            }
+
+            await loadConductRules();
+            await loadDropdowns();
+
+            document.getElementById('selectGrade').addEventListener('change', loadClasses);
+            document.getElementById('btnLoad').addEventListener('click', onLoadClick);
+            document.getElementById('btnSave').addEventListener('click', onSaveClick);
+            document.getElementById('btnEditRules').addEventListener('click', openRulesModal);
+            ['inputTot', 'inputKha', 'inputTB', 'inputYeu'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateRulesPreview);
+            });
         });
 
         async function loadDropdowns() {
             try {
-                const token = getAuthToken();
-                const authHeaders = { 'Authorization': `Bearer ${token}` };
-
-                const [yRes, sRes, gRes] = await Promise.all([
-                    fetch('/api/settings/school-years', { headers: authHeaders }),
-                    fetch('/api/settings/semesters', { headers: authHeaders }),
-                    fetch('/api/settings/grade-levels', { headers: authHeaders })
+                const [yearsRes, gradesRes] = await Promise.all([
+                    authFetch('/api/settings/school-years'),
+                    authFetch('/api/settings/grade-levels')
                 ]);
 
-                if (!yRes.ok || !sRes.ok || !gRes.ok) {
-                    throw new Error('Không thể tải danh sách năm học/kỳ/khối');
-                }
+                const [years, grades] = await Promise.all([yearsRes.json(), gradesRes.json()]);
 
-                const [years, semesters, grades] = await Promise.all([
-                    yRes.json(), sRes.json(), gRes.json()
-                ]);
+                document.getElementById('selectYear').innerHTML = '<option value="">-- Chọn --</option>' +
+                    years.map(y => `<option value="${y.manamhoc}">${y.tennamhoc}</option>`).join('');
 
-                const yearSel = document.getElementById('selectYear');
-                years.forEach(y => {
-                    const opt = document.createElement('option');
-                    opt.value = y.manamhoc;
-                    opt.textContent = y.tennamhoc;
-                    yearSel.appendChild(opt);
-                });
-
-                const semSel = document.getElementById('selectSemester');
-                semSel.innerHTML = '<option value="">-- Chọn học kỳ --</option>';
-
-                const getOrder = (val) => {
-                    if (val === 'HK1' || val === '1' || val === 1) return 1;
-                    if (val === 'HK2' || val === '2' || val === 2) return 2;
-                    // Để Cả năm xuống cuối
-                    if (val === 'Nam' || val === 'CN' || val === '0' || val === 0) return 99;
-                    return 50;
-                };
-
-                semesters
-                    .map(s => ({
-                        value: s.mahocky || s.maHocKy || s.MaHocKy || s.id,
-                        text: s.tenhocky || s.tenHocKy || s.TenHocKy || s.name
-                    }))
-                    .filter(s => s.value !== 'CN' && s.value !== 'Nam' && s.value !== '0' && s.value !== 0)
-                    .sort((a, b) => getOrder(a.value) - getOrder(b.value))
-                    .forEach(s => {
-                        const opt = document.createElement('option');
-                        opt.value = s.value;
-                        opt.textContent = s.text;
-                        semSel.appendChild(opt);
-                    });
-
-                const gradeSel = document.getElementById('selectGrade');
-                gradeSel.innerHTML = '<option value="">-- Chọn khối --</option>';
-                grades.forEach(g => {
-                    const opt = document.createElement('option');
-                    const value = g.makhoilop || g.maKhoiLop || g.MaKhoiLop;
-                    opt.value = value;
-                    opt.textContent = g.tenkhoilop || g.tenKhoiLop || g.TenKhoiLop || ('Khối ' + value);
-                    gradeSel.appendChild(opt);
-                });
+                document.getElementById('selectGrade').innerHTML = '<option value="">-- Chọn --</option>' +
+                    grades.map(g => `<option value="${g.makhoilop}">${g.tenkhoilop}</option>`).join('');
             } catch (error) {
-                console.error(error);
-                toastError('Không thể tải dữ liệu: ' + error.message);
+                console.error('Lỗi load dropdowns:', error);
             }
         }
 
         async function loadClasses() {
-            const year = document.getElementById('selectYear').value;
             const grade = document.getElementById('selectGrade').value;
-            const classEl = document.getElementById('selectClass');
-
-            classEl.innerHTML = '<option value="">-- Chọn lớp --</option>';
-
-            if (!year || !grade) return;
+            if (!grade) {
+                document.getElementById('selectClass').innerHTML = '<option value="">-- Chọn --</option>';
+                return;
+            }
 
             try {
-                const token = getAuthToken();
-                const params = new URLSearchParams({ khoi: grade, namhoc: year });
-                const res = await authFetch('/api/classes?' + params.toString(), {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (!res.ok) throw new Error('Cannot load classes');
+                const res = await authFetch(`/api/classes?khoilop=${grade}`);
                 const classes = await res.json();
-
-                classes.forEach(c => {
-                    const opt = document.createElement('option');
-                    opt.value = c.malop || c.MaLop;
-                    opt.textContent = c.tenlop || c.TenLop;
-                    classEl.appendChild(opt);
-                });
+                document.getElementById('selectClass').innerHTML = '<option value="">-- Chọn --</option>' +
+                    classes.map(c => `<option value="${c.malop}">${c.malop}</option>`).join('');
             } catch (error) {
-                console.error(error);
-                toastError('Không thể tải lớp: ' + error.message);
+                console.error('Lỗi load classes:', error);
             }
-        }
-
-        function normalizeSemester(semRaw) {
-            if (semRaw === 'HK1' || semRaw === '1' || semRaw === 1) return 1;
-            if (semRaw === 'HK2' || semRaw === '2' || semRaw === 2) return 2;
-            if (semRaw === 'Nam' || semRaw === 'CN' || semRaw === '0' || semRaw === 0) return 0;
-            const num = parseInt(semRaw);
-            return Number.isNaN(num) ? null : num;
-        }
-
-        function getUserIdOrThrow() {
-            const user = getCurrentUser();
-            const userId = user?.maNguoiDung || user?.manguoidung || user?.MaNguoiDung;
-            if (!user || !userId) {
-                toastError('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
-                throw new Error('Missing user or maNguoiDung in local storage');
-            }
-            return userId.toString();
         }
 
         async function onLoadClick() {
             const year = document.getElementById('selectYear').value;
-            const cls = document.getElementById('selectClass').value;
-            const semRaw = document.getElementById('selectSemester').value;
+            const semester = document.getElementById('selectSemester').value;
+            const classId = document.getElementById('selectClass').value;
 
-            if (!year || !cls || !semRaw) {
-                toastWarning('Chọn năm học, lớp và học kỳ');
+            if (!year || !semester || !classId) {
+                toastWarning('Chọn đầy đủ thông tin');
                 return;
             }
 
-            // Store for later use in save
             window.currentYear = year;
-            window.currentSemesterRaw = semRaw;
+            window.currentSemesterRaw = semester;
 
             try {
-                const token = getAuthToken();
-                const authHeaders = { 'Authorization': `Bearer ${token}` };
+                const [studentsRes, hkRes] = await Promise.all([
+                    authFetch(`/api/classes/${classId}/students`),
+                    authFetch(`/api/hanhkiem/lop/${classId}?maNamHoc=${year}&maHocKy=${semester}`)
+                ]);
 
-                // Load students
-                const sRes = await authFetch(`/api/classes/${cls}/students`, { headers: authHeaders });
-                if (!sRes.ok) throw new Error('Cannot load students');
-                const students = await sRes.json();
+                const students = await studentsRes.json();
+                const hkData = (await hkRes.json()).data || [];
 
-                // Load hanhkiem data from dedicated API
-                const hanhkiemRes = await authFetch(`/api/hanhkiem/lop/${cls}?maNamHoc=${year}&maHocKy=${semRaw}`, { headers: authHeaders });
-                const hanhkiemData = hanhkiemRes.ok ? await hanhkiemRes.json() : { success: false, data: [] };
-
-                console.log('Hanhkiem API response:', hanhkiemData);
-
-                // Build hanhkiem map from API response
-                const hkMap = {}; // Map MaHocSinh -> {diemhanhkiem, xeploai}
-                
-                if (hanhkiemData.success && hanhkiemData.data) {
-                    hanhkiemData.data.forEach(row => {
-                        const mhs = row.mahocsinh || row.MaHocSinh;
-                        const diem = row.diemhanhkiem || row.DiemHanhKiem || '';
-                        const xeploai = row.xeploai || row.XepLoai || '';
-                        hkMap[mhs] = { diemhanhkiem: diem, xeploai: xeploai };
-                    });
-                }
-
-                // Load scores for calculating DiemTK and HocLuc
-                const scoresRes = await authFetch(`/api/reports/class-final?maLop=${cls}&namhoc=${year}`, { headers: authHeaders });
-                const scoresData = scoresRes.ok ? await scoresRes.json() : { success: false, data: [] };
-                
-                const scoreMap = {};
-                if (scoresData.success && scoresData.data) {
-                    scoresData.data.forEach(row => {
-                        const mhs = row.mahocsinh || row.MaHocSinh;
-                        const tenMon = row.tenmonhoc || row.TenMonHoc;
-                        
-                        // Get score for selected semester
-                        let diemRaw;
-                        if (semRaw === 'HK1') {
-                            diemRaw = row.diemtbhk1 || row.DiemTBHK1;
-                        } else if (semRaw === 'HK2') {
-                            diemRaw = row.diemtbhk2 || row.DiemTBHK2;
-                        } else {
-                            diemRaw = row.diemtbnam || row.DiemTBNam;
-                        }
-                        
-                        const diem = typeof diemRaw === 'number' ? diemRaw : parseFloat(diemRaw);
-                        
-                        if (!scoreMap[mhs]) {
-                            scoreMap[mhs] = { grades: {}, list: [] };
-                        }
-                        if (!isNaN(diem) && diem !== null) {
-                            scoreMap[mhs].grades[tenMon] = diem;
-                            scoreMap[mhs].list.push(diem);
-                        }
-                    });
-                }
-
-                console.log('Score map:', scoreMap);
-                console.log('HanhKiem map:', hkMap);
-
-                // Compute DiemTK and HocLuc - EXACT same logic as reports page
-                Object.keys(scoreMap).forEach(mhs => {
-                    const info = scoreMap[mhs];
-                    const scores = info.list || [];
-                    const avgNum = scores.length > 0 ? (scores.reduce((a,b)=>a+b,0) / scores.length) : null;
-                    info.diemtk = avgNum !== null ? avgNum.toFixed(2) : '-';
-
-                    const hasToan = 'Toán' in info.grades;
-                    const hasVan = 'Ngữ Văn' in info.grades;
-                    const toan = hasToan ? info.grades['Toán'] : undefined;
-                    const van = hasVan ? info.grades['Ngữ Văn'] : undefined;
-                    const anyBelow = (thr) => scores.some(v => v < thr);
-                    const anyGE = (score, thr) => (score !== undefined && !isNaN(score) && score >= thr);
-
-                    let hocLuc = '-';
-                    if (avgNum !== null) {
-                        if (avgNum >= 8.0 && (anyGE(toan,8.0) || anyGE(van,8.0)) && !anyBelow(6.5)) hocLuc = 'Giỏi';
-                        else if (avgNum >= 6.5 && (anyGE(toan,6.5) || anyGE(van,6.5)) && !anyBelow(5.0)) hocLuc = 'Khá';
-                        else if (avgNum >= 5.0 && (anyGE(toan,5.0) || anyGE(van,5.0)) && !anyBelow(3.5)) hocLuc = 'Trung bình';
-                        else if (avgNum >= 3.5 && !anyBelow(2.0)) hocLuc = 'Yếu';
-                        else hocLuc = 'Kém';
-                    }
-                    info.hocluc = hocLuc;
+                const hkMap = {};
+                hkData.forEach(row => {
+                    const mhs = row.mahocsinh;
+                    hkMap[mhs] = { diemhanhkiem: row.diemhanhkiem || '', xeploai: row.xeploai || '' };
                 });
 
                 currentData = students.map(s => {
-                    const mhs = s.mahocsinh || s.MaHocSinh;
+                    const mhs = s.mahocsinh;
                     const hkInfo = hkMap[mhs] || { diemhanhkiem: '', xeploai: '' };
-                    
                     return {
                         mahocsinh: mhs,
-                        hoten: s.hoten || s.HoTen,
-                        ngaysinh: s.ngaysinh || s.NgaySinh || '',
-                        diemtk: scoreMap[mhs]?.diemtk || '-',
-                        hocluc: scoreMap[mhs]?.hocluc || '-',
+                        hoten: s.hoten,
+                        ngaysinh: s.ngaysinh || '',
                         diemhanhkiem: hkInfo.diemhanhkiem,
                         xeploai: hkInfo.xeploai
                     };
                 });
 
-                // Sắp xếp theo TÊN (từ cuối cùng của họ tên)
-                currentData.sort((a, b) => {
-                    const getTen = (hoten) => {
-                        const parts = hoten.trim().split(/\s+/);
-                        return parts[parts.length - 1]; // Lấy từ cuối cùng (tên)
-                    };
-                    const tenA = getTen(a.hoten);
-                    const tenB = getTen(b.hoten);
-                    const compare = tenA.localeCompare(tenB, 'vi');
-                    // Nếu tên giống nhau, sắp xếp theo họ tên đầy đủ
-                    if (compare === 0) {
-                        return a.hoten.localeCompare(b.hoten, 'vi');
-                    }
-                    return compare;
-                });
+                currentData.sort((a, b) => a.hoten.localeCompare(b.hoten, 'vi'));
+
+                document.getElementById('classInfoBox').style.display = 'block';
+                document.getElementById('toolbarRules').style.display = 'flex';
+                document.getElementById('btnSave').style.display = 'inline-block';
+                document.getElementById('classInfoText').textContent = `Lớp: ${classId} - ${semester}`;
 
                 renderTable();
-                document.getElementById('btnSave').style.display = 'inline-block';
-                document.getElementById('keyboardHints').style.display = 'block';
-                
-                const clsName = document.getElementById('selectClass').selectedOptions[0].text;
-                const semName = semRaw === 'HK1' ? 'Học kỳ 1' : semRaw === 'HK2' ? 'Học kỳ 2' : 'Cả năm';
-                
-                document.getElementById('classInfoBox').style.display = 'block';
-                document.getElementById('classInfoText').textContent = `Lớp: ${clsName} - ${semName}`;
-                
-                const user = getCurrentUser();
-                document.getElementById('teacherInfo').textContent = `Giáo viên chủ nhiệm: ${user.hoTen}`;
             } catch (error) {
-                console.error(error);
-                toastError('Lỗi: ' + error.message);
+                console.error('Lỗi:', error);
+                toastError('Lỗi tải dữ liệu: ' + error.message);
             }
         }
 
         function renderTable() {
             const tbody = document.getElementById('tableBody');
-
+            
             if (currentData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Không có học sinh</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 20px; text-align: center;">Không có học sinh</td></tr>';
                 return;
             }
 
             tbody.innerHTML = currentData.map((s, idx) => {
-                const ngaysinh = s.ngaysinh ? new Date(s.ngaysinh).toLocaleDateString('vi-VN') : '';
-                const hasGrades = s.diemtk !== '-';
-                const disabledAttr = '';
-                const disabledClass = '';
-                const disabledTitle = hasGrades ? '' : 'title="Học sinh chưa có điểm tổng kết học kỳ - vẫn có thể nhập"';
-                
-                // Nếu có điểm hạnh kiểm, parse và hiển thị
-                const diemHanhKiem = s.diemhanhkiem || '';
+                const diem = s.diemhanhkiem || '';
                 const xepLoai = s.xeploai || '';
-                
-                return `
-                <tr>
-                    <td style="text-align:center;">${idx + 1}</td>
-                    <td>${s.mahocsinh}</td>
-                    <td>${s.hoten}</td>
-                    <td style="text-align:center;">${ngaysinh}</td>
-                    <td style="text-align:center; font-weight: 500;">${s.diemtk}</td>
-                    <td style="text-align:center;">${s.hocluc}</td>
-                    <td style="text-align:center;">
-                           <input type="number" 
-                               class="hk-input ${diemHanhKiem ? 'filled' : ''} ${disabledClass}" 
-                               data-mhs="${s.mahocsinh}"
-                               value="${diemHanhKiem}"
-                               placeholder="0-100"
-                               min="0"
-                               max="100"
-                               step="0.01"
-                               ${disabledAttr}
-                               ${disabledTitle}>
-                    </td>
-                    <td style="text-align:center;">
-                           <span class="xeploai-display" data-mhs="${s.mahocsinh}" 
-                                 style="display:inline-block; padding:4px 12px; border-radius:12px; font-size:13px; font-weight:500;
-                                        ${xepLoai === 'Tốt' ? 'background:#d1fae5;color:#065f46' : ''}
-                                        ${xepLoai === 'Khá' ? 'background:#dbeafe;color:#1e40af' : ''}
-                                        ${xepLoai === 'Trung bình' ? 'background:#fed7aa;color:#9a3412' : ''}
-                                        ${xepLoai === 'Yếu' ? 'background:#fecaca;color:#991b1b' : ''}
-                                        ${xepLoai === 'Kém' ? 'background:#fca5a5;color:#7f1d1d' : ''}
-                                 ">
-                                 ${xepLoai || '-'}
-                           </span>
-                    </td>
-                </tr>
-            `}).join('');
+                let xepLoaiStyle = '';
+                if (xepLoai === 'Tốt') xepLoaiStyle = 'background:#d1fae5;color:#065f46';
+                else if (xepLoai === 'Khá') xepLoaiStyle = 'background:#dbeafe;color:#1e40af';
+                else if (xepLoai === 'Trung bình') xepLoaiStyle = 'background:#fef3c7;color:#92400e';
+                else if (xepLoai === 'Yếu') xepLoaiStyle = 'background:#fee2e2;color:#991b1b';
 
-            // Add input event listeners for auto-calculate xếp loại
-            tbody.querySelectorAll('.hk-input').forEach(input => {
-                if (!input.disabled) {
-                    // Arrow navigation
-                    input.addEventListener('keydown', (e) => {
-                        if (e.key === 'ArrowDown') {
-                            e.preventDefault();
-                            const inputs = Array.from(document.querySelectorAll('.hk-input:not([disabled])'));
-                            const currentIndex = inputs.indexOf(e.target);
-                            if (currentIndex < inputs.length - 1) {
-                                inputs[currentIndex + 1].focus();
-                            }
-                        } else if (e.key === 'ArrowUp') {
-                            e.preventDefault();
-                            const inputs = Array.from(document.querySelectorAll('.hk-input:not([disabled])'));
-                            const currentIndex = inputs.indexOf(e.target);
-                            if (currentIndex > 0) {
-                                inputs[currentIndex - 1].focus();
-                            }
-                        } else if (e.key === 'Enter') {
-                            e.preventDefault();
-                            e.target.blur();
-                            setTimeout(() => {
-                                const inputs = Array.from(document.querySelectorAll('.hk-input:not([disabled])'));
-                                const currentIndex = inputs.indexOf(e.target);
-                                if (currentIndex < inputs.length - 1) {
-                                    inputs[currentIndex + 1].focus();
-                                }
-                            }, 0);
-                        }
-                    });
-                    
-                    // Auto-calculate xếp loại on input change
-                    input.addEventListener('input', (e) => {
-                        const mhs = e.target.dataset.mhs;
-                        let diem = parseFloat(e.target.value) || 0;
-                        
-                        // Giới hạn 0-100
-                        if (diem > 100) {
-                            diem = 100;
-                            e.target.value = 100;
-                        }
-                        if (diem < 0) {
-                            diem = 0;
-                            e.target.value = 0;
-                        }
-                        
-                        const s = currentData.find(x => x.mahocsinh === mhs);
-                        
-                        // Tính xếp loại từ điểm (CHỈ 4 LOẠI: Tốt, Khá, Trung bình, Yếu)
-                        // KHÔNG có Kém theo constraint database
-                        let xepLoai = '';
-                        if (diem >= 80) xepLoai = 'Tốt';
-                        else if (diem >= 65) xepLoai = 'Khá';
-                        else if (diem >= 50) xepLoai = 'Trung bình';
-                        else if (diem >= 20) xepLoai = 'Yếu';
-                        // Dưới 20 điểm: không xếp loại (rỗng)
-                        
-                        // Cập nhật data
-                        if (s) {
-                            s.diemhanhkiem = diem > 0 ? diem : null;
-                            s.xeploai = xepLoai;
-                        }
-                        
-                        // Cập nhật hiển thị xếp loại
-                        const xepLoaiDisplay = document.querySelector(`.xeploai-display[data-mhs="${mhs}"]`);
-                        if (xepLoaiDisplay) {
-                            xepLoaiDisplay.textContent = xepLoai || '-';
-                            
-                            // Reset style
-                            xepLoaiDisplay.style.background = '';
-                            xepLoaiDisplay.style.color = '';
-                            
-                            // Apply color based on xếp loại
-                            if (xepLoai === 'Tốt') {
-                                xepLoaiDisplay.style.background = '#d1fae5';
-                                xepLoaiDisplay.style.color = '#065f46';
-                            } else if (xepLoai === 'Khá') {
-                                xepLoaiDisplay.style.background = '#dbeafe';
-                                xepLoaiDisplay.style.color = '#1e40af';
-                            } else if (xepLoai === 'Trung bình') {
-                                xepLoaiDisplay.style.background = '#fed7aa';
-                                xepLoaiDisplay.style.color = '#9a3412';
-                            } else if (xepLoai === 'Yếu') {
-                                xepLoaiDisplay.style.background = '#fecaca';
-                                xepLoaiDisplay.style.color = '#991b1b';
-                            }
-                        }
-                        
-                        // Toggle filled class
-                        if (diem > 0) {
-                            e.target.classList.add('filled');
-                        } else {
-                            e.target.classList.remove('filled');
-                        }
-                    });
-                }
-            });
+                const ngaysinh = s.ngaysinh ? new Date(s.ngaysinh).toLocaleDateString('vi-VN') : '-';
+
+                return `
+                    <tr>
+                        <td style="text-align:center;">${idx + 1}</td>
+                        <td><strong>${s.mahocsinh}</strong></td>
+                        <td>${s.hoten}</td>
+                        <td style="text-align:center;">${ngaysinh}</td>
+                        <td style="text-align:center;">
+                            <input type="number" class="hk-input ${diem ? 'filled' : ''}" 
+                                   data-mhs="${s.mahocsinh}" value="${diem}"
+                                   placeholder="0-100" min="0" max="100" step="0.01"
+                                   onchange="handleDiemChange(this)">
+                        </td>
+                        <td style="text-align:center;">
+                            <span class="xeploai-display" data-mhs="${s.mahocsinh}" 
+                                  style="padding:4px 12px;border-radius:4px;font-weight:500;font-size:13px;display:inline-block;${xepLoaiStyle}">
+                                ${xepLoai || '-'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        // VĂN BẢN KHÔNG SỬ DỤNG NỮA - ĐÃ ĐỔI SANG NHẬP ĐIỂM 0-100
-        // function validateHanhKiemValue(value) {
-        //     const valid = ['Tốt', 'Khá', 'Trung bình', 'Yếu', ''];
-        //     return valid.includes(value);
-        // }
+        function handleDiemChange(input) {
+            const mhs = input.dataset.mhs;
+            let diem = parseFloat(input.value) || 0;
+            
+            if (diem > 100) diem = 100;
+            if (diem < 0) diem = 0;
+            input.value = diem;
+            
+            const student = currentData.find(s => s.mahocsinh === mhs);
+            if (student) {
+                student.diemhanhkiem = diem > 0 ? diem : null;
+                student.xeploai = getHKRank(diem);
+                
+                const xepLoaiDisplay = input.closest('tr').querySelector('.xeploai-display');
+                xepLoaiDisplay.textContent = student.xeploai || '-';
+                xepLoaiDisplay.style.background = '';
+                xepLoaiDisplay.style.color = '';
+                
+                if (student.xeploai === 'Tốt') {
+                    xepLoaiDisplay.style.background = '#d1fae5';
+                    xepLoaiDisplay.style.color = '#065f46';
+                } else if (student.xeploai === 'Khá') {
+                    xepLoaiDisplay.style.background = '#dbeafe';
+                    xepLoaiDisplay.style.color = '#1e40af';
+                } else if (student.xeploai === 'Trung bình') {
+                    xepLoaiDisplay.style.background = '#fef3c7';
+                    xepLoaiDisplay.style.color = '#92400e';
+                } else if (student.xeploai === 'Yếu') {
+                    xepLoaiDisplay.style.background = '#fee2e2';
+                    xepLoaiDisplay.style.color = '#991b1b';
+                }
+                
+                input.classList.toggle('filled', diem > 0);
+            }
+        }
 
         async function onSaveClick() {
-            // Force blur on current focused input to save its value
-            if (document.activeElement && document.activeElement.classList.contains('hk-input')) {
-                document.activeElement.blur();
-                // Wait a moment for blur event to complete
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-
-            // Thu thập dữ liệu từ input (Điểm Hạnh Kiểm 0-100)
             const toSave = currentData
-                .map(s => {
-                    const input = document.querySelector(`.hk-input[data-mhs="${s.mahocsinh}"]`);
-                    const diemStr = input ? input.value.trim() : '';
-                    
-                    // Nếu không nhập gì hoặc nhập 0, bỏ qua học sinh này
-                    if (!diemStr || diemStr === '0') {
-                        return null;
-                    }
-                    
-                    let diem = parseFloat(diemStr);
-                    
-                    // Giới hạn 1-100
-                    if (diem > 100) diem = 100;
-                    if (diem < 1) return null; // Chỉ bỏ qua nếu điểm < 1
-                    
-                    // Validate điểm trong khoảng 1-100
-                    if (isNaN(diem)) {
-                        return null;
-                    }
-                    
-                    // Tính xếp loại từ điểm (CHỊ 4 LOẠI theo constraint database)
-                    let xepLoai;
-                    if (diem >= 80) xepLoai = 'Tốt';
-                    else if (diem >= 65) xepLoai = 'Khá';
-                    else if (diem >= 50) xepLoai = 'Trung bình';
-                    else xepLoai = 'Yếu';
-                    
-                    return {
-                        maHocSinh: s.mahocsinh,
-                        maNamHoc: window.currentYear,
-                        maHocKy: window.currentSemesterRaw,
-                        diemHanhKiem: diem,
-                        xepLoai: xepLoai,
-                        ghiChu: null
-                    };
-                })
-                .filter(item => item !== null); // Chỉ lấy học sinh đã nhập điểm hợp lệ
+                .filter(s => s.diemhanhkiem && s.diemhanhkiem > 0)
+                .map(s => ({
+                    maHocSinh: s.mahocsinh,
+                    maNamHoc: window.currentYear,
+                    maHocKy: window.currentSemesterRaw,
+                    diemHanhKiem: s.diemhanhkiem,
+                    xepLoai: getHKRank(s.diemhanhkiem),
+                    ghiChu: null
+                }));
             
-            // Cảnh báo nếu không có học sinh nào được nhập điểm
             if (toSave.length === 0) {
-                toastWarning('Chưa nhập điểm hạnh kiểm cho học sinh nào. Vui lòng nhập điểm (1-100) trước khi lưu.');
+                toastWarning('Chưa nhập điểm hạnh kiểm cho học sinh nào');
                 return;
             }
 
             try {
-                // Use VARCHAR values from dropdown, not integers
-                const maNamHoc = window.currentYear; // e.g., "2024-2025"
-                const maHocKy = window.currentSemesterRaw; // e.g., "HK1" or "HK2"
-
-                const payload = {
-                    hanhKiemList: toSave
-                };
-
-                // Count saves and deletes for message
-                const actualSaves = toSave.filter(s => s.xepLoai);
-                const deletes = toSave.filter(s => !s.xepLoai);
-
-                console.log('Saving payload:', JSON.stringify(payload, null, 2));
-
-                const user = getCurrentUser();
-                const userId = user.maNguoiDung || user.manguoidung || user.MaNguoiDung;
-                if (!user || !userId) {
-                    toastError('Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.');
-                    console.error('User data:', user);
-                    return;
+                for (const item of toSave) {
+                    await authFetch('/api/hanhkiem/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(item)
+                    });
                 }
-
-                console.log('User info:', { 
-                    maNguoiDung: userId, 
-                    vaiTro: user.vaiTro, 
-                    hoTen: user.hoTen 
-                });
-
-                const res = await authFetch('/api/hanhkiem/bulk-upsert', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${getAuthToken()}`
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!res.ok) {
-                    let errText = 'Save failed';
-                    try {
-                        const err = await res.json();
-                        errText = err.error || err.message || errText;
-                    } catch (_) {}
-                    console.error('Save error status:', res.status, 'message:', errText);
-                    toastError(`Lỗi (${res.status}): ${errText}`);
-                    return;
-                }
-
-                toastSuccess('Đã lưu hạnh kiểm thành công');
-                await onLoadClick();
+                toastSuccess(`Đã lưu hạnh kiểm cho ${toSave.length} học sinh!`);
             } catch (error) {
-                console.error(error);
-                toastError('Lỗi: ' + error.message);
+                console.error('Lỗi:', error);
+                toastError('Lỗi khi lưu dữ liệu');
             }
         }
     </script>
