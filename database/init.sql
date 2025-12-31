@@ -187,14 +187,16 @@ INSERT INTO KHOILOP VALUES ('K11', 'Khối 11') ON CONFLICT DO NOTHING;
 INSERT INTO KHOILOP VALUES ('K12', 'Khối 12') ON CONFLICT DO NOTHING;
 
 -- Lớp
--- Lớp (seed.sql sẽ tạo 12 lớp cho năm 2024-2025)
+-- Lớp (seed.sql sẽ tạo 36 lớp cho 3 năm học: 2023-2024, 2024-2025, 2025-2026)
+-- Mỗi năm: 12 lớp (3 khối x 4 lớp/khối)
 -- INSERT INTO LOP VALUES ('10A1', 'Lớp 10A1', 'K10', 45, '2024-2025') ON CONFLICT DO NOTHING;
 -- INSERT INTO LOP VALUES ('10A2', 'Lớp 10A2', 'K10', 43, '2024-2025') ON CONFLICT DO NOTHING;
 -- INSERT INTO LOP VALUES ('10A3', 'Lớp 10A3', 'K10', 40, '2024-2025') ON CONFLICT DO NOTHING;
 -- INSERT INTO LOP VALUES ('11A1', 'Lớp 11A1', 'K11', 42, '2024-2025') ON CONFLICT DO NOTHING;
 -- INSERT INTO LOP VALUES ('12A1', 'Lớp 12A1', 'K12', 44, '2024-2025') ON CONFLICT DO NOTHING;
 
--- Học sinh (seed.sql sẽ tạo 530 học sinh từ HS010000-HS010529)
+-- Học sinh (seed.sql sẽ tạo 1500 học sinh từ HS010000-HS011499)
+-- Gồm: 1440 HS đã phân lớp (3 năm x 480 HS/năm) + 60 HS chưa phân lớp
 -- INSERT INTO HOCSINH VALUES ('HS010001', 'Nguyễn Văn A', 'Nam', '2008-01-01', 'TP. HCM', 'nguyenvana@gmail.com', 'Nguyễn Văn Phụ', '0901234567') ON CONFLICT DO NOTHING;
 -- INSERT INTO HOCSINH VALUES ('HS010002', 'Trần Thị B', 'Nữ', '2008-03-15', 'TP. HCM', 'tranthib@gmail.com', 'Trần Văn Huynh', '0902234567') ON CONFLICT DO NOTHING;
 -- INSERT INTO HOCSINH VALUES ('HS010003', 'Lê Văn C', 'Nam', '2008-07-25', 'Đồng Nai', 'levanc@gmail.com', 'Lê Văn Đức', '0903234567') ON CONFLICT DO NOTHING;

@@ -9,6 +9,7 @@ node_modules/
 claude.md
 IMPLEMENTATION_REPORT.md
 SECURITY_AND_TESTING.md
+logic.md
 # Lock file 
 package-lock.json
 

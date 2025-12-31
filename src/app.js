@@ -14,11 +14,9 @@ async function initializeDatabase() {
         );
         
         if (!result.rows[0].exists) {
-            console.log('Initializing database schema...');
             const initPath = path.join(__dirname, '../database/init.sql');
             const initSQL = fs.readFileSync(initPath, 'utf-8');
             await pool.query(initSQL);
-            console.log('Database schema initialized');
         }
         
         // AUTO-SEED DISABLED: Run seed.sql manually in pgAdmin if needed

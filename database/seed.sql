@@ -1,11 +1,11 @@
 -- =====================================================
--- FILE: generate.sql
+-- FILE: seed.sql
 -- MỤC ĐÍCH: Generate dữ liệu mẫu cho hệ thống quản lý học sinh
--- - 3 khối: 10, 11, 12
--- - Mỗi khối 4 lớp (A1, A2, A3, A4) = 12 lớp
--- - Mỗi lớp 40 học sinh = 480 học sinh đã phân lớp
--- - 50 học sinh chưa phân lớp
--- - TỔNG: 530 học sinh (HS010000 - HS010529)
+-- - 3 năm học: 2023-2024, 2024-2025, 2025-2026
+-- - Mỗi năm 12 lớp (3 khối x 4 lớp) = 36 lớp tổng cộng
+-- - Mỗi năm 480 học sinh (mỗi lớp 40 HS) = 1440 học sinh đã phân lớp
+-- - 60 học sinh chưa phân lớp
+-- - TỔNG: 1500 học sinh (HS010000 - HS011499)
 -- =====================================================
 
 -- ========== THÊM CỘT ĐIỂM HẠNH KIỂM VÀO BẢNG HANHKIEM ==========
@@ -160,8 +160,10 @@ $$ LANGUAGE plpgsql;
 
 -- ========== GENERATE 1500 HỌC SINH ==========  
 -- Mã học sinh từ HS010000 đến HS011499
--- Mỗi năm học (2023-2024, 2024-2025, 2025-2026): 480 HS (160 khối 10, 160 khối 11, 160 khối 12)
--- Tổng đã phân lớp: 1440 HS; chưa phân lớp: 60 HS
+-- - Năm 2023-2024: HS010000-HS010479 (480 HS: 160 K10 + 160 K11 + 160 K12)
+-- - Năm 2024-2025: HS010480-HS010959 (480 HS: 160 K10 + 160 K11 + 160 K12)
+-- - Năm 2025-2026: HS010960-HS011439 (480 HS: 160 K10 + 160 K11 + 160 K12)
+-- - Chưa phân lớp: HS011440-HS011499 (60 HS, mặc định KhoiHienTai=K10)
 
 DO $$
 DECLARE
@@ -241,7 +243,10 @@ BEGIN
     RAISE NOTICE '  - Chưa phân lớp: 60 HS cuối (HS011440-HS011499, mặc định KhoiHienTai=K10)';
 END $$;
 
--- ========== TẠO 12 LỚP CHO MỖI NĂM HỌC 2023-2024, 2024-2025, 2025-2026 ==========  
+-- ========== TẠO 36 LỚP (12 LỚP/NĂM CHO 3 NĂM HỌC) ==========
+-- - Năm 2023-2024: 12 lớp (23_10A1-23_10A4, 23_11A1-23_11A4, 23_12A1-23_12A4)
+-- - Năm 2024-2025: 12 lớp (24_10A1-24_10A4, 24_11A1-24_11A4, 24_12A1-24_12A4)
+-- - Năm 2025-2026: 12 lớp (25_10A1-25_10A4, 25_11A1-25_11A4, 25_12A1-25_12A4)  
 INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc) VALUES 
     -- Năm 2023-2024
     ('23_10A1', 'Lớp 10A1 (2023-2024)', 'K10', 0, '2023-2024'),
@@ -284,9 +289,11 @@ INSERT INTO LOP (MaLop, TenLop, MaKhoiLop, SiSo, MaNamHoc) VALUES
     ('25_12A4', 'Lớp 12A4 (2025-2026)', 'K12', 0, '2025-2026')
 ON CONFLICT (MaLop) DO NOTHING;
 
--- ========== PHÂN BỔ HỌC SINH VÀO CÁC LỚP (3 NĂM HỌC) ==========
--- Mỗi năm: 480 HS (khối 10/11/12 mỗi khối 160 HS) → 12 lớp (4 lớp/khối, 40 HS/lớp)
--- HS chưa phân lớp: 60 cuối cùng giữ nguyên trạng thái
+-- ========== PHÂN BỔ 1440 HỌC SINH VÀO 36 LỚP (3 NĂM HỌC) ==========
+-- - Năm 2023-2024: 480 HS (HS010000-HS010479) → 12 lớp (mỗi lớp 40 HS)
+-- - Năm 2024-2025: 480 HS (HS010480-HS010959) → 12 lớp (mỗi lớp 40 HS)
+-- - Năm 2025-2026: 480 HS (HS010960-HS011439) → 12 lớp (mỗi lớp 40 HS)
+-- - Chưa phân lớp: 60 HS (HS011440-HS011499) không được thêm vào QUATRINHHOC
 
 DO $$
 DECLARE
@@ -392,9 +399,13 @@ INSERT INTO LOAIHINHKIEMTRA (MaLHKT, TenLHKT, HeSo) VALUES
     ('TX4', 'Thường xuyên 4', 1)
 ON CONFLICT (MaLHKT) DO NOTHING;
 
--- ========== GENERATE ĐIỂM CHO 1440 HỌC SINH ĐÃ PHÂN LỚP (3 NĂM HỌC) ==========
--- Tạo điểm cho tất cả môn học, cả 2 học kỳ (HK1, HK2)
--- Năm 2023-2024: HS010000-HS010479, Năm 2024-2025: HS010480-HS010959, Năm 2025-2026: HS010960-HS011439
+-- ========== GENERATE ĐIỂM CHO 1440 HỌC SINH ĐÃ PHÂN LỚP ==========
+-- Tạo điểm cho 9 môn học x 2 học kỳ (HK1, HK2) = 18 bảng điểm/học sinh
+-- Mỗi bảng điểm gồm: 1 GK + 1 CK + 2-4 TX (ngẫu nhiên)
+-- Kèm theo: Điểm hạnh kiểm và xếp loại cho mỗi học kỳ
+-- - Năm 2023-2024: HS010000-HS010479 (480 HS)
+-- - Năm 2024-2025: HS010480-HS010959 (480 HS)
+-- - Năm 2025-2026: HS010960-HS011439 (480 HS)
 
 DO $$
 DECLARE
@@ -563,10 +574,11 @@ ORDER BY
     END;
 
 -- =====================================================
--- TẠO DỮ LIỆU GIANGDAY (PHÂN CÔNG GIẢNG DẠY - 3 NĂM HỌC)
+-- TẠO DỮ LIỆU GIANGDAY (PHÂN CÔNG GIẢNG DẠY)
 -- =====================================================
--- Phân công: mỗi lớp có 9 môn, mỗi môn 1 giáo viên
--- 3 năm x 12 lớp x 9 môn = 324 phân công cho HK1 và HK2
+-- Phân công giảng dạy cho 3 năm học x 12 lớp x 9 môn x 2 học kỳ
+-- Tổng cộng: 3 x 12 x 9 x 2 = 648 phân công giảng dạy
+-- Mỗi phân công gán 1 giáo viên bộ môn (GVBM/GVCN) theo vòng tròn
 
 DO $$
 DECLARE

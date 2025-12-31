@@ -2,13 +2,13 @@
 
 ## 📊 Tổng quan hệ thống
 
-Hệ thống quản lý học sinh bao gồm **19 bảng** được chia thành các nhóm chức năng:
+Hệ thống quản lý học sinh bao gồm **20 bảng** được chia thành các nhóm chức năng:
 - **Quản lý cơ bản**: Năm học, Học kỳ, Khối lớp, Lớp
 - **Quản lý học sinh**: Học sinh, Quá trình học, Hạnh kiểm
 - **Quản lý giảng dạy**: Giảng dạy (phân công GV)
 - **Quản lý môn học và điểm**: Môn học, Loại hình kiểm tra, Bảng điểm
 - **Báo cáo**: Báo cáo tổng kết môn, Báo cáo tổng kết học kỳ
-- **Hệ thống**: Tham số, Vai trò, Người dùng
+- **Hệ thống**: Tham số, Vai trò, Người dùng, Nhật ký
 
 ---
 
@@ -51,6 +51,7 @@ erDiagram
         varchar(100) Email
         varchar(100) HoTenPhuHuynh
         varchar(20) SdtPhuHuynh
+        varchar(10) KhoiHienTai
     }
     
     QUATRINHHOC {
@@ -62,6 +63,7 @@ erDiagram
         varchar(20) MaHocSinh PK,FK
         varchar(20) MaNamHoc PK,FK
         varchar(10) MaHocKy PK,FK
+        integer DiemHanhKiem
         varchar(20) XepLoai
         text GhiChu
     }
@@ -156,6 +158,16 @@ erDiagram
         timestamp NgayTao
     }
     
+    NHATKY {
+        serial id PK
+        int MaNguoiDung FK
+        varchar(50) HanhDong
+        varchar(50) BangMuc
+        varchar(50) MaDoiTuong
+        jsonb ChiTiet
+        timestamp NgayTao
+    }
+    
     %% ========== RELATIONSHIPS ==========
     %% Lớp
     KHOILOP ||--o{ LOP : "thuộc"
@@ -205,6 +217,9 @@ erDiagram
     
     %% User và Role
     VAITRO ||--o{ NGUOIDUNG : "có vai trò"
+    
+    %% Nhật ký hệ thống
+    NGUOIDUNG ||--o{ NHATKY : "thực hiện"
 ```
 
 ---
@@ -284,6 +299,7 @@ Table HOCSINH {
   Email varchar(100) [note: 'Email liên hệ']
   HoTenPhuHuynh varchar(100) [note: 'Họ tên phụ huynh']
   SdtPhuHuynh varchar(20) [note: 'SĐT phụ huynh']
+  KhoiHienTai varchar(10) [note: 'Khối hiện tại: K10, K11, K12']
   
   Note: 'Thông tin học sinh (phụ huynh chỉ là thông tin liên hệ)'
 }
@@ -303,6 +319,7 @@ Table HANHKIEM {
   MaHocSinh varchar(20) [pk, ref: > HOCSINH.MaHocSinh]
   MaNamHoc varchar(20) [pk, ref: > NAMHOC.MaNamHoc]
   MaHocKy varchar(10) [pk, ref: > HOCKY.MaHocKy]
+  DiemHanhKiem integer [note: 'Điểm hạnh kiểm (0-100)']
   XepLoai varchar(20) [note: 'Tốt/Khá/Trung bình/Yếu']
   GhiChu text [note: 'Ghi chú']
   
@@ -310,7 +327,7 @@ Table HANHKIEM {
     (MaHocSinh, MaNamHoc, MaHocKy) [pk]
   }
   
-  Note: 'Hạnh kiểm học sinh theo học kỳ'
+  Note: 'Hạnh kiểm học sinh theo học kỳ (điểm >=80: Tốt, >=65: Khá, >=50: TB, <50: Yếu)'
 }
 
 // ========== MÔN HỌC ==========
@@ -415,7 +432,7 @@ Table THAMSO {
   GiaTri varchar(100) [note: 'Giá trị']
   MoTa varchar(255) [note: 'Mô tả']
   
-  Note: 'Các tham số: tuổi, sĩ số, điểm đạt, max HS (999/khóa, 1600 toàn hệ thống), max cột 15P (4)'
+  Note: 'Các tham số: tuổi (15-20), sĩ số (40), điểm đạt (5), max HS (999/khóa, 1600 hệ thống), max cột TX (4), ngưỡng hạnh kiểm'
 }
 
 Table VAITRO {
@@ -443,6 +460,23 @@ Table NGUOIDUNG {
   }
   
   Note: 'Tài khoản người dùng hệ thống'
+}
+
+Table NHATKY {
+  id serial [pk, note: 'ID tự động']
+  MaNguoiDung int [ref: > NGUOIDUNG.MaNguoiDung, note: 'Người thực hiện']
+  HanhDong varchar(50) [not null, note: 'Hành động (CREATE, UPDATE, DELETE...)']
+  BangMuc varchar(50) [note: 'Bảng bị tác động']
+  MaDoiTuong varchar(50) [note: 'Mã đối tượng bị thao tác']
+  ChiTiet jsonb [note: 'Chi tiết thay đổi (JSON)']
+  NgayTao timestamp [default: `CURRENT_TIMESTAMP`, note: 'Thời gian']
+  
+  Indexes {
+    MaNguoiDung
+    NgayTao
+  }
+  
+  Note: 'Nhật ký audit log - ghi lại các thao tác quan trọng trong hệ thống'
 }
 
 // ========== GHI CHÚ QUAN HỆ ==========
@@ -482,12 +516,13 @@ Table NGUOIDUNG {
 - `CT_BCTKM`: Chi tiết báo cáo tổng kết môn theo lớp
 - `BAOCAOTONGKETHOCKY`: Báo cáo tổng kết học kỳ
 
-### 6. **Bảng Hệ thống** (3 bảng)
+### 6. **Bảng Hệ thống** (4 bảng)
 - `THAMSO`: Cấu hình hệ thống (tuổi, sĩ số, điểm đạt, số HS tối đa...)
 - `VAITRO`: Vai trò người dùng (Admin, GVCN, GVBM, Student)
 - `NGUOIDUNG`: Tài khoản người dùng
+- `NHATKY`: Nhật ký audit log (ghi lại các thao tác quan trọng)
 
-**Tổng cộng: 19 bảng**
+**Tổng cộng: 20 bảng**
 
 ---
 
@@ -521,13 +556,18 @@ Table NGUOIDUNG {
 - Phụ huynh: Chỉ là **thông tin liên hệ**, không có tài khoản đăng nhập
 
 ### Quy định về hạnh kiểm
-- Xếp loại: **Tốt**, **Khá**, **Trung bình**, **Yếu**
+- Thang điểm: **0-100** (số nguyên)
+- Xếp loại:
+  - **Tốt**: ≥ 80 điểm
+  - **Khá**: 65-79 điểm
+  - **Trung bình**: 50-64 điểm
+  - **Yếu**: < 50 điểm
 - Nhập theo học kỳ (HK1, HK2)
 - Hạnh kiểm cả năm phụ thuộc vào HK1 và HK2
 
 ### Quy định về môn học
-- Có **8 môn học** cơ bản
-- Mỗi môn có hệ số riêng (thường là 1 hoặc 2)
+- Có **9 môn học**: Toán, Văn, Anh, Lý, Hóa, Sinh, Sử, Địa, GDCD
+- Mỗi môn có hệ số riêng (1 hoặc 2)
 
 ### Quyền hạn người dùng
 - **ADMIN**: Toàn quyền hệ thống, xem tất cả lớp, nhập hạnh kiểm cho tất cả
